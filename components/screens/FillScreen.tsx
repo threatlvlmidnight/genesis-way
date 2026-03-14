@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export interface Big3Item {
   id: string;
@@ -83,14 +83,25 @@ export default function FillScreen({
   personalTasks,
   onToggleBig3,
   onShowIntro,
+  googleConnected,
+  lastCalendarSync,
+  onToggleGoogleConnected,
+  onImportIcs,
 }: {
   big3: Big3Item[];
   workTasks: Task[];
   personalTasks: Task[];
   onToggleBig3: (id: string) => void;
   onShowIntro: () => void;
+  googleConnected: boolean;
+  lastCalendarSync: string | null;
+  onToggleGoogleConnected: () => void;
+  onImportIcs: (rawIcs: string) => number;
 }) {
   const [now, setNow] = useState(new Date());
+  const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const icsInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60_000);
@@ -104,6 +115,42 @@ export default function FillScreen({
   });
 
   const doneCount = big3.filter((b) => b.done).length;
+
+  const lastSyncLabel = lastCalendarSync
+    ? new Date(lastCalendarSync).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "Not synced yet";
+
+  const handlePickIcs = () => {
+    icsInputRef.current?.click();
+  };
+
+  const handleImportIcs = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsImporting(true);
+      const raw = await file.text();
+      const imported = onImportIcs(raw);
+      if (imported > 0) {
+        setImportMessage(`Imported ${imported} calendar item${imported === 1 ? "" : "s"}.`);
+      } else {
+        setImportMessage("No new items found in this calendar file.");
+      }
+    } catch {
+      setImportMessage("Could not import this file. Please try another .ics export.");
+    } finally {
+      if (icsInputRef.current) icsInputRef.current.value = "";
+      setIsImporting(false);
+    }
+  };
 
   const PHASES = [
     { label: "Dump", state: "done" },
@@ -263,6 +310,109 @@ export default function FillScreen({
           zIndex: 1,
         }}
       >
+        {/* Calendar Sync */}
+        <div
+          style={{
+            position: "relative",
+            background: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(200,169,110,0.08)",
+            borderRadius: 16,
+            padding: "14px 14px",
+            marginBottom: 14,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 1,
+              background:
+                "linear-gradient(to right, transparent, rgba(200,169,110,0.2), transparent)",
+            }}
+          />
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: "#5a4830",
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              marginBottom: 8,
+            }}
+          >
+            Calendar Sync
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: "#7a6850",
+              lineHeight: 1.5,
+              marginBottom: 10,
+            }}
+          >
+            Google-first workflow with Apple-compatible .ics import.
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <button
+              onClick={onToggleGoogleConnected}
+              style={{
+                flex: 1,
+                borderRadius: 10,
+                border: "1px solid rgba(200,169,110,0.18)",
+                background: googleConnected
+                  ? "rgba(200,169,110,0.14)"
+                  : "rgba(255,255,255,0.03)",
+                color: googleConnected ? "#c8a96e" : "#7a6850",
+                padding: "9px 10px",
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {googleConnected ? "Google Linked" : "Link Google"}
+            </button>
+
+            <button
+              onClick={handlePickIcs}
+              disabled={isImporting}
+              style={{
+                flex: 1,
+                borderRadius: 10,
+                border: "1px solid rgba(200,169,110,0.12)",
+                background: "rgba(255,255,255,0.03)",
+                color: "#7a6850",
+                padding: "9px 10px",
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                opacity: isImporting ? 0.6 : 1,
+              }}
+            >
+              {isImporting ? "Importing..." : "Import .ics"}
+            </button>
+            <input
+              ref={icsInputRef}
+              type="file"
+              accept=".ics,text/calendar"
+              onChange={handleImportIcs}
+              style={{ display: "none" }}
+            />
+          </div>
+
+          <div style={{ fontSize: 10, color: "#4a3820" }}>Last sync: {lastSyncLabel}</div>
+          {importMessage && (
+            <div style={{ fontSize: 10, color: "#c8a96e", marginTop: 5 }}>
+              {importMessage}
+            </div>
+          )}
+        </div>
+
         {/* Jam Session */}
         <div
           style={{

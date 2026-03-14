@@ -1,161 +1,226 @@
-# The Genesis Way — Development Plan
+# The Genesis Way — Product Roadmap (iOS Build Phase)
 
-## Project Overview
+## Current Phase
 
-A proof-of-concept mobile web app for **Dan Holland's Genesis Way** productivity framework. Built by Dan's son to demonstrate the system and potentially partner with Dan to commercialize it.
+The demo phase is complete.
 
-**Goal:** Show Dan a polished, interactive demo of his framework — clean enough to impress, simple enough to pivot fast.
+- Design spec approved and shared with Dan.
+- Web proof of concept exists and is useful as a reference implementation.
+- We are now entering the starting phase for the actual iOS app.
 
-**Demo URL:** Deploy to Vercel for a shareable link. No login required. Data persists in `localStorage`.
+## Product Direction
 
----
+Primary product target:
 
-## Design System (Approved)
+1. Native iOS app (SwiftUI-first)
+2. Architecture designed for Android port (Kotlin/Compose) with minimal business-logic rework
+3. Google Calendar happy path for connected scheduling
+4. Apple Calendar support to a practical level (ICS-first in early versions)
+5. Preserve core Genesis system while broadening audience language
 
-Visual direction: **A2 — Glass Jakarta** (warm charcoal + gold glassmorphism, iOS-native feel)
+Secondary target:
 
-| Token | Value |
-|---|---|
-| Background | `#0c0a06` |
-| Gold accent | `#c8a96e` |
-| Glass card | `rgba(255,255,255,0.03)` + `backdrop-filter: blur(40px)` |
-| Glass border | `rgba(200,169,110,0.1)` |
-| Top shimmer | `linear-gradient(to right, transparent, rgba(200,169,110,0.3), transparent)` |
-| Font | Plus Jakarta Sans Variable (300–800) |
-| Phone width | 390px shell on desktop, full-screen on mobile |
-
-**Reference mockup:** `../mockup-A2-glass-jakarta.html` (open in browser to see approved design)
+1. Keep web app/design spec as reference and fallback demo surface
 
 ---
 
-## Tech Stack
+## North Star Outcomes
 
-| Layer | Choice | Why |
-|---|---|---|
-| Framework | Next.js 15 (App Router) | Easy Vercel deploy, React |
-| Styling | CSS-in-JS (inline styles) + globals.css | Full design control for custom dark theme |
-| UI components | shadcn/ui (installed but minimal use) | Available for future forms/dialogs |
-| Font | `@fontsource-variable/plus-jakarta-sans` | Self-hosted, no Google Fonts GDPR concern |
-| Data | `localStorage` | No backend needed for POC |
-| Deploy | Vercel | Free tier, instant sharing |
+1. A reliable daily-use iOS app for Dump -> Shape -> Fill -> Execute -> Park
+2. Calendar-assisted planning that reduces manual entry
+3. Fast capture and low-friction workflow execution
+4. Clean onboarding for broad audience (non-faith-specific copy in app UI)
+5. Android-ready architecture so porting is implementation work, not product redesign
 
 ---
 
-## File Structure
+## Cross-Platform Portability Rules (iOS -> Android)
 
-```
-genesis-way/
-├── app/
-│   ├── globals.css         ← Design tokens, glass utilities, font import
-│   ├── layout.tsx          ← Metadata, root HTML
-│   └── page.tsx            ← Main client component: state + routing
-├── components/
-│   ├── PhoneWrapper.tsx    ← Responsive: phone shell (desktop) / full-screen (mobile)
-│   ├── BottomNav.tsx       ← 4-tab navigation: Dump / Shape / Fill / Park
-│   └── screens/
-│       ├── OnboardingScreen.tsx  ← Framework intro + 3 phase cards + CTA
-│       ├── DumpScreen.tsx        ← Brain dump capture list
-│       ├── ShapeScreen.tsx       ← Week calendar + Five Filters assignment
-│       ├── FillScreen.tsx        ← Daily planner (THE showpiece screen)
-│       └── ParkScreen.tsx        ← Long-term parking lot
-```
+Non-negotiable implementation constraints from the start:
 
----
-
-## The Genesis Way Framework (for content reference)
-
-### 3 Phases
-1. **Dump It** — Empty the mind. Get everything on paper. No filtering.
-2. **Shape It** — Give structure. Three tools: wall calendar, digital calendar, paper planner.
-3. **Fill It** — Assign every task a time slot before the day begins.
-
-### Five Filters (applied in Shape phase)
-- **Eliminate** — Not worth doing at all
-- **Automate** — Set up a system to handle it
-- **Delegate** — Someone else should own this
-- **Schedule** — Time-block it on the calendar
-- **Park** — Not now, not never — someday
-
-### Task Coding System
-- Work tasks: **W1, W2, W3…** (top-priority first, numbered down)
-- Personal tasks: **P1, P2, P3…** (numbered from bottom up — personal life as foundation)
-- Priority levels: A (must do), B (should do), C (nice to do)
-- Delegation levels 1–5 (1 = do it yourself → 5 = full authority)
-
-### Key Concepts
-- **Daily Big 3** — Three non-negotiable outcomes for the day
-- **Jam Session** — 90-minute deep focus block (no interruptions)
-- **168 Hours** — Dan's framing: you have 168 hours/week, not just a workday
-- **F.O.C.U.S.** — Follow One Course Until Successful
-- **Long-Term Parking** — Items that don't fit this week but shouldn't be forgotten
-
-### Dan Holland's Influences
-- Stephen Covey (7 Habits), David Allen (GTD), Michael Hyatt, John Maxwell
-- Samurai discipline metaphor (lethal precision, not spiritual)
-- Biblical creation narrative as metaphor for the 3-phase process
+1. Keep domain logic platform-agnostic
+- Use the same entities and state transitions on all platforms
+- Avoid embedding business rules directly in SwiftUI views
+2. Contract-first data layer
+- Define stable JSON schemas for tasks, workflow state, sync metadata, and calendar mappings
+- Keep API surface independent of iOS-specific types
+3. Design token parity
+- Maintain a token table for color, spacing, typography scale, radius, elevation
+- Reference tokens in components instead of hardcoding per-screen style values
+4. Feature parity checklist
+- Every new iOS feature requires an "Android parity note" in planning/PR comments
+5. Integration abstraction
+- Wrap calendar providers behind a provider interface so Google/ICS mapping logic can be reused
+6. Local-first with sync abstraction
+- Persistence and sync should be decoupled so Android can mirror behavior with equivalent storage
 
 ---
 
-## Current App State
+## Milestone Map
 
-### What's built ✅
-- [x] Responsive phone shell (desktop: 390px bezel, mobile: full-screen)
-- [x] Dynamic Island + home bar (iOS aesthetic)
-- [x] Ambient warm glow background
-- [x] Glass card component with top shimmer
-- [x] **Onboarding screen** — wordmark, 3 phase cards with quotes, CTA button
-- [x] **Dump screen** — add/remove items, capture list
-- [x] **Shape screen** — week mini-calendar, Five Filters, item assignment
-- [x] **Fill screen** — Jam Session card, Daily Big 3 (interactive checkboxes), Work/Personal tasks with filter badges
-- [x] **Park screen** — categorized parking (This Week / Next Month / Someday)
-- [x] Bottom nav with active state
-- [x] localStorage persistence
-- [x] Clean build (no TypeScript errors)
+## Milestone 0 (Completed): Demo Validation
 
-### What's next 🔲
-- [ ] **Deploy to Vercel** — `vercel --prod` from genesis-way directory
-- [ ] **Add task creation in Fill** — Allow adding Work/Personal tasks inline
-- [ ] **Weekly view in Shape** — Drag dump items onto day slots
-- [ ] **Delegation modal** — When delegating a task, pick delegation level 1-5
-- [ ] **Priority badges** — A/B/C priority on tasks
-- [ ] **Animations** — Slide transitions between screens, check animation on Big 3
-- [ ] **Onboarding flow** — Multi-step wizard rather than single screen
-- [ ] **Settings** — User name (to personalize "Good morning, Dan")
+Status: complete
+
+1. Visual design spec produced: [docs/design-spec.html](docs/design-spec.html)
+2. Spec published for sharing/review
+3. Roadmap reset decision made after successful demo
+
+## Milestone 1: iOS Foundation (Start Here)
+
+Goal: Establish native app scaffold and durable local data model.
+
+1. Create Xcode project structure (SwiftUI + MVVM)
+2. Define domain models:
+- Task
+- Big3Item
+- DumpItem
+- Spoke
+- RhythmAnchor
+- FillAction
+- ExecutionAssignment
+- ParkItem
+3. Extract business rules/services into testable modules (no view-coupled logic)
+4. Persistence layer:
+- Start with local storage (SwiftData/Core Data or file-backed model)
+5. Navigation shell:
+- Native tab structure for Dump / Shape / Fill / Park
+- Entry flow for onboarding and week progression
+6. Theme system port:
+- Recreate Glass Jakarta tokens for iOS components
+7. Portability docs baseline:
+- Add "Android port notes" section for each major module
+
+Exit criteria:
+
+1. App installs and runs on iPhone simulator/device
+2. Data persists across app restarts
+3. Core tabs and routing are in place
+4. Business logic is callable outside UI layer
+5. Android port notes exist for foundation modules
+
+## Milestone 2: Core Genesis Workflow (MVP)
+
+Goal: End-to-end usable Genesis loop without external integrations.
+
+1. Onboarding + Week 1 perspective flow
+2. Dump capture + reflection
+3. Shape with seven spokes
+4. Rhythm/boundaries step
+5. Fill actions and daily Big 3
+6. Execute/finish line view
+7. Park and rehydrate items into active workflow
+
+Exit criteria:
+
+1. User can complete full loop from onboarding to execute
+2. No blockers/crashes in core paths
+3. Local-only planning is fully functional
+
+## Milestone 3: Calendar Integrations (Google-First)
+
+Goal: Add practical event-to-task flow with Google as happy path.
+
+1. Google Calendar direct integration (priority)
+- OAuth sign-in
+- Select calendars
+- Event import into app tasks
+- Incremental sync with manual refresh in v1
+2. Apple Calendar support (practical v1)
+- ICS import/sync workflow
+- Read-only ingest path
+3. Mapping controls
+- Map imported events to Work vs Personal lanes
+- Respect W/P code sequencing
+- De-duplication rules
+4. Provider abstraction for portability
+- Keep provider interface generic so Android can implement same contract
+
+Exit criteria:
+
+1. Google user can connect and import/sync events
+2. Apple user can import ICS and map events reliably
+3. Imported items appear correctly in Fill workflow
+4. Provider contracts are documented and Android-implementable
+
+## Milestone 4: Account + Sync Infrastructure
+
+Goal: Make data portable and resilient beyond one device.
+
+1. Choose backend stack for user accounts + sync
+2. Auth + secure token storage
+3. Cloud sync for tasks/settings/calendar mappings
+4. Conflict handling and sync status UX
+
+Exit criteria:
+
+1. User data survives reinstall/device changes
+2. Calendar connection state persists securely
+3. Sync errors are visible and recoverable
+
+## Milestone 5: Beta Readiness
+
+Goal: Ship a testable beta to a small user cohort.
+
+1. Performance pass
+2. Crash/error instrumentation
+3. Accessibility pass (Dynamic Type, VoiceOver basics, contrast)
+4. QA checklist for critical flows
+5. TestFlight distribution setup
+6. Android pre-port package
+- Architecture and API contracts reviewed
+- UI token parity checklist finalized
+- Initial Kotlin/Compose mapping notes completed
+
+Exit criteria:
+
+1. Internal/external TestFlight build available
+2. Critical path bug count near zero
+3. Feedback loop in place
 
 ---
 
-## Deployment
+## Immediate Priority Queue (Next 2-3 Weeks)
 
-### To deploy to Vercel (first time):
-```bash
-cd "c:/Users/godda/OneDrive/Desktop/Project Genesis/genesis-way"
-vercel
-```
-Follow prompts: login → link to project → deploy. Get a `*.vercel.app` URL.
-
-### To redeploy after changes:
-```bash
-vercel --prod
-```
+1. Lock iOS architecture and persistence choice
+2. Scaffold native navigation + tab shell
+3. Port Dump and Fill screens first (highest daily-use value)
+4. Implement task model and coding system (W/P, A/B/C if needed)
+5. Add placeholder Calendar Settings screen with provider options:
+- Google (coming next)
+- Apple ICS import
 
 ---
 
-## Design Notes for Future Sessions
+## Calendar Strategy (Explicit)
 
-- **No serif fonts** — Plus Jakarta Sans only, all weights
-- **No pure white text** — Use `#f0e4d0` for primary, `#c0b090` for secondary
-- **Gold is reserved** — Only use `#c8a96e` for interactive/active states, not decorative text
-- **Glass cards need `overflow: hidden`** — Otherwise the top shimmer `::before` bleeds out
-- **Phone wrapper is responsive** — Below 480px it goes full-screen automatically
-- **State lives in `page.tsx`** — Screens are dumb components receiving props
-- **localStorage key** — `"genesis-way-v1"` (increment version to wipe old state)
+Google (happy path):
+
+1. Direct integration and ongoing sync target
+2. v1 can use manual refresh button
+3. v2 can add background refresh/push improvements
+
+Apple:
+
+1. v1 supports ICS import/sync workflow
+2. Treat as practical compatibility path for web-linked calendars
+3. Re-evaluate deeper Apple-native options later
 
 ---
 
-## Key Files to Read When Resuming
+## Assets To Keep Using
 
-1. `app/page.tsx` — App state, routing, default data
-2. `components/screens/FillScreen.tsx` — The main showpiece, most complex screen
-3. `app/globals.css` — All design tokens and utilities
-4. `../mockup-A2-glass-jakarta.html` — The approved visual reference (open in browser)
-5. `../framework-analysis.md` — Complete Genesis Way framework breakdown
+1. Product design spec: [docs/design-spec.html](docs/design-spec.html)
+2. PDF synthesis reference: [docs/pdf-worksheet-system-reference.md](docs/pdf-worksheet-system-reference.md)
+3. Existing web code for behavior reference only
+
+---
+
+## Decisions Log
+
+1. Demo phase complete and accepted as proof point.
+2. Roadmap is now iOS-first.
+3. Google Calendar gets priority as primary integration path.
+4. Apple Calendar supported via practical ICS approach in early phase.
+5. Language should remain broad-audience and non-verse-specific in app UI.
+6. All iOS implementation decisions must preserve Android portability.

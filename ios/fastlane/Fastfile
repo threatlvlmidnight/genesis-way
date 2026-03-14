@@ -1,0 +1,69 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload a TestFlight build"
+  lane :beta do
+    app_identifier = ENV.fetch("APP_IDENTIFIER", "com.genesisway.app")
+
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID"),
+      issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+      key_content: ENV.fetch("APP_STORE_CONNECT_PRIVATE_KEY"),
+      is_key_content_base64: false
+    )
+
+    team_id = ENV["APPLE_TEAM_ID"]
+    build_number = ENV["GITHUB_RUN_NUMBER"]
+
+    if build_number.nil?
+      begin
+        latest = latest_testflight_build_number(
+          api_key: api_key,
+          app_identifier: app_identifier
+        )
+        build_number = (latest + 1).to_s
+      rescue StandardError
+        # First upload has no prior TestFlight build number.
+        build_number = "1"
+      end
+    end
+
+    increment_build_number(
+      xcodeproj: "GenesisWay.xcodeproj",
+      build_number: build_number
+    )
+
+    build_app(
+      xcodeproj: "GenesisWay.xcodeproj",
+      scheme: "GenesisWay",
+      clean: true,
+      export_method: "app-store",
+      output_directory: "build",
+      output_name: "GenesisWay.ipa",
+      xcargs: [
+        "-allowProvisioningUpdates",
+        (team_id ? "DEVELOPMENT_TEAM=#{team_id}" : nil)
+      ].compact.join(" ")
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: app_identifier,
+      ipa: "build/GenesisWay.ipa",
+      skip_waiting_for_build_processing: true,
+      notify_external_testers: false
+    )
+  end
+
+  desc "Compile-only CI check for pull requests"
+  lane :ci_build do
+    build_app(
+      xcodeproj: "GenesisWay.xcodeproj",
+      scheme: "GenesisWay",
+      skip_archive: true,
+      skip_codesigning: true,
+      clean: true,
+      xcargs: "-allowProvisioningUpdates"
+    )
+  end
+end

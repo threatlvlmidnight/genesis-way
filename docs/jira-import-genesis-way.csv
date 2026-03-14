@@ -1,0 +1,13 @@
+Summary,Issue Type,Description,Priority,Labels
+Apple Developer team visible in Xcode,Task,"Paid Apple Developer team appears in Xcode Accounts and can be selected in Signing and Capabilities.",Highest,"release,apple,blocking"
+Set signing to paid team,Task,"In Xcode target Signing and Capabilities: team set to paid team, automatic signing enabled, no profile errors.",Highest,"release,ios"
+Create App Store Connect app record,Task,"Create app in App Store Connect with bundle identifier com.genesisway.app.",Highest,"release,appstoreconnect"
+Generate App Store Connect API key,Task,"Create API key in App Store Connect for CI upload (key id, issuer id, private key).",Highest,"release,ci"
+Add GitHub Actions secrets,Task,"Add APP_STORE_CONNECT_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, APP_STORE_CONNECT_PRIVATE_KEY repository secrets.",Highest,"release,ci,github-actions"
+Add GitHub Actions variables,Task,"Add APPLE_TEAM_ID and APP_IDENTIFIER repository variables.",High,"release,ci,github-actions"
+Run iOS TestFlight workflow manually,Task,"Trigger workflow iOS TestFlight from GitHub Actions and verify build upload starts.",High,"release,ci"
+Verify build appears in TestFlight,Task,"Confirm uploaded build appears in App Store Connect TestFlight tab.",High,"release,testflight"
+Invite internal testers,Task,"Add internal testers and confirm install succeeds via TestFlight app.",Medium,"qa,testflight"
+Submit external beta review,Task,"Create external group and submit build for Beta App Review.",Medium,"qa,testflight"
+Collect first beta feedback,Bug,"Track first wave of issues from testers and prioritize fixes.",Medium,"qa,feedback"
+Fix highest-impact beta issues,Story,"Resolve top issues from beta feedback and publish follow-up build.",Medium,"qa,release"
