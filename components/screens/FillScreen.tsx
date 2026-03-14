@@ -82,11 +82,13 @@ export default function FillScreen({
   workTasks,
   personalTasks,
   onToggleBig3,
+  onShowIntro,
 }: {
   big3: Big3Item[];
   workTasks: Task[];
   personalTasks: Task[];
   onToggleBig3: (id: string) => void;
+  onShowIntro: () => void;
 }) {
   const [now, setNow] = useState(new Date());
 
@@ -164,22 +166,44 @@ export default function FillScreen({
               Good morning.
             </div>
           </div>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              background: "rgba(200,169,110,0.08)",
-              border: "1px solid rgba(200,169,110,0.15)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#c8a96e",
-            }}
-          >
-            D
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={onShowIntro}
+              title="About the Genesis Way"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                background: "rgba(200,169,110,0.05)",
+                border: "1px solid rgba(200,169,110,0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 16,
+                color: "#5a4830",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              ☰
+            </button>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                background: "rgba(200,169,110,0.08)",
+                border: "1px solid rgba(200,169,110,0.15)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#c8a96e",
+              }}
+            >
+              D
+            </div>
           </div>
         </div>
 

@@ -137,6 +137,7 @@ export default function Home() {
             workTasks={workTasks}
             personalTasks={personalTasks}
             onToggleBig3={toggleBig3}
+            onShowIntro={() => setScreen("onboarding")}
           />
         )}
         {screen === "park" && (
