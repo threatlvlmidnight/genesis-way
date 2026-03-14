@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Genesis Way — Design Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ─── TOKENS ─────────────────────────────────────────── */
+  :root {
+    --bg:           #0c0a06;
+    --gold:         #c8a96e;
+    --gold-dk:      #8a6830;
+    --gold-10:      rgba(200,169,110,0.10);
+    --gold-12:      rgba(200,169,110,0.12);
+    --gold-15:      rgba(200,169,110,0.15);
+    --gold-20:      rgba(200,169,110,0.20);
+    --gold-25:      rgba(200,169,110,0.25);
+    --gold-30:      rgba(200,169,110,0.30);
+    --gold-45:      rgba(200,169,110,0.45);
+    --glass:        rgba(255,255,255,0.03);
+    --glass-border: rgba(200,169,110,0.10);
+    --txt-pri:      #f0e4d0;
+    --txt-warm:     #c0b090;
+    --txt-muted:    #6a5840;
+    --txt-faint:    #5a4830;
+    --txt-ghost:    #3a2e18;
+    --txt-dim:      #4a3820;
+    --radius-card:  20px;
+    --radius-pill:  100px;
+    --radius-btn:   14px;
+    --radius-input: 12px;
+  }
+
+  /* ─── RESET ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    background: #080604;
+    -webkit-font-smoothing: antialiased;
+    color: var(--txt-pri);
+  }
+
+  /* ─── PAGE LAYOUT ────────────────────────────────────── */
+  .page-title {
+    text-align: center;
+    padding: 56px 24px 8px;
+  }
+  .page-title h1 {
+    font-size: 13px; font-weight: 600; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
+  }
+  .page-title p {
+    font-size: 35px; font-weight: 800; letter-spacing: -1.5px; color: var(--txt-pri); line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .page-title small {
+    font-size: 13px; color: var(--txt-muted);
+  }
+
+  .flow-label {
+    text-align: center;
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--txt-ghost);
+    padding: 48px 0 20px;
+  }
+  .flow-arrow {
+    text-align: center; color: var(--gold-45); font-size: 18px; margin: -12px 0 12px;
+  }
+
+  .screens-row {
+    display: flex;
+    gap: 32px;
+    padding: 0 40px 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ─── PHONE SHELL ────────────────────────────────────── */
+  .phone {
+    width: 390px;
+    min-width: 390px;
+    height: 844px;
+    border-radius: 56px;
+    background: #0c0a06;
+    border: 1.5px solid rgba(200,169,110,0.18);
+    box-shadow:
+      0 0 0 8px rgba(0,0,0,0.6),
+      0 40px 80px rgba(0,0,0,0.7),
+      inset 0 1px 0 rgba(200,169,110,0.08);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .phone-label {
+    text-align: center;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--txt-ghost); margin-top: 12px; margin-bottom: 8px;
+  }
+
+  /* Dynamic island */
+  .di {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 35px;
+    background: #000; border-radius: 20px;
+    z-index: 100;
+  }
+
+  /* Ambient glow */
+  .bg-glow {
+    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 280px 200px at 20% 10%, rgba(200,140,40,0.10) 0%, transparent 100%),
+      radial-gradient(ellipse 200px 300px at 80% 60%, rgba(160,90,20,0.07)  0%, transparent 100%),
+      radial-gradient(ellipse 150px 150px at 50% 85%, rgba(200,140,40,0.05) 0%, transparent 100%);
+  }
+
+  /* Home bar */
+  .home-bar {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    width: 133px; height: 5px; border-radius: 3px;
+    background: rgba(200,169,110,0.18); z-index: 100;
+  }
+
+  /* Screen inner  */
+  .screen {
+    position: absolute; inset: 0; z-index: 1;
+    display: flex; flex-direction: column;
+  }
+
+  /* ─── HEADER BLOCK ───────────────────────────────────── */
+  .hdr {
+    flex-shrink: 0;
+    padding: 64px 24px 14px;
+    border-bottom: 1px solid rgba(200,169,110,0.06);
+    position: relative; z-index: 2;
+  }
+  .hdr-kicker {
+    font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--txt-dim); margin-bottom: 4px;
+  }
+  .hdr-title {
+    font-size: 26px; font-weight: 800; letter-spacing: -1px; color: var(--txt-pri);
+  }
+  .hdr-sub {
+    font-size: 12px; color: var(--txt-faint); margin-top: 4px; line-height: 1.5;
+  }
+
+  /* ─── SCROLLABLE BODY ────────────────────────────────── */
+  .body {
+    flex: 1; overflow-y: auto; padding: 14px 24px;
+    position: relative; z-index: 2;
+    scrollbar-width: none;
+  }
+  .body::-webkit-scrollbar { display: none; }
+
+  /* ─── BOTTOM NAV ─────────────────────────────────────── */
+  .bnav {
+    flex-shrink: 0;
+    height: 72px;
+    background: rgba(12,10,6,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(200,169,110,0.07);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 8px 10px; z-index: 99; position: relative;
+  }
+  .bnav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    flex: 1; cursor: pointer;
+  }
+  .bnav-icon {
+    width: 28px; height: 28px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; position: relative;
+  }
+  .bnav-icon.active { background: var(--gold-12); }
+  .bnav-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--gold); position: absolute; bottom: -7px;
+  }
+  .bnav-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .bnav-label.active { color: var(--gold); }
+  .bnav-label.idle   { color: var(--txt-ghost); }
+
+  /* ─── GLASS CARD ─────────────────────────────────────── */
+  .gc {
+    position: relative;
+    background: var(--glass);
+    backdrop-filter: blur(40px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .gc::before {
+    content: "";
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-30), transparent);
+  }
+  .gc-body { padding: 16px 18px; }
+
+  /* ─── SMALL UTILITIES ────────────────────────────────── */
+  .label-sm {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--txt-dim); margin-bottom: 8px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: var(--radius-pill);
+    font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .pill-active {
+    background: var(--gold-10); border: 1px solid var(--gold-20); color: var(--gold);
+  }
+  .pill-done {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(200,169,110,0.06); color: var(--txt-ghost);
+  }
+  .pill-idle {
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(200,169,110,0.04); color: var(--txt-ghost);
+  }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .gold-btn {
+    width: 100%; padding: 15px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dk) 100%);
+    border-radius: var(--radius-btn); font-size: 14px; font-weight: 700;
+    color: #1a1208; border: none; cursor: pointer; font-family: inherit;
+    box-shadow: 0 12px 32px var(--gold-30), inset 0 1px 0 rgba(255,255,255,0.2);
+    text-align: center;
+  }
+  .ghost-btn {
+    width: 100%; padding: 13px;
+    background: var(--gold-10); border: 1px solid var(--gold-15);
+    border-radius: var(--radius-btn); font-size: 13px; font-weight: 600;
+    color: var(--txt-muted); font-family: inherit; text-align: center;
+  }
+  .input-row {
+    display: flex; gap: 8px; margin-bottom: 14px;
+  }
+  .fake-input {
+    flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(200,169,110,0.12);
+    border-radius: var(--radius-input); padding: 11px 14px; font-size: 13px;
+    color: var(--txt-muted); font-family: inherit;
+  }
+  .add-btn {
+    width: 44px; height: 44px; border-radius: var(--radius-input);
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dk) 100%);
+    font-size: 20px; color: #1a1208; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .item-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 0; border-bottom: 1px solid rgba(200,169,110,0.05);
+  }
+  .item-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold-30); flex-shrink: 0; }
+  .item-text { flex: 1; font-size: 13px; color: var(--txt-muted); line-height: 1.4; }
+  .item-x { color: var(--txt-ghost); font-size: 16px; flex-shrink: 0; }
+
+  .section-gap { margin-top: 20px; }
+
+  /* spoke rows */
+  .spoke-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid rgba(200,169,110,0.04);
+  }
+  .spoke-ico {
+    width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
+    background: var(--gold-10); border: 1px solid var(--gold-15);
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+  }
+  .spoke-name { font-size: 13px; font-weight: 700; color: var(--txt-warm); flex: 1; }
+  .spoke-sub  { font-size: 11px; color: var(--txt-ghost); }
+  .spoke-count {
+    font-size: 11px; font-weight: 700; color: var(--gold);
+    background: var(--gold-10); border: 1px solid var(--gold-20);
+    border-radius: 20px; padding: 2px 8px; flex-shrink: 0;
+  }
+
+  /* checkboxes */
+  .cb-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; }
+  .cb {
+    width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0; margin-top: 1px;
+    border: 1.5px solid rgba(200,169,110,0.2);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .cb.done { background: var(--gold); border-color: var(--gold); color: #1a1208; }
+  .cb-text { font-size: 13px; line-height: 1.45; color: var(--txt-muted); }
+  .cb-text.done { color: var(--txt-ghost); text-decoration: line-through; }
+
+  /* timeline / hour rows */
+  .time-row {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 8px 0; border-bottom: 1px solid rgba(200,169,110,0.03);
+  }
+  .time-label { font-size: 11px; font-weight: 700; color: var(--txt-ghost); width: 42px; flex-shrink: 0; padding-top: 2px; }
+  .time-block {
+    flex: 1; border-radius: 10px; background: var(--glass); border: 1px solid rgba(200,169,110,0.06);
+    padding: 8px 12px;
+  }
+  .time-block.filled { background: var(--gold-10); border-color: var(--gold-20); }
+  .time-block-title { font-size: 12px; font-weight: 700; color: var(--txt-warm); margin-bottom: 2px; }
+  .time-block-sub   { font-size: 11px; color: var(--txt-ghost); }
+
+  /* spoke fills grid */
+  .fill-act-row {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid rgba(200,169,110,0.05);
+  }
+  .fill-act-ico {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    background: var(--gold-10); border: 1px solid var(--gold-15);
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+  }
+  .fill-act-name  { font-size: 12px; font-weight: 700; color: var(--txt-warm); }
+  .fill-act-desc  { font-size: 11px; color: var(--txt-muted); line-height: 1.4; margin-top: 2px; }
+  .fill-act-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+    background: rgba(80,200,80,0.1); border: 1px solid rgba(80,200,80,0.2); color: #80c880;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* deadline cards */
+  .deadline-card {
+    border-radius: 14px; background: var(--glass); border: 1px solid rgba(200,169,110,0.08);
+    padding: 12px 14px; margin-bottom: 8px; position: relative; overflow: hidden;
+  }
+  .deadline-card::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  }
+  .deadline-card.hot::before   { background: var(--gold); }
+  .deadline-card.med::before   { background: #c07060; }
+  .deadline-card.cool::before  { background: #6090d0; }
+  .deadline-card.far::before   { background: #6a5840; }
+  .deadline-horizon { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--txt-dim); margin-bottom: 4px; }
+  .deadline-text    { font-size: 13px; color: var(--txt-warm); font-weight: 600; }
+
+  /* park dot */
+  .park-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 12px; border-radius: 12px;
+    background: var(--glass); border: 1px solid rgba(200,169,110,0.04);
+    margin-bottom: 6px;
+  }
+  .park-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* wheel of life ── donut placeholder */
+  .wheel-wrap { display: flex; justify-content: center; align-items: center; padding: 12px 0 6px; }
+  .wheel-svg  { width: 170px; height: 170px; }
+
+  /* filter badges */
+  .fb { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 20px; font-size: 10px; font-weight: 700; margin-right: 5px; margin-bottom: 6px; }
+  .fb-eliminate { background: rgba(180,50,50,0.13);  border: 1px solid rgba(200,80,80,0.25);   color: #c07060; }
+  .fb-automate  { background: rgba(80,100,180,0.13); border: 1px solid rgba(80,120,200,0.25);  color: #8090d0; }
+  .fb-delegate  { background: rgba(60,140,90,0.13);  border: 1px solid rgba(80,180,100,0.25);  color: #70b880; }
+  .fb-schedule  { background: var(--gold-12);         border: 1px solid var(--gold-20);         color: var(--gold); }
+  .fb-park      { background: rgba(120,80,180,0.13); border: 1px solid rgba(140,100,200,0.25); color: #b090d0; }
+
+  /* progress track */
+  .prog-track { display: flex; gap: 5px; margin-bottom: 6px; }
+  .prog-seg { flex: 1; height: 3px; border-radius: 2px; }
+  .prog-seg.done   { background: var(--gold); }
+  .prog-seg.active { background: var(--gold-45); }
+  .prog-seg.blank  { background: rgba(200,169,110,0.08); }
+
+  /* life-clock arc */
+  .lc-wrap { display: flex; justify-content: center; padding: 16px 0 10px; }
+  .lc-svg  { width: 200px; height: 140px; }
+
+  /* stat grid */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .stat-card { border-radius: 14px; background: var(--glass); border: 1px solid rgba(200,169,110,0.08); padding: 12px 14px; }
+  .stat-num  { font-size: 24px; font-weight: 800; color: var(--gold); letter-spacing: -1px; }
+  .stat-lbl  { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--txt-ghost); margin-top: 2px; }
+
+  /* execution grid */
+  .exec-row {
+    display: flex; gap: 8px; align-items: center;
+    padding: 8px 0; border-bottom: 1px solid rgba(200,169,110,0.04);
+  }
+  .exec-spoke-ico {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    background: var(--gold-10); border: 1px solid var(--gold-15);
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+  }
+  .exec-name { font-size: 11px; font-weight: 700; color: var(--txt-warm); line-height: 1; }
+  .exec-sub  { font-size: 10px; color: var(--txt-ghost); margin-top: 2px; }
+  .exec-badge {
+    font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+  }
+  .exec-badge.done     { background: rgba(80,200,80,0.12);  border:1px solid rgba(80,200,80,0.25);  color:#80c880; }
+  .exec-badge.progress { background: var(--gold-12);         border:1px solid var(--gold-20);        color:var(--gold); }
+  .exec-badge.planned  { background: rgba(255,255,255,0.03); border:1px solid rgba(200,169,110,0.1); color:var(--txt-ghost); }
+
+  /* quote callout */
+  .quote-box {
+    border-radius: 14px; background: var(--gold-10); border: 1px solid var(--gold-20);
+    padding: 12px 14px; margin-bottom: 10px;
+  }
+  .quote-box p {
+    font-size: 12px; font-style: italic; color: var(--gold-45); line-height: 1.55;
+    border-left: 1.5px solid var(--gold-30); padding-left: 10px;
+  }
+  .quote-box cite { font-size: 10px; color: var(--txt-ghost); margin-top: 4px; display: block; }
+
+  /* rhythm card */
+  .rhythm-card {
+    border-radius: 14px; background: var(--glass); border: 1px solid rgba(200,169,110,0.07);
+    padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+  }
+  .rc-ico { font-size: 18px; width: 32px; text-align: center; flex-shrink: 0; }
+  .rc-name { font-size: 12px; font-weight: 700; color: var(--txt-warm); }
+  .rc-anchor { font-size: 11px; color: var(--txt-muted); margin-top: 2px; }
+  .rc-cadence { font-size: 10px; font-weight: 700; color: var(--gold); background: var(--gold-10); border: 1px solid var(--gold-20); border-radius: 20px; padding: 2px 8px; flex-shrink: 0; margin-left: auto; }
+
+  /* bottom CTA strip */
+  .cta-strip { flex-shrink: 0; padding: 10px 24px 12px; position: relative; z-index: 2; }
+
+  /* ─── ANNOTATION LAYER ───────────────────────────────── */
+  .phone-wrap { display: inline-block; position: relative; }
+  .annotation {
+    position: absolute;
+    font-size: 11px; font-weight: 600; color: var(--gold);
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ann-line {
+    height: 1px; background: var(--gold-30); display: inline-block;
+  }
+
+  /* ─── SPEC LEGEND SECTION ────────────────────────────── */
+  .spec-section {
+    max-width: 1400px; margin: 60px auto 0; padding: 0 40px 80px;
+  }
+  .spec-section h2 {
+    font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--gold); border-bottom: 1px solid rgba(200,169,110,0.1);
+    padding-bottom: 12px; margin-bottom: 24px;
+  }
+
+  .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .token-row {
+    border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(200,169,110,0.06);
+    padding: 14px 16px; display: flex; gap: 12px; align-items: center;
+  }
+  .token-swatch { width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.07); }
+  .token-name { font-size: 11px; font-weight: 700; color: var(--txt-warm); }
+  .token-val  { font-size: 10px; color: var(--txt-ghost); margin-top: 2px; font-family: monospace; }
+
+  .type-row {
+    display: flex; align-items: baseline; gap: 24px; padding: 12px 0;
+    border-bottom: 1px solid rgba(200,169,110,0.05);
+  }
+  .type-lbl { font-size: 10px; color: var(--txt-ghost); width: 100px; flex-shrink: 0; }
+
+  table.spec-table { width: 100%; border-collapse: collapse; }
+  table.spec-table th {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--txt-dim); text-align: left; padding: 8px 12px 8px 0; border-bottom: 1px solid rgba(200,169,110,0.08);
+  }
+  table.spec-table td {
+    font-size: 12px; color: var(--txt-muted); padding: 10px 12px 10px 0;
+    border-bottom: 1px solid rgba(200,169,110,0.04); vertical-align: top;
+  }
+  table.spec-table td:first-child { color: var(--txt-warm); font-weight: 600; }
+  code { font-family: monospace; font-size: 11px; color: var(--gold); background: var(--gold-10); padding: 2px 6px; border-radius: 4px; }
+
+  .flow-diagram {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0;
+  }
+  .flow-node {
+    padding: 8px 16px; border-radius: 10px;
+    background: var(--glass); border: 1px solid rgba(200,169,110,0.12);
+    font-size: 11px; font-weight: 700; color: var(--txt-warm); letter-spacing: 0.3px;
+  }
+  .flow-node.active { background: var(--gold-12); border-color: var(--gold-20); color: var(--gold); }
+  .flow-chevron { color: var(--txt-ghost); font-size: 14px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .note-box {
+    background: rgba(200,169,110,0.05); border: 1px solid rgba(200,169,110,0.1);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;
+  }
+  .note-box p { font-size: 12px; color: var(--txt-muted); line-height: 1.6; }
+  .note-box strong { color: var(--txt-warm); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE TITLE
+═══════════════════════════════════════════════════════════ -->
+<div class="page-title">
+  <h1>Dan Holland · Coachplus</h1>
+  <p>The Genesis Way<br/>Design Spec</p>
+  <small>Glass Jakarta visual system · A2 warm charcoal + gold · March 2026</small>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 1 — ONBOARDING + WEEK 1
+═══════════════════════════════════════════════════════════ -->
+<div class="flow-label">Orientation &amp; Perspective</div>
+
+<div class="screens-row">
+
+  <!-- ONBOARDING -->
+  <div>
+    <p class="phone-label">S1 — Onboarding</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="body" style="padding-top:60px;">
+          <div style="margin-bottom:28px;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--txt-ghost);margin-bottom:10px;">Dan Holland · Coachplus</div>
+            <div style="font-size:44px;font-weight:800;color:var(--txt-pri);line-height:1.0;letter-spacing:-2px;">The<br/>Genesis<br/>Way</div>
+            <div style="font-size:13px;color:var(--txt-faint);margin-top:10px;line-height:1.55;">A practical framework for designing your 168 hours — not just managing them.</div>
+          </div>
+
+          <!-- progress strip -->
+          <div class="prog-track" style="margin-bottom:22px;">
+            <div class="prog-seg done"></div>
+            <div class="prog-seg blank"></div>
+            <div class="prog-seg blank"></div>
+          </div>
+
+          <!-- phase cards -->
+          <div class="gc">
+            <div class="gc-body" style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="width:34px;height:34px;border-radius:10px;background:var(--gold-10);border:1px solid var(--gold-20);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--gold);flex-shrink:0;">1</div>
+              <div>
+                <div style="font-size:15px;font-weight:700;color:var(--txt-pri);margin-bottom:4px;">Dump It</div>
+                <div style="font-size:11px;color:var(--txt-muted);line-height:1.5;">Empty your mind onto paper. The brain is for thinking — not storing every obligation.</div>
+                <div style="margin-top:7px;font-size:10px;font-style:italic;color:var(--gold-45);border-left:1.5px solid rgba(200,169,110,0.18);padding-left:8px;">"Get it all out of your head."</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gc">
+            <div class="gc-body" style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="width:34px;height:34px;border-radius:10px;background:var(--gold-10);border:1px solid var(--gold-20);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--gold);flex-shrink:0;">2</div>
+              <div>
+                <div style="font-size:15px;font-weight:700;color:var(--txt-pri);margin-bottom:4px;">Shape It</div>
+                <div style="font-size:11px;color:var(--txt-muted);line-height:1.5;">Give form to what's formless. Assign each item to one of seven life spokes.</div>
+                <div style="margin-top:7px;font-size:10px;font-style:italic;color:var(--gold-45);border-left:1.5px solid rgba(200,169,110,0.18);padding-left:8px;">"Structure comes before sustainable action."</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="gc">
+            <div class="gc-body" style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="width:34px;height:34px;border-radius:10px;background:var(--gold-10);border:1px solid var(--gold-20);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:var(--gold);flex-shrink:0;">3</div>
+              <div>
+                <div style="font-size:15px;font-weight:700;color:var(--txt-pri);margin-bottom:4px;">Fill It</div>
+                <div style="font-size:11px;color:var(--txt-muted);line-height:1.5;">One intentional action per spoke, scheduled before your day begins.</div>
+                <div style="margin-top:7px;font-size:10px;font-style:italic;color:var(--gold-45);border-left:1.5px solid rgba(200,169,110,0.18);padding-left:8px;">"Don't fill chaos. Fill what you've shaped."</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="padding:6px 0 24px;">
+            <div class="gold-btn" style="margin-bottom:12px;">Begin the Journey</div>
+            <div class="ghost-btn">Already familiar — quick start →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK 1: MY LIFE IN 24 HOURS -->
+  <div>
+    <p class="phone-label">S2 — Week 1: Perspective</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Week 1 of 6</div>
+          <div class="hdr-title">My Life in 24 Hours</div>
+          <div class="hdr-sub">Number your days to gain perspective and focus.</div>
+        </div>
+        <div class="body">
+
+          <!-- life-clock graphic -->
+          <div class="lc-wrap">
+            <svg class="lc-svg" viewBox="0 0 200 140">
+              <!-- Clock face arc 7 AM – 11 PM -->
+              <path d="M 20 120 A 90 90 0 0 1 180 120" fill="none" stroke="rgba(200,169,110,0.10)" stroke-width="16" stroke-linecap="round"/>
+              <!-- elapsed portion (e.g. to 3 PM = roughly midday) -->
+              <path d="M 20 120 A 90 90 0 0 1 130 38" fill="none" stroke="#c8a96e" stroke-width="16" stroke-linecap="round" opacity="0.8"/>
+              <!-- now marker -->
+              <circle cx="130" cy="38" r="8" fill="#c8a96e"/>
+              <!-- labels -->
+              <text x="10"  y="135" font-size="9" fill="rgba(200,169,110,0.4)" font-family="'Plus Jakarta Sans',sans-serif" font-weight="700">7AM</text>
+              <text x="90"  y="22"  font-size="9" fill="rgba(200,169,110,0.4)" font-family="'Plus Jakarta Sans',sans-serif" font-weight="700">3PM</text>
+              <text x="164" y="135" font-size="9" fill="rgba(200,169,110,0.4)" font-family="'Plus Jakarta Sans',sans-serif" font-weight="700">11PM</text>
+              <!-- age callout -->
+              <text x="100" y="90" text-anchor="middle" font-size="22" font-weight="800" fill="#f0e4d0" font-family="'Plus Jakarta Sans',sans-serif">3:14 PM</text>
+              <text x="100" y="110" text-anchor="middle" font-size="10" fill="rgba(200,169,110,0.5)" font-family="'Plus Jakarta Sans',sans-serif" font-weight="600">YOUR CURRENT TIME OF DAY</text>
+            </svg>
+          </div>
+
+          <!-- stat cards -->
+          <div class="stat-grid" style="margin-bottom:14px;">
+            <div class="stat-card">
+              <div class="stat-num">38</div>
+              <div class="stat-lbl">My Age</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" style="font-size:18px;">3:14 PM</div>
+              <div class="stat-lbl">Life-Day Time</div>
+            </div>
+          </div>
+
+          <div class="label-sm">Your Season</div>
+          <div style="display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap;">
+            <div class="pill pill-idle">Morning · 0–20</div>
+            <div class="pill pill-idle">Midday · 20–40</div>
+            <div class="pill pill-active">Building · 30–50</div>
+            <div class="pill pill-idle">Evening · 50+</div>
+          </div>
+
+          <div class="label-sm" style="margin-top:4px;">Reflection</div>
+          <div class="gc" style="margin-bottom:8px;">
+            <div class="gc-body">
+              <div style="font-size:11px;font-weight:700;color:var(--txt-warm);margin-bottom:4px;">What feels urgent in this season?</div>
+              <div style="height:32px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(200,169,110,0.08);"></div>
+            </div>
+          </div>
+          <div class="gc" style="margin-bottom:8px;">
+            <div class="gc-body">
+              <div style="font-size:11px;font-weight:700;color:var(--txt-warm);margin-bottom:4px;">What is distracting or unnecessary?</div>
+              <div style="height:32px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(200,169,110,0.08);"></div>
+            </div>
+          </div>
+          <div class="gc" style="margin-bottom:16px;">
+            <div class="gc-body">
+              <div style="font-size:11px;font-weight:700;color:var(--txt-warm);margin-bottom:4px;">Because of my season, I need to focus on…</div>
+              <div style="height:42px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(200,169,110,0.08);"></div>
+            </div>
+          </div>
+
+        </div>
+        <div class="cta-strip">
+          <div class="gold-btn">Continue to Dump It →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 2 — DUMP IT
+═══════════════════════════════════════════════════════════ -->
+<div class="flow-arrow">↓</div>
+<div class="flow-label">Exposure — Week 2: Dump It</div>
+
+<div class="screens-row">
+
+  <!-- DUMP: CAPTURE -->
+  <div>
+    <p class="phone-label">S3 — Dump It: Capture</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Week 2 · Step 1 of 3</div>
+          <div class="hdr-title">Dump It</div>
+          <div class="hdr-sub">Get everything out. Don't filter — just expose.</div>
+        </div>
+        <div class="body">
+
+          <!-- bucket selector -->
+          <div class="label-sm">Bucket</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+            <div class="pill pill-active">⏱ Time</div>
+            <div class="pill pill-idle">⚡ Energy</div>
+            <div class="pill pill-idle">👁 Attention</div>
+            <div class="pill pill-idle">💭 Emotional</div>
+          </div>
+
+          <!-- input -->
+          <div class="input-row">
+            <div class="fake-input" style="color:var(--txt-ghost);">What's taking up your time…</div>
+            <div class="add-btn">+</div>
+          </div>
+
+          <!-- captured items by bucket -->
+          <div class="label-sm">Captured — 8</div>
+
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-45);margin:8px 0 6px;">⏱ Time</div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Weekly team meetings</div><div class="item-x">×</div></div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Q1 client onboarding review</div><div class="item-x">×</div></div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Weekend volunteer commitments</div><div class="item-x">×</div></div>
+
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-45);margin:10px 0 6px;">⚡ Energy</div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Disruptor Manufacturing update</div><div class="item-x">×</div></div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Ongoing budget concerns</div><div class="item-x">×</div></div>
+
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-45);margin:10px 0 6px;">💭 Emotional</div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Conflict with team member</div><div class="item-x">×</div></div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Expectation from leadership board</div><div class="item-x">×</div></div>
+          <div class="item-row"><div class="item-dot"></div><div class="item-text">Son's college decision pressure</div><div class="item-x">×</div></div>
+          <div style="height:20px;"></div>
+        </div>
+        <div class="cta-strip">
+          <div class="gold-btn">Reflect on What I Dumped →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DUMP: REFLECT -->
+  <div>
+    <p class="phone-label">S4 — Dump It: Reflect</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Week 2 · Pause &amp; Reflect</div>
+          <div class="hdr-title">Look at What You Carry</div>
+          <div class="hdr-sub">Do not fix. Do not solve. Only observe.</div>
+        </div>
+        <div class="body">
+
+          <div class="quote-box">
+            <p>"We cannot shape what we refuse to expose. Clarity comes before change."</p>
+            <cite>— Week 2 Worksheet</cite>
+          </div>
+
+          <div class="label-sm">Reflection Questions</div>
+
+          <div class="gc" style="margin-bottom:8px;">
+            <div class="gc-body">
+              <div style="font-size:11px;font-weight:700;color:var(--txt-warm);margin-bottom:5px;">What surprised me?</div>
+              <div style="height:44px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(200,169,110,0.08);"></div>
+            </div>
+          </div>
+
+          <div class="gc" style="margin-bottom:8px;">
+            <div class="gc-body">
+              <div style="font-size:11px;font-weight:700;color:var(--txt-warm);margin-bottom:5px;">What explains my exhaustion?</div>
+              <div style="height:44px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(200,169,110,0.08);"></div>
+            </div>
+          </div>
+
+          <div class="gc" style="margin-bottom:14px;">
+            <div class="gc-body">
+              <div style="font-size:11px;font-weight:700;color:var(--txt-warm);margin-bottom:5px;">What have I been carrying alone?</div>
+              <div style="height:44px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(200,169,110,0.08);"></div>
+            </div>
+          </div>
+
+          <!-- closing declaration -->
+          <div style="border-radius:14px;background:rgba(200,169,110,0.05);border:1px solid rgba(200,169,110,0.1);padding:14px;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:8px;">Closing Declaration</div>
+            <div style="font-size:12px;color:var(--txt-muted);line-height:1.7;font-style:italic;">
+              Today I choose honesty over hiding.<br/>
+              I bring into the light what I've been carrying.<br/>
+              I trust the process to shape what I have named.
+            </div>
+          </div>
+
+          <div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,110,0.06);">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:6px;">Remember</div>
+            <div style="font-size:11px;color:var(--txt-ghost);line-height:1.8;">
+              · Dumping is not weakness — it is wisdom<br/>
+              · Nothing gets shaped that isn't dumped first<br/>
+              · You are not behind — you are becoming aware
+            </div>
+          </div>
+
+        </div>
+        <div class="cta-strip">
+          <div class="gold-btn">Continue to Shape It →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 3 — SHAPE IT
+═══════════════════════════════════════════════════════════ -->
+<div class="flow-arrow">↓</div>
+<div class="flow-label">Form — Week 3 &amp; 4: Shape It + Rhythm</div>
+
+<div class="screens-row">
+
+  <!-- SHAPE: SEVEN SPOKES -->
+  <div>
+    <p class="phone-label">S5 — Shape It: Seven Spokes</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Week 3 · Step 2 of 3</div>
+          <div class="hdr-title">Shape It</div>
+          <div class="hdr-sub">Place each item in one spoke. You are shaping, not solving.</div>
+        </div>
+        <div class="body">
+
+          <div class="label-sm">Seven Spokes</div>
+
+          <div class="spoke-row">
+            <div class="spoke-ico">🙏</div>
+            <div><div class="spoke-name">Spiritual</div><div class="spoke-sub">Reflection, values, purpose</div></div>
+            <div class="spoke-count">2</div>
+          </div>
+          <div class="spoke-row">
+            <div class="spoke-ico">👨‍👩‍👦</div>
+            <div><div class="spoke-name">Family</div><div class="spoke-sub">Marriage, Parenting, Home</div></div>
+            <div class="spoke-count">3</div>
+          </div>
+          <div class="spoke-row">
+            <div class="spoke-ico">💼</div>
+            <div><div class="spoke-name">Career</div><div class="spoke-sub">Work, projects, calling</div></div>
+            <div class="spoke-count" style="background:rgba(200,100,80,0.12);border-color:rgba(200,100,80,0.25);color:#d08870;">6</div>
+          </div>
+          <div class="spoke-row">
+            <div class="spoke-ico">🏃</div>
+            <div><div class="spoke-name">Physical</div><div class="spoke-sub">Health, Exercise, Rest</div></div>
+            <div class="spoke-count" style="background:rgba(200,169,110,0.06);border-color:rgba(200,169,110,0.12);color:var(--txt-ghost);">1</div>
+          </div>
+          <div class="spoke-row">
+            <div class="spoke-ico">📚</div>
+            <div><div class="spoke-name">Mental</div><div class="spoke-sub">Learning, Counseling, Stress</div></div>
+            <div class="spoke-count">2</div>
+          </div>
+          <div class="spoke-row">
+            <div class="spoke-ico">🤝</div>
+            <div><div class="spoke-name">Social</div><div class="spoke-sub">Friends, Community, Small Group</div></div>
+            <div class="spoke-count" style="background:rgba(200,169,110,0.06);border-color:rgba(200,169,110,0.12);color:var(--txt-ghost);">0</div>
+          </div>
+          <div class="spoke-row" style="border-bottom:none;">
+            <div class="spoke-ico">💰</div>
+            <div><div class="spoke-name">Financial</div><div class="spoke-sub">Budget, Giving, Planning</div></div>
+            <div class="spoke-count">1</div>
+          </div>
+
+          <!-- imbalance indicator -->
+          <div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(200,100,80,0.07);border:1px solid rgba(200,100,80,0.15);">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#c07060;margin-bottom:5px;">Imbalance Detected</div>
+            <div style="font-size:11px;color:var(--txt-ghost);line-height:1.65;">Career is crowded (6). Social has nothing. This is normal — you are now aware.</div>
+          </div>
+
+          <!-- reflect checkboxes -->
+          <div style="margin-top:14px;">
+            <div class="label-sm">How are you feeling?</div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;">
+              <div class="pill pill-active">Peace</div>
+              <div class="pill pill-idle">Clarity</div>
+              <div class="pill pill-active">Resistance</div>
+              <div class="pill pill-idle">Overwhelm</div>
+              <div class="pill pill-idle">Relief</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="cta-strip">
+          <div class="gold-btn">Continue to Rhythm →</div>
+        </div>
+        <div class="bnav">
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">☁</div></div><div class="bnav-label idle">Dump</div></div>
+          <div class="bnav-item"><div class="bnav-icon active"><div style="font-size:14px;">⬡</div><div class="bnav-dot"></div></div><div class="bnav-label active">Shape</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">▣</div></div><div class="bnav-label idle">Fill</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">🅿</div></div><div class="bnav-label idle">Park</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHAPE: RHYTHM & BOUNDARIES -->
+  <div>
+    <p class="phone-label">S6 — Week 4: Rhythm &amp; Boundaries</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Week 4 · Rhythm &amp; Boundaries</div>
+          <div class="hdr-title">When Does It Belong?</div>
+          <div class="hdr-sub">Shape tells you what. Rhythm tells you when.</div>
+        </div>
+        <div class="body">
+
+          <div class="label-sm">Rhythm Anchors</div>
+
+          <div class="rhythm-card">
+            <div class="rc-ico">🙏</div>
+            <div><div class="rc-name">Spiritual</div><div class="rc-anchor">Morning reflection before phone</div></div>
+            <div class="rc-cadence">Daily</div>
+          </div>
+          <div class="rhythm-card">
+            <div class="rc-ico">👨‍👩‍👦</div>
+            <div><div class="rc-name">Family</div><div class="rc-anchor">Dinner together, no screens</div></div>
+            <div class="rc-cadence">Weekly</div>
+          </div>
+          <div class="rhythm-card">
+            <div class="rc-ico">💼</div>
+            <div><div class="rc-name">Career</div><div class="rc-anchor">Deep work 8:30–10:30 AM</div></div>
+            <div class="rc-cadence">Daily</div>
+          </div>
+          <div class="rhythm-card">
+            <div class="rc-ico">🏃</div>
+            <div><div class="rc-name">Physical</div><div class="rc-anchor">Walk after dinner</div></div>
+            <div class="rc-cadence">3× Wk</div>
+          </div>
+
+          <div class="section-gap">
+            <div class="label-sm">Boundaries</div>
+
+            <div class="gc" style="margin-bottom:7px;">
+              <div class="gc-body">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:20px;height:20px;border-radius:6px;background:rgba(80,200,80,0.12);border:1px solid rgba(80,200,80,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;color:#80c880;flex-shrink:0;">+</div>
+                  <div><div style="font-size:11px;font-weight:700;color:var(--txt-warm);">Start</div><div style="font-size:11px;color:var(--txt-muted);">Weekly budget review Fridays</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="gc" style="margin-bottom:7px;">
+              <div class="gc-body">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:20px;height:20px;border-radius:6px;background:rgba(200,80,80,0.12);border:1px solid rgba(200,80,80,0.2);display:flex;align-items:center;justify-content:center;font-size:10px;color:#c07060;flex-shrink:0;">−</div>
+                  <div><div style="font-size:11px;font-weight:700;color:var(--txt-warm);">Stop</div><div style="font-size:11px;color:var(--txt-muted);">Email after 7 PM</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="gc" style="margin-bottom:14px;">
+              <div class="gc-body">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="width:20px;height:20px;border-radius:6px;background:var(--gold-10);border:1px solid var(--gold-20);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gold);flex-shrink:0;">↑</div>
+                  <div><div style="font-size:11px;font-weight:700;color:var(--txt-warm);">Strengthen</div><div style="font-size:11px;color:var(--txt-muted);">Saturday reset, full rest day</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- one rhythm commit -->
+          <div style="padding:12px 14px;border-radius:12px;background:var(--gold-10);border:1px solid var(--gold-20);">
+            <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:5px;">My One Rhythm This Week</div>
+            <div style="font-size:13px;color:var(--txt-warm);font-weight:600;">Deep work block, 8:30–10:30 AM daily</div>
+          </div>
+
+        </div>
+        <div class="cta-strip">
+          <div class="gold-btn">Continue to Fill It →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 4 — FILL IT
+═══════════════════════════════════════════════════════════ -->
+<div class="flow-arrow">↓</div>
+<div class="flow-label">Deployment — Week 5: Fill It</div>
+
+<div class="screens-row">
+
+  <!-- FILL: ACTION PLANNER -->
+  <div>
+    <p class="phone-label">S7 — Fill It: Spoke Actions</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Week 5 · Step 3 of 3</div>
+          <div class="hdr-title">Fill It</div>
+          <div class="hdr-sub">One intentional action per spoke. Filling is alignment, not busyness.</div>
+        </div>
+        <div class="body">
+
+          <!-- phase progress -->
+          <div style="display:flex;gap:5px;margin-bottom:14px;">
+            <div class="pill pill-done"><div class="dot"></div>Dump</div>
+            <div class="pill pill-done"><div class="dot"></div>Shape</div>
+            <div class="pill pill-active"><div class="dot"></div>Fill</div>
+            <div class="pill pill-idle"><div class="dot"></div>Execute</div>
+          </div>
+
+          <div class="label-sm">Spoke Actions</div>
+
+          <div class="fill-act-row">
+            <div class="fill-act-ico">🙏</div>
+            <div style="flex:1;"><div class="fill-act-name">Spiritual</div><div class="fill-act-desc">Read 10 minutes + 5 min reflection before phone. Daily.</div></div>
+            <div class="fill-act-badge">Set</div>
+          </div>
+          <div class="fill-act-row">
+            <div class="fill-act-ico">👨‍👩‍👦</div>
+            <div style="flex:1;"><div class="fill-act-name">Family</div><div class="fill-act-desc">Distraction-free dinner Wednesday. No devices.</div></div>
+            <div class="fill-act-badge">Set</div>
+          </div>
+          <div class="fill-act-row">
+            <div class="fill-act-ico">💼</div>
+            <div style="flex:1;"><div class="fill-act-name">Career</div><div class="fill-act-desc">Complete Q1 proposal by Wednesday noon.</div></div>
+            <div class="fill-act-badge">Set</div>
+          </div>
+          <div class="fill-act-row">
+            <div class="fill-act-ico">🏃</div>
+            <div style="flex:1;"><div class="fill-act-name">Physical</div><div class="fill-act-desc">Walk 20 min after lunch — Mon, Wed, Fri.</div></div>
+            <div class="fill-act-badge">Set</div>
+          </div>
+          <div class="fill-act-row">
+            <div class="fill-act-ico">📚</div>
+            <div style="flex:1;"><div class="fill-act-name">Mental</div><div class="fill-act-desc">10 pages leadership book before bed.</div></div>
+            <div class="fill-act-badge">Set</div>
+          </div>
+          <div class="fill-act-row">
+            <div class="fill-act-ico">🤝</div>
+            <div style="flex:1;"><div class="fill-act-name">Social</div><div class="fill-act-desc" style="color:#d08870;">No action set — tap to add</div></div>
+            <div style="font-size:14px;color:var(--txt-ghost);">+</div>
+          </div>
+          <div class="fill-act-row" style="border-bottom:none;">
+            <div class="fill-act-ico">💰</div>
+            <div style="flex:1;"><div class="fill-act-name">Financial</div><div class="fill-act-desc">20-min budget review — Friday.</div></div>
+            <div class="fill-act-badge">Set</div>
+          </div>
+
+          <!-- heart check -->
+          <div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--glass);border:1px solid rgba(200,169,110,0.08);">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt-dim);margin-bottom:8px;">Heart Check</div>
+            <div style="font-size:11px;color:var(--txt-ghost);line-height:1.8;">
+              Most life-giving: <span style="color:var(--txt-warm);">Spiritual</span><br/>
+              Most discipline-required: <span style="color:var(--txt-warm);">Physical</span><br/>
+              Distraction I'm rejecting: <span style="color:var(--txt-warm);">Social scrolling</span>
+            </div>
+          </div>
+          <div style="height:16px;"></div>
+
+        </div>
+        <div class="cta-strip">
+          <div class="gold-btn">Continue to Execute →</div>
+        </div>
+        <div class="bnav">
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">☁</div></div><div class="bnav-label idle">Dump</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">⬡</div></div><div class="bnav-label idle">Shape</div></div>
+          <div class="bnav-item"><div class="bnav-icon active"><div style="font-size:14px;">▣</div><div class="bnav-dot"></div></div><div class="bnav-label active">Fill</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">🅿</div></div><div class="bnav-label idle">Park</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILL: DAILY PLANNER (existing screen enhanced) -->
+  <div>
+    <p class="phone-label">S8 — Daily Planner (Fill Mode)</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+            <div>
+              <div class="hdr-kicker">Friday · March 14 · Week 11</div>
+              <div class="hdr-title">Good morning.</div>
+            </div>
+            <div style="width:36px;height:36px;border-radius:11px;background:var(--gold-10);border:1px solid var(--gold-20);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--gold);">D</div>
+          </div>
+          <!-- phase pills -->
+          <div style="display:flex;gap:5px;">
+            <div class="pill pill-done"><div class="dot"></div>Dump</div>
+            <div class="pill pill-done"><div class="dot"></div>Shape</div>
+            <div class="pill pill-active"><div class="dot"></div>Fill</div>
+            <div class="pill pill-idle"><div class="dot"></div>Park</div>
+          </div>
+        </div>
+        <div class="body">
+
+          <!-- jam session card -->
+          <div class="gc" style="margin-bottom:14px;">
+            <div class="gc-body" style="display:flex;align-items:center;gap:14px;">
+              <div style="flex:1;">
+                <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:3px;">Jam Session</div>
+                <div style="font-size:20px;font-weight:800;color:var(--txt-pri);letter-spacing:-0.5px;">90 min</div>
+                <div style="font-size:11px;color:var(--txt-muted);margin-top:2px;">Deep work · No interruptions</div>
+              </div>
+              <div style="width:52px;height:52px;border-radius:16px;background:var(--gold-10);border:1px solid var(--gold-20);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+                <div style="font-size:17px;">⏱</div>
+                <div style="font-size:9px;font-weight:700;color:var(--gold);">START</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Daily Big 3 -->
+          <div class="label-sm">Daily Big 3</div>
+          <div class="gc" style="margin-bottom:12px;">
+            <div class="gc-body" style="padding:12px 14px;">
+              <div class="cb-row"><div class="cb done">✓</div><div class="cb-text done">Q1 Proposal — sent to client</div></div>
+              <div class="cb-row"><div class="cb">·</div><div class="cb-text">15-min check-in with Corrine</div></div>
+              <div class="cb-row" style="padding-bottom:0;"><div class="cb">·</div><div class="cb-text">Send card to son</div></div>
+            </div>
+          </div>
+
+          <!-- Work tasks -->
+          <div class="label-sm">Work Tasks</div>
+          <div class="item-row">
+            <div style="font-size:10px;font-weight:700;color:var(--gold);width:22px;flex-shrink:0;">W1</div>
+            <div class="item-text">Disruptor Manufacturing update</div>
+            <div class="fb fb-schedule">10 AM</div>
+          </div>
+          <div class="item-row">
+            <div style="font-size:10px;font-weight:700;color:var(--gold);width:22px;flex-shrink:0;">W2</div>
+            <div class="item-text">Follow up Howard — John Maxwell</div>
+            <div class="fb fb-delegate">→</div>
+          </div>
+          <div class="item-row" style="border-bottom:none;">
+            <div style="font-size:10px;font-weight:700;color:var(--gold);width:22px;flex-shrink:0;">W3</div>
+            <div class="item-text">Review onboarding docs</div>
+            <div class="fb fb-schedule">2 PM</div>
+          </div>
+
+          <!-- Personal tasks -->
+          <div class="label-sm" style="margin-top:14px;">Personal Tasks</div>
+          <div class="item-row">
+            <div style="font-size:10px;font-weight:700;color:#8090d0;width:22px;flex-shrink:0;">P1</div>
+            <div class="item-text">Date night — Thursday reservation</div>
+            <div class="fb fb-schedule">Thu</div>
+          </div>
+          <div class="item-row" style="border-bottom:none;">
+            <div style="font-size:10px;font-weight:700;color:#8090d0;width:22px;flex-shrink:0;">P2</div>
+            <div class="item-text">Evening walk with Beth</div>
+            <div class="fb fb-schedule">6 PM</div>
+          </div>
+          <div style="height:16px;"></div>
+
+        </div>
+        <div class="bnav">
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">☁</div></div><div class="bnav-label idle">Dump</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">⬡</div></div><div class="bnav-label idle">Shape</div></div>
+          <div class="bnav-item"><div class="bnav-icon active"><div style="font-size:14px;">▣</div><div class="bnav-dot"></div></div><div class="bnav-label active">Fill</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">🅿</div></div><div class="bnav-label idle">Park</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SECTION 5 — EXECUTE (Emperor of Time) + PARK
+═══════════════════════════════════════════════════════════ -->
+<div class="flow-arrow">↓</div>
+<div class="flow-label">Finish &amp; Rest — Week 6: Execute + Park</div>
+
+<div class="screens-row">
+
+  <!-- EMPEROR OF TIME -->
+  <div>
+    <p class="phone-label">S9 — Execute: Emperor of Time</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Week 6 · Finish Well</div>
+          <div class="hdr-title">Emperor of Time</div>
+          <div class="hdr-sub">Deadlines don't limit momentum — they activate it.</div>
+        </div>
+        <div class="body">
+
+          <div class="quote-box">
+            <p>"You don't drift into completion. You run toward it."</p>
+          </div>
+
+          <!-- season selector -->
+          <div class="label-sm">My Current Season</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+            <div class="pill pill-idle">Discovery</div>
+            <div class="pill pill-active">Building</div>
+            <div class="pill pill-idle">Leading</div>
+            <div class="pill pill-idle">Finishing</div>
+            <div class="pill pill-idle">Transition</div>
+          </div>
+
+          <!-- execution grid -->
+          <div class="label-sm">Execution Grid</div>
+
+          <div class="exec-row">
+            <div class="exec-spoke-ico">🙏</div>
+            <div style="flex:1;"><div class="exec-name">Spiritual</div><div class="exec-sub">Finish 30-day reflection plan · Apr 14</div></div>
+            <div class="exec-badge progress">Active</div>
+          </div>
+          <div class="exec-row">
+            <div class="exec-spoke-ico">💼</div>
+            <div style="flex:1;"><div class="exec-name">Career</div><div class="exec-sub">Launch Genesis Way app · May 1</div></div>
+            <div class="exec-badge progress">Active</div>
+          </div>
+          <div class="exec-row">
+            <div class="exec-spoke-ico">👨‍👩‍👦</div>
+            <div style="flex:1;"><div class="exec-name">Family</div><div class="exec-sub">Plan summer trip · Jun 15</div></div>
+            <div class="exec-badge planned">Planned</div>
+          </div>
+          <div class="exec-row">
+            <div class="exec-spoke-ico">🏃</div>
+            <div style="flex:1;"><div class="exec-name">Physical</div><div class="exec-sub">5K run — consistent 3× week</div></div>
+            <div class="exec-badge done">Done</div>
+          </div>
+
+          <!-- deadline map -->
+          <div class="label-sm" style="margin-top:14px;">Finish Lines</div>
+
+          <div class="deadline-card hot">
+            <div class="deadline-horizon">30 Days</div>
+            <div class="deadline-text">Complete Q2 client proposals</div>
+          </div>
+          <div class="deadline-card med">
+            <div class="deadline-horizon">90 Days</div>
+            <div class="deadline-text">App live on Vercel, demo to Dan</div>
+          </div>
+          <div class="deadline-card cool">
+            <div class="deadline-horizon">6 Months</div>
+            <div class="deadline-text">Coach 3 new participants through program</div>
+          </div>
+          <div class="deadline-card far">
+            <div class="deadline-horizon">1 Year</div>
+            <div class="deadline-text">Commercialized product, revenue generating</div>
+          </div>
+
+          <div style="margin-top:14px;padding:14px;border-radius:12px;background:var(--gold-10);border:1px solid var(--gold-20);">
+            <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Commitment</div>
+            <div style="font-size:11px;color:var(--txt-muted);line-height:1.7;">Form · Fill · Finish · Rest.<br/>You are called to the same rhythm.</div>
+            <div style="margin-top:10px;height:28px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(200,169,110,0.1);display:flex;align-items:center;padding:0 10px;">
+              <div style="font-size:11px;color:var(--txt-ghost);">Signature _____________________ · Date ________</div>
+            </div>
+          </div>
+          <div style="height:20px;"></div>
+
+        </div>
+        <div class="bnav">
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">☁</div></div><div class="bnav-label idle">Dump</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">⬡</div></div><div class="bnav-label idle">Shape</div></div>
+          <div class="bnav-item"><div class="bnav-icon active"><div style="font-size:14px;">▣</div><div class="bnav-dot"></div></div><div class="bnav-label active">Execute</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">🅿</div></div><div class="bnav-label idle">Park</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARK -->
+  <div>
+    <p class="phone-label">S10 — The Park</p>
+    <div class="phone">
+      <div class="di"></div>
+      <div class="bg-glow"></div>
+      <div class="home-bar"></div>
+      <div class="screen">
+        <div class="hdr">
+          <div class="hdr-kicker">Long-Term Parking</div>
+          <div class="hdr-title">The Park</div>
+          <div class="hdr-sub">Not now. Not never. Just not today — park it and move on.</div>
+        </div>
+        <div class="body">
+
+          <!-- tabs -->
+          <div style="display:flex;gap:7px;margin-bottom:14px;">
+            <div class="pill pill-active">This Week · 3</div>
+            <div class="pill pill-idle">Next Month · 5</div>
+            <div class="pill pill-idle">Someday · 4</div>
+          </div>
+
+          <!-- input -->
+          <div class="input-row">
+            <div class="fake-input" style="color:var(--txt-ghost);">Park something for this week…</div>
+            <div class="add-btn" style="font-size:12px;font-weight:800;">P</div>
+          </div>
+
+          <!-- This week items -->
+          <div class="label-sm">This Week — 3</div>
+
+          <div class="park-item">
+            <div class="park-dot" style="background:rgba(200,169,110,0.5);"></div>
+            <div style="flex:1;"><div style="font-size:13px;color:var(--txt-muted);">Date night Thursday reservation</div><div style="font-size:10px;color:var(--txt-ghost);margin-top:2px;">From Dump · Shape: Family</div></div>
+            <div style="font-size:10px;font-weight:700;color:var(--gold);">↑ Lift</div>
+          </div>
+          <div class="park-item">
+            <div class="park-dot" style="background:rgba(200,169,110,0.5);"></div>
+            <div style="flex:1;"><div style="font-size:13px;color:var(--txt-muted);">Call Jim re: board meeting agenda</div><div style="font-size:10px;color:var(--txt-ghost);margin-top:2px;">From Dump · Shape: Career</div></div>
+            <div style="font-size:10px;font-weight:700;color:var(--gold);">↑ Lift</div>
+          </div>
+          <div class="park-item">
+            <div class="park-dot" style="background:rgba(200,169,110,0.5);"></div>
+            <div style="flex:1;"><div style="font-size:13px;color:var(--txt-muted);">Read chapter 6 leadership book</div><div style="font-size:10px;color:var(--txt-ghost);margin-top:2px;">From Fill · Mental spoke</div></div>
+            <div style="font-size:10px;font-weight:700;color:var(--gold);">↑ Lift</div>
+          </div>
+
+          <!-- someday preview -->
+          <div class="label-sm" style="margin-top:16px;">Someday — 4</div>
+          <div class="park-item">
+            <div class="park-dot" style="background:#6a5840;"></div>
+            <div style="flex:1;"><div style="font-size:13px;color:var(--txt-ghost);">Write a book on Genesis Way principles</div></div>
+            <div style="font-size:10px;font-weight:700;color:var(--txt-ghost);">↑ Lift</div>
+          </div>
+          <div class="park-item">
+            <div class="park-dot" style="background:#6a5840;"></div>
+            <div style="flex:1;"><div style="font-size:13px;color:var(--txt-ghost);">Anniversary trip to Israel</div></div>
+            <div style="font-size:10px;font-weight:700;color:var(--txt-ghost);">↑ Lift</div>
+          </div>
+          <div class="park-item">
+            <div class="park-dot" style="background:#6a5840;"></div>
+            <div style="flex:1;"><div style="font-size:13px;color:var(--txt-ghost);">Mentor program for young leaders</div></div>
+            <div style="font-size:10px;font-weight:700;color:var(--txt-ghost);">↑ Lift</div>
+          </div>
+
+          <div style="height:20px;"></div>
+
+        </div>
+        <div class="bnav">
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">☁</div></div><div class="bnav-label idle">Dump</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">⬡</div></div><div class="bnav-label idle">Shape</div></div>
+          <div class="bnav-item"><div class="bnav-icon"><div style="font-size:14px;">▣</div></div><div class="bnav-label idle">Execute</div></div>
+          <div class="bnav-item"><div class="bnav-icon active"><div style="font-size:14px;">🅿</div><div class="bnav-dot"></div></div><div class="bnav-label active">Park</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SPEC SECTION — DESIGN TOKENS
+═══════════════════════════════════════════════════════════ -->
+<div class="spec-section">
+  <h2>Design Tokens</h2>
+  <div class="token-grid">
+    <div class="token-row"><div class="token-swatch" style="background:#0c0a06;"></div><div><div class="token-name">Background</div><div class="token-val">#0c0a06</div></div></div>
+    <div class="token-row"><div class="token-swatch" style="background:#c8a96e;"></div><div><div class="token-name">Gold</div><div class="token-val">#c8a96e</div></div></div>
+    <div class="token-row"><div class="token-swatch" style="background:#8a6830;"></div><div><div class="token-name">Gold Dark</div><div class="token-val">#8a6830</div></div></div>
+    <div class="token-row"><div class="token-swatch" style="background:#f0e4d0;"></div><div><div class="token-name">Text Primary</div><div class="token-val">#f0e4d0</div></div></div>
+    <div class="token-row"><div class="token-swatch" style="background:#c0b090;"></div><div><div class="token-name">Text Warm</div><div class="token-val">#c0b090</div></div></div>
+    <div class="token-row"><div class="token-swatch" style="background:#6a5840;"></div><div><div class="token-name">Text Muted</div><div class="token-val">#6a5840</div></div></div>
+    <div class="token-row"><div class="token-swatch" style="background:#3a2e18;"></div><div><div class="token-name">Text Ghost</div><div class="token-val">#3a2e18</div></div></div>
+    <div class="token-row"><div class="token-swatch" style="background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,110,0.2);"></div><div><div class="token-name">Glass Card</div><div class="token-val">rgba(255,255,255,0.03)</div></div></div>
+  </div>
+
+  <h2 style="margin-top:48px;">Typography Scale</h2>
+  <div>
+    <div class="type-row"><div class="type-lbl">Wordmark</div><div style="font-size:44px;font-weight:800;color:var(--txt-pri);letter-spacing:-2px;line-height:1;">The Genesis Way</div></div>
+    <div class="type-row"><div class="type-lbl">Screen Title</div><div style="font-size:26px;font-weight:800;color:var(--txt-pri);letter-spacing:-1px;">Dump It</div></div>
+    <div class="type-row"><div class="type-lbl">Card Title</div><div style="font-size:15px;font-weight:700;color:var(--txt-warm);">Seven Spokes</div></div>
+    <div class="type-row"><div class="type-lbl">Body</div><div style="font-size:13px;color:var(--txt-muted);line-height:1.5;">One specific action per category. Choose one clear, specific action.</div></div>
+    <div class="type-row"><div class="type-lbl">Caption / Kicker</div><div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt-dim);">Week 3 · Step 2 of 3</div></div>
+    <div class="type-row"><div class="type-lbl">Monospace value</div><div><code>localStorage.getItem("genesis-way-v1")</code></div></div>
+  </div>
+
+  <h2 style="margin-top:48px;">Full App Flow</h2>
+  <div class="note-box">
+    <p>The app supports two paths: the <strong>6-week guided journey</strong> (full program) and the <strong>3-step quick start</strong> (daily planning). Both share the same screens — the quick start skips Weeks 1, 4 and 6.</p>
+  </div>
+  <div class="flow-diagram">
+    <div class="flow-node">Onboarding</div>
+    <div class="flow-chevron">›</div>
+    <div class="flow-node">Week 1: Perspective</div>
+    <div class="flow-chevron">›</div>
+    <div class="flow-node active">Dump It</div>
+    <div class="flow-chevron">›</div>
+    <div class="flow-node">Shape It</div>
+    <div class="flow-chevron">›</div>
+    <div class="flow-node">Rhythm</div>
+    <div class="flow-chevron">›</div>
+    <div class="flow-node">Fill It</div>
+    <div class="flow-chevron">›</div>
+    <div class="flow-node">Execute</div>
+    <div class="flow-chevron">›</div>
+    <div class="flow-node">Rest ✓</div>
+  </div>
+  <div style="margin-top:8px;font-size:12px;color:var(--txt-ghost);">Park is accessible at any stage via the bottom nav and does not block flow progression.</div>
+
+  <h2 style="margin-top:48px;">Screen Inventory</h2>
+  <table class="spec-table">
+    <thead>
+      <tr>
+        <th>Screen</th>
+        <th>Route / ID</th>
+        <th>PDF Source</th>
+        <th>Status</th>
+        <th>Key Interactions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>S1 — Onboarding</td>
+        <td><code>onboarding</code></td>
+        <td>All Leader/Student PDFs</td>
+        <td>Exists — update copy</td>
+        <td>Begin journey CTA, quick-start skip</td>
+      </tr>
+      <tr>
+        <td>S2 — Week 1: Perspective</td>
+        <td><code>week1</code></td>
+        <td>Week 1 · My Life in 24 Hours</td>
+        <td>New screen needed</td>
+        <td>Age input → life-clock arc, season selector, 3 reflection fields</td>
+      </tr>
+      <tr>
+        <td>S3 — Dump: Capture</td>
+        <td><code>dump</code></td>
+        <td>Week 2 Dump It</td>
+        <td>Exists — add bucket selector</td>
+        <td>Bucket tabs (Time / Energy / Attention / Emotional), add + remove items</td>
+      </tr>
+      <tr>
+        <td>S4 — Dump: Reflect</td>
+        <td><code>dump-reflect</code></td>
+        <td>Week 2 Dump It (Pause &amp; Reflect)</td>
+        <td>New sub-step needed</td>
+        <td>3 reflection prompts, closing declaration card, continue CTA</td>
+      </tr>
+      <tr>
+        <td>S5 — Shape: Seven Spokes</td>
+        <td><code>shape</code></td>
+        <td>Week 3 Shape It</td>
+        <td>Exists — replace Five Filters with Spokes</td>
+        <td>Spoke assignment per item, imbalance indicator, emotional state picker</td>
+      </tr>
+      <tr>
+        <td>S6 — Rhythm &amp; Boundaries</td>
+        <td><code>rhythm</code></td>
+        <td>Week 4 Shape It Pt 2</td>
+        <td>New screen needed</td>
+        <td>Anchor per spoke, Start/Stop/Strengthen boundary triad, one-rhythm commit</td>
+      </tr>
+      <tr>
+        <td>S7 — Fill: Spoke Actions</td>
+        <td><code>fill-plan</code></td>
+        <td>Week 5 Fill It</td>
+        <td>New sub-step needed</td>
+        <td>Action + timing per spoke, incomplete spoke warning, heart-check fields</td>
+      </tr>
+      <tr>
+        <td>S8 — Daily Planner</td>
+        <td><code>fill</code></td>
+        <td>Time Management Keynote</td>
+        <td>Exists — minor enhancements</td>
+        <td>Jam session timer, Big 3 checkboxes, W/P task list with filter badges</td>
+      </tr>
+      <tr>
+        <td>S9 — Execute / Emperor of Time</td>
+        <td><code>execute</code></td>
+        <td>Week 6 + Emperor of Time PDF</td>
+        <td>New screen needed</td>
+        <td>Season selector, execution grid, deadline map (30/90/180/365-day), pledge</td>
+      </tr>
+      <tr>
+        <td>S10 — The Park</td>
+        <td><code>park</code></td>
+        <td>Time Management Keynote</td>
+        <td>Exists — add source linking + lift action</td>
+        <td>Category tabs, source tag per item, "Lift" to return item to active stage</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 style="margin-top:48px;">Data Model</h2>
+  <div class="note-box">
+    <p>All state lives in <strong><code>localStorage</code></strong> under key <code>"genesis-way-v1"</code>. The shape below matches what both existing and new screens need.</p>
+  </div>
+  <table class="spec-table">
+    <thead>
+      <tr><th>Model</th><th>Key Fields</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>DumpItem</td>
+        <td><code>id, text, bucket, spoke, filter, parked, sourceStage</code></td>
+        <td><code>bucket</code>: time | energy | attention | emotional</td>
+      </tr>
+      <tr>
+        <td>RhythmAnchor</td>
+        <td><code>spoke, anchorText, cadence</code></td>
+        <td><code>cadence</code>: daily | weekly | monthly</td>
+      </tr>
+      <tr>
+        <td>FillAction</td>
+        <td><code>spoke, action, when, done</code></td>
+        <td>One per spoke; required before marking Fill complete</td>
+      </tr>
+      <tr>
+        <td>ExecutionAssignment</td>
+        <td><code>spoke, assignment, deadline, firstStep, status</code></td>
+        <td><code>status</code>: planned | in-progress | finished</td>
+      </tr>
+      <tr>
+        <td>DeadlineMap</td>
+        <td><code>d30, d90, d180, d365</code></td>
+        <td>Each field is a plain string finish-line statement</td>
+      </tr>
+      <tr>
+        <td>ParkItem</td>
+        <td><code>id, text, category, sourceStage, spoke</code></td>
+        <td><code>category</code>: week | month | someday</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 style="margin-top:48px;">Copy Rules (from Worksheets)</h2>
+  <div class="grid-2">
+    <div>
+      <div class="note-box">
+        <p><strong>DO use:</strong> Ownership language. Clarity, alignment, focus, finishing well. Short declarative sentences. Keep tone calm and practical.</p>
+      </div>
+    </div>
+    <div>
+      <div class="note-box">
+        <p><strong>AVOID:</strong> Productivity hustle framing. Phrases like "optimize," "hack," "achieve more." Do not imply the user is behind or failing during Dump/Shape screens.</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="margin-top:48px;">Wheel of Life — Spoke Scoring (Ziglar Model)</h2>
+  <div class="note-box">
+    <p>The Wheel of Life is an optional diagnostic used at <strong>Week 3 (Shape It)</strong> and every 6 months. Each spoke is scored 1–10 across 10 sub-dimensions → average = spoke score. Consider building a spoke-score visualization to complement the imbalance indicator on the Shape screen.</p>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <div class="pill pill-idle">🙏 Spiritual</div>
+    <div class="pill pill-idle">👨‍👩‍👦 Family</div>
+    <div class="pill pill-idle">💼 Career</div>
+    <div class="pill pill-idle">🏃 Physical</div>
+    <div class="pill pill-idle">📚 Mental</div>
+    <div class="pill pill-idle">🤝 Social</div>
+    <div class="pill pill-idle">💰 Financial</div>
+  </div>
+
+</div>
+
+</body>
+</html>
