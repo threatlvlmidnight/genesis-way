@@ -34,13 +34,11 @@ export default function OnboardingScreen({
         flexDirection: "column",
         background: "#0c0a06",
         position: "relative",
-        overflow: "hidden",
       }}
     >
       <div className="bg-glow" />
 
       <div
-        className="scroll-hide"
         style={{
           flex: 1,
           padding: "16px 24px 0",
@@ -48,6 +46,8 @@ export default function OnboardingScreen({
           zIndex: 1,
           display: "flex",
           flexDirection: "column",
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         {/* Status row */}
