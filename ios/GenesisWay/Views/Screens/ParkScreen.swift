@@ -3,6 +3,7 @@ import SwiftUI
 struct ParkScreen: View {
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
+    @FocusState private var isInputFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -15,6 +16,11 @@ struct ParkScreen: View {
 
             HStack(spacing: 8) {
                 TextField("Park an item for later", text: $input)
+                    .submitLabel(.done)
+                    .focused($isInputFocused)
+                    .onSubmit {
+                        addParkedItem()
+                    }
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 11)
@@ -23,8 +29,7 @@ struct ParkScreen: View {
                     .foregroundStyle(GWTheme.textPrimary)
 
                 Button("P") {
-                    store.addParkItem(input)
-                    input = ""
+                    addParkedItem()
                 }
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(Color(hex: "1a1208"))
@@ -65,5 +70,24 @@ struct ParkScreen: View {
         }
         .padding(24)
         .background(GWTheme.background.ignoresSafeArea())
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    isInputFocused = false
+                }
+                .foregroundStyle(GWTheme.gold)
+            }
+        }
+    }
+
+    private func addParkedItem() {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            isInputFocused = false
+            return
+        }
+        store.addParkItem(trimmed)
+        input = ""
     }
 }

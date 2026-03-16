@@ -85,8 +85,11 @@ export default function FillScreen({
   onShowIntro,
   googleConnected,
   lastCalendarSync,
-  onToggleGoogleConnected,
+  onConnectGoogle,
+  onDisconnectGoogle,
+  onSyncGoogle,
   onImportIcs,
+  onImportIcsUrl,
 }: {
   big3: Big3Item[];
   workTasks: Task[];
@@ -95,12 +98,17 @@ export default function FillScreen({
   onShowIntro: () => void;
   googleConnected: boolean;
   lastCalendarSync: string | null;
-  onToggleGoogleConnected: () => void;
+  onConnectGoogle: () => void;
+  onDisconnectGoogle: () => void;
+  onSyncGoogle: () => Promise<number>;
   onImportIcs: (rawIcs: string) => number;
+  onImportIcsUrl: (url: string) => Promise<number>;
 }) {
   const [now, setNow] = useState(new Date());
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isGoogleSyncing, setIsGoogleSyncing] = useState(false);
+  const [icsUrl, setIcsUrl] = useState("");
   const icsInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -148,6 +156,51 @@ export default function FillScreen({
       setImportMessage("Could not import this file. Please try another .ics export.");
     } finally {
       if (icsInputRef.current) icsInputRef.current.value = "";
+      setIsImporting(false);
+    }
+  };
+
+  const handleGooglePrimaryAction = async () => {
+    setImportMessage(null);
+
+    if (!googleConnected) {
+      onConnectGoogle();
+      return;
+    }
+
+    try {
+      setIsGoogleSyncing(true);
+      const imported = await onSyncGoogle();
+      if (imported > 0) {
+        setImportMessage(`Imported ${imported} Google event${imported === 1 ? "" : "s"}.`);
+      } else {
+        setImportMessage("Google sync complete. No new items to import.");
+      }
+    } catch {
+      setImportMessage("Google sync failed. Try reconnecting your account.");
+    } finally {
+      setIsGoogleSyncing(false);
+    }
+  };
+
+  const handleImportFromUrl = async () => {
+    const trimmed = icsUrl.trim();
+    if (!trimmed) {
+      setImportMessage("Paste a calendar .ics URL first.");
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      const imported = await onImportIcsUrl(trimmed);
+      if (imported > 0) {
+        setImportMessage(`Imported ${imported} calendar item${imported === 1 ? "" : "s"}.`);
+      } else {
+        setImportMessage("No new items found in this calendar feed.");
+      }
+    } catch {
+      setImportMessage("Could not import from this URL. Check the link and try again.");
+    } finally {
       setIsImporting(false);
     }
   };
@@ -353,12 +406,12 @@ export default function FillScreen({
               marginBottom: 10,
             }}
           >
-            Google-first workflow with Apple-compatible .ics import.
+            Simple calendar import: upload an .ics file or paste an .ics feed URL.
           </div>
 
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <button
-              onClick={onToggleGoogleConnected}
+              onClick={handleGooglePrimaryAction}
               style={{
                 flex: 1,
                 borderRadius: 10,
@@ -372,14 +425,39 @@ export default function FillScreen({
                 fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "inherit",
+                opacity: isGoogleSyncing ? 0.7 : 1,
               }}
+              disabled={isGoogleSyncing}
             >
-              {googleConnected ? "Google Linked" : "Link Google"}
+              {googleConnected
+                ? isGoogleSyncing
+                  ? "Syncing Google..."
+                  : "Sync Google"
+                : "Link Google"}
             </button>
+
+            {googleConnected && (
+              <button
+                onClick={onDisconnectGoogle}
+                style={{
+                  borderRadius: 10,
+                  border: "1px solid rgba(200,169,110,0.12)",
+                  background: "rgba(255,255,255,0.02)",
+                  color: "#7a6850",
+                  padding: "9px 10px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Unlink
+              </button>
+            )}
 
             <button
               onClick={handlePickIcs}
-              disabled={isImporting}
+              disabled={isImporting || isGoogleSyncing}
               style={{
                 flex: 1,
                 borderRadius: 10,
@@ -391,7 +469,7 @@ export default function FillScreen({
                 fontWeight: 700,
                 cursor: "pointer",
                 fontFamily: "inherit",
-                opacity: isImporting ? 0.6 : 1,
+                opacity: isImporting || isGoogleSyncing ? 0.6 : 1,
               }}
             >
               {isImporting ? "Importing..." : "Import .ics"}
@@ -403,6 +481,44 @@ export default function FillScreen({
               onChange={handleImportIcs}
               style={{ display: "none" }}
             />
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input
+              value={icsUrl}
+              onChange={(e) => setIcsUrl(e.target.value)}
+              placeholder="https://.../calendar.ics"
+              style={{
+                flex: 1,
+                borderRadius: 10,
+                border: "1px solid rgba(200,169,110,0.12)",
+                background: "rgba(255,255,255,0.03)",
+                color: "#c8b898",
+                padding: "9px 10px",
+                fontSize: 11,
+                fontWeight: 500,
+                outline: "none",
+                fontFamily: "inherit",
+              }}
+            />
+            <button
+              onClick={handleImportFromUrl}
+              disabled={isImporting || isGoogleSyncing}
+              style={{
+                borderRadius: 10,
+                border: "1px solid rgba(200,169,110,0.18)",
+                background: "rgba(200,169,110,0.08)",
+                color: "#c8a96e",
+                padding: "9px 12px",
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                opacity: isImporting || isGoogleSyncing ? 0.6 : 1,
+              }}
+            >
+              Import URL
+            </button>
           </div>
 
           <div style={{ fontSize: 10, color: "#4a3820" }}>Last sync: {lastSyncLabel}</div>

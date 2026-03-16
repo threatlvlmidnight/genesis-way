@@ -8,6 +8,149 @@ The demo phase is complete.
 - Web proof of concept exists and is useful as a reference implementation.
 - We are now entering the starting phase for the actual iOS app.
 
+## Dan Daily Flow Realignment Plan (Pre-Release 2)
+
+Source of truth: [docs/Brain Dump with Dan](docs/Brain Dump%20with%20Dan)
+
+Goal:
+
+Replace spoke-first daily flow with Dan's operational loop:
+`Pile -> Shape (5 filters) -> Fill (daily timeline)`
+
+## Versioned Roadmap (Release Framing)
+
+### V1: Daily Path Stabilization
+
+Scope:
+
+1. Ship the current daily flow as the core product path:
+- Dump/Pile capture
+- Shape (5 filters)
+- Fill (daily planner)
+- Daily loop behaviors (carryover/reminders/delegate follow-up scaffolds)
+2. Resolve open bugs and polish blockers in daily workflow before release.
+
+Exit criteria:
+
+1. Core daily path is reliable on-device end-to-end.
+2. Known priority bugs are closed or explicitly deferred.
+3. UX copy/navigation for the daily path is production-ready.
+
+### V1.5: Monetization Layer
+
+Scope:
+
+1. Add tiered subscription model and entitlement gating.
+2. Define free vs paid feature boundaries without breaking core daily utility.
+3. Add billing/settings UX, restoration, and subscription status handling.
+
+Exit criteria:
+
+1. Subscription tiers are purchasable/restorable.
+2. Entitlements are enforced consistently.
+3. Monetization analytics and support hooks are in place.
+
+### V2: Backend + Accounts + Extended Platform Features
+
+Scope:
+
+1. Backend infrastructure for authenticated logins and multi-device data portability.
+2. Long-term planning modules beyond daily loop.
+3. Social collaboration features (for example shared delegations and team handoff workflows).
+
+Exit criteria:
+
+1. Authenticated user accounts and sync are stable.
+2. Long-term planning feature set is available behind backend services.
+3. Social workflows are functional and privacy-safe.
+
+## Phase A: Foundation and Migration
+
+1. Introduce day-scoped task lifecycle model:
+- Daily pile items
+- Filter outcomes (scheduled, moved forward, eliminated, delegated, parked)
+- Scheduled timeline assignments
+- Completion and carryover flags
+2. Migrate existing persisted data:
+- Preserve dump text
+- Archive spoke/rhythm fields for future long-term goals module
+- Map current active items into today's pile
+3. Reframe W/P codes:
+- System-generated immutable IDs for indexing
+- Remove user rating edit semantics from codes
+
+Exit criteria:
+
+1. Existing users load into new model without data loss
+2. New users start in daily pile flow
+3. W/P identifiers are generated only by system
+
+## Phase B: New Shape Experience (No Spokes)
+
+1. Replace spoke assignment UI with filter decision UI
+2. Two sortable lists:
+- Work (top-down priority)
+- Personal (bottom-up priority)
+3. Drag/drop between lists and reordering within list
+4. Per-item filter action controls (5 directions)
+5. Oversize task guidance:
+- If task is larger than 15-30 min, create/suggest "jam session" refinement task
+
+Exit criteria:
+
+1. Every pile item can be given a filter outcome
+2. Users can reorder and move items between Work and Personal lists
+3. No spoke concepts appear in daily Shape flow
+
+## Phase C: Fill as Daily Planner Timeline
+
+1. Build daily planner timeline with appointment-first layout
+2. Planning order guidance:
+- Appointments first
+- Work tasks next
+- Personal tasks last
+3. Drag task items/codes onto timeline slots
+4. List and timeline stay in sync for completion state
+5. Require all active items to be assigned a disposition before start-of-day execution
+
+Exit criteria:
+
+1. User can fully plan day before execution
+2. Timeline and list reflect same state changes
+3. Planner supports rescheduling by day
+
+## Phase D: Daily Loop Automation
+
+1. End-of-day rollover:
+- Incomplete items auto-carry to next day's pile
+- Mark carried items visually
+2. Evening planning reminder:
+- Custom time
+- Prompt for 5-minute next-day planning
+3. Delegate follow-up support scaffold:
+- Delegate action can capture who/when and follow-up placeholder
+
+Exit criteria:
+
+1. Next day opens with carried pile and new additions
+2. Evening reminder can be configured and triggered
+3. Delegate actions have follow-up metadata path
+
+## Phase E: Future Scope (Not in Daily Loop)
+
+1. Re-introduce seven spokes only in long-term goal planning module
+2. Keep daily planning independent from goal framework
+
+## Implementation Notes
+
+1. Keep broad-audience copy and Dan-language terms:
+- Pile
+- Shape
+- Fill
+- Thin vertical slices
+2. Maintain iOS-first architecture with Android portability constraints
+3. Validate each phase with device tests before advancing
+
 ## Product Direction
 
 Primary product target:

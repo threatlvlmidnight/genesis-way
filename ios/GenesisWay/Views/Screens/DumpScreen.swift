@@ -5,7 +5,11 @@ import SwiftUI
 struct DumpScreen: View {
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
+    @FocusState private var isInputFocused: Bool
     @StateObject private var voice = VoiceDumpController()
+    @State private var wasRecording = false
+    @State private var voiceStatusMessage: String?
+    @State private var hasDeferredFocus = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,6 +18,11 @@ struct DumpScreen: View {
             VStack(spacing: 14) {
                 HStack(spacing: 8) {
                     TextField("What is occupying your mind right now?", text: $input)
+                        .submitLabel(.done)
+                        .focused($isInputFocused)
+                        .onSubmit {
+                            addTypedDumpItem()
+                        }
                         .textFieldStyle(.plain)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 11)
@@ -22,8 +31,7 @@ struct DumpScreen: View {
                         .foregroundStyle(GWTheme.textPrimary)
 
                     Button("+") {
-                        store.addDumpItem(input)
-                        input = ""
+                        addTypedDumpItem()
                     }
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(Color(hex: "1a1208"))
@@ -61,22 +69,9 @@ struct DumpScreen: View {
                                 .fixedSize(horizontal: false, vertical: true)
 
                             HStack(spacing: 10) {
-                                Button("AI Parse to List") {
-                                    for item in aiParseDumpItems(from: voice.transcript) {
-                                        store.addDumpItem(item)
-                                    }
-                                    voice.clearTranscript()
-                                }
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "1a1208"))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .background(GWTheme.gold)
-                                .clipShape(Capsule())
-                                .buttonStyle(.plain)
-
                                 Button("Clear") {
                                     voice.clearTranscript()
+                                    voiceStatusMessage = nil
                                 }
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(GWTheme.textGhost)
@@ -90,6 +85,12 @@ struct DumpScreen: View {
                     Text(error)
                         .font(.system(size: 11))
                         .foregroundStyle(Color(hex: "c07060"))
+                }
+
+                if let status = voiceStatusMessage {
+                    Text(status)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(GWTheme.gold)
                 }
 
                 if store.dumpItems.isEmpty {
@@ -135,12 +136,53 @@ struct DumpScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(GWTheme.background.ignoresSafeArea())
+        .onAppear {
+            guard !store.shouldShowGuidedSetup else { return }
+            guard !hasDeferredFocus else { return }
+            hasDeferredFocus = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isInputFocused = true
+            }
+        }
+        .onChange(of: store.shouldShowGuidedSetup) { _, shouldShow in
+            guard !shouldShow else {
+                isInputFocused = false
+                return
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                isInputFocused = true
+            }
+        }
+        .onChange(of: voice.isRecording) { _, isRecording in
+            if wasRecording && !isRecording {
+                parseTranscriptIntoDumpItems()
+            }
+            wasRecording = isRecording
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    isInputFocused = false
+                }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(GWTheme.gold)
+                .padding(.vertical, 6)
+            }
+        }
     }
 
     private func aiParseDumpItems(from raw: String) -> [String] {
-        let separators = CharacterSet(charactersIn: ",;\n.")
-        return raw
-            .components(separatedBy: separators)
+        let normalized = raw
+            .replacingOccurrences(of: "\n", with: ". ")
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+
+        let splitPattern = #"(?:[\.;,]|\b(?:and|then|also|plus|next)\b)"#
+        let tokenized = normalized.replacingOccurrences(of: splitPattern, with: "|", options: .regularExpression)
+
+        return tokenized
+            .components(separatedBy: "|")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .map { item in
                 let lowered = item.lowercased()
@@ -153,6 +195,35 @@ struct DumpScreen: View {
                 return item
             }
             .filter { $0.count >= 3 }
+    }
+
+    private func parseTranscriptIntoDumpItems() {
+        let parsed = aiParseDumpItems(from: voice.transcript)
+        guard !parsed.isEmpty else {
+            voiceStatusMessage = voice.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? nil
+                : "Could not detect separate items. Try pausing between tasks."
+            return
+        }
+
+        for item in parsed {
+            store.addDumpItem(item)
+        }
+
+        voiceStatusMessage = "Added \(parsed.count) item\(parsed.count == 1 ? "" : "s") from voice capture."
+        voice.clearTranscript()
+    }
+
+    private func addTypedDumpItem() {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            isInputFocused = false
+            return
+        }
+        store.addDumpItem(trimmed)
+        input = ""
+        isInputFocused = true
+        GWHaptics.light()
     }
 
     private var header: some View {
@@ -209,13 +280,25 @@ final class VoiceDumpController: NSObject, ObservableObject {
                     return
                 }
 
-                AVAudioSession.sharedInstance().requestRecordPermission { granted in
-                    DispatchQueue.main.async {
-                        guard granted else {
-                            self.errorMessage = "Microphone permission denied. Enable Microphone in Settings."
-                            return
+                if #available(iOS 17.0, *) {
+                    AVAudioApplication.requestRecordPermission { granted in
+                        DispatchQueue.main.async {
+                            guard granted else {
+                                self.errorMessage = "Microphone permission denied. Enable Microphone in Settings."
+                                return
+                            }
+                            self.startRecording()
                         }
-                        self.startRecording()
+                    }
+                } else {
+                    AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                        DispatchQueue.main.async {
+                            guard granted else {
+                                self.errorMessage = "Microphone permission denied. Enable Microphone in Settings."
+                                return
+                            }
+                            self.startRecording()
+                        }
                     }
                 }
             }

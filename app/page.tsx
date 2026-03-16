@@ -10,6 +10,11 @@ import FillScreen from "@/components/screens/FillScreen";
 import type { Big3Item, Task } from "@/components/screens/FillScreen";
 import ParkScreen from "@/components/screens/ParkScreen";
 import { mapEventsToTasks, parseIcsEvents } from "@/lib/calendar";
+import {
+  beginGoogleOAuth,
+  consumeGoogleOAuthFromHash,
+  fetchGoogleEvents,
+} from "@/lib/googleCalendar";
 import { DEBUG } from "@/lib/debug";
 
 type Screen = "onboarding" | "dump" | "shape" | "fill" | "park";
@@ -62,6 +67,8 @@ export default function Home() {
   const [dumpItems, setDumpItems] = useState<string[]>([]);
   const [parkedItems, setParkedItems] = useState<string[]>(DEFAULT_PARKED);
   const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
+  const [googleTokenExpiresAt, setGoogleTokenExpiresAt] = useState<number | null>(null);
   const [lastCalendarSync, setLastCalendarSync] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -80,9 +87,28 @@ export default function Home() {
         if (saved.parkedItems) setParkedItems(saved.parkedItems);
         if (typeof saved.googleConnected === "boolean")
           setGoogleConnected(saved.googleConnected);
+        if (saved.googleAccessToken) setGoogleAccessToken(saved.googleAccessToken);
+        if (typeof saved.googleTokenExpiresAt === "number") {
+          setGoogleTokenExpiresAt(saved.googleTokenExpiresAt);
+        }
         if (saved.lastCalendarSync) setLastCalendarSync(saved.lastCalendarSync);
       }
     } catch {}
+
+    try {
+      const token = consumeGoogleOAuthFromHash();
+      if (token) {
+        setGoogleAccessToken(token.accessToken);
+        setGoogleTokenExpiresAt(token.expiresAt);
+        setGoogleConnected(true);
+        setLastCalendarSync(new Date().toISOString());
+      }
+    } catch {
+      setGoogleConnected(false);
+      setGoogleAccessToken(null);
+      setGoogleTokenExpiresAt(null);
+    }
+
     setHydrated(true);
   }, []);
 
@@ -99,6 +125,8 @@ export default function Home() {
         dumpItems,
         parkedItems,
         googleConnected,
+        googleAccessToken,
+        googleTokenExpiresAt,
         lastCalendarSync,
       })
     );
@@ -110,6 +138,8 @@ export default function Home() {
     dumpItems,
     parkedItems,
     googleConnected,
+    googleAccessToken,
+    googleTokenExpiresAt,
     lastCalendarSync,
     hydrated,
   ]);
@@ -122,9 +152,34 @@ export default function Home() {
     );
   };
 
-  const toggleGoogleConnected = () => {
-    setGoogleConnected((prev) => !prev);
+  const connectGoogleCalendar = () => {
+    beginGoogleOAuth(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "");
+  };
+
+  const disconnectGoogleCalendar = () => {
+    setGoogleConnected(false);
+    setGoogleAccessToken(null);
+    setGoogleTokenExpiresAt(null);
+  };
+
+  const syncGoogleCalendar = async (): Promise<number> => {
+    if (!googleAccessToken || (googleTokenExpiresAt && googleTokenExpiresAt < Date.now() + 60_000)) {
+      connectGoogleCalendar();
+      return 0;
+    }
+
+    const events = await fetchGoogleEvents(googleAccessToken);
+    const mapped = mapEventsToTasks(events, workTasks, personalTasks);
+    const total = mapped.work.length + mapped.personal.length;
+
+    if (total > 0) {
+      setWorkTasks((prev) => [...prev, ...mapped.work]);
+      setPersonalTasks((prev) => [...prev, ...mapped.personal]);
+    }
+
+    setGoogleConnected(true);
     setLastCalendarSync(new Date().toISOString());
+    return total;
   };
 
   const importIcs = (rawIcs: string): number => {
@@ -136,6 +191,22 @@ export default function Home() {
     setPersonalTasks((prev) => [...prev, ...mapped.personal]);
     setLastCalendarSync(new Date().toISOString());
     return mapped.work.length + mapped.personal.length;
+  };
+
+  const importIcsFromUrl = async (url: string): Promise<number> => {
+    const response = await fetch("/api/calendar/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Calendar URL import failed.");
+    }
+
+    const payload = (await response.json()) as { raw?: string };
+    if (!payload.raw) return 0;
+    return importIcs(payload.raw);
   };
 
   if (!hydrated) return null;
@@ -215,8 +286,11 @@ export default function Home() {
             onShowIntro={() => setScreen("onboarding")}
             googleConnected={googleConnected}
             lastCalendarSync={lastCalendarSync}
-            onToggleGoogleConnected={toggleGoogleConnected}
+            onConnectGoogle={connectGoogleCalendar}
+            onDisconnectGoogle={disconnectGoogleCalendar}
+            onSyncGoogle={syncGoogleCalendar}
             onImportIcs={importIcs}
+            onImportIcsUrl={importIcsFromUrl}
           />
         )}
         {screen === "park" && (

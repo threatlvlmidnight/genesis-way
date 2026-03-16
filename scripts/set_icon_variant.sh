@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-variant="${1:-B}"
+variant="${1:-1}"
 appicon_dir="ios/GenesisWay/Assets.xcassets/AppIcon.appiconset"
 source_png="$appicon_dir/Icon-AppStore-1024-${variant}.png"
 target_png="$appicon_dir/Icon-AppStore-1024.png"

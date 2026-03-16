@@ -5,8 +5,7 @@ struct OnboardingScreen: View {
     let onBegin: () -> Void
     let onSkip: () -> Void
 
-    @State private var selectedStep: IntroStep = .dump
-    @State private var showCalendarSettings = false
+    @State private var selectedStep: IntroStep = .pile
 
     private var selectedIndex: Int {
         IntroStep.allCases.firstIndex(of: selectedStep) ?? 0
@@ -65,10 +64,6 @@ struct OnboardingScreen: View {
             .padding(.top, 28)
         }
         .background(GWTheme.background.ignoresSafeArea())
-        .sheet(isPresented: $showCalendarSettings) {
-            CalendarSettingsScreen()
-                .environmentObject(store)
-        }
     }
 
     private var stepSelector: some View {
@@ -156,97 +151,70 @@ struct OnboardingScreen: View {
                     }
                 }
 
-                if selectedStep == .sync {
-                    HStack(spacing: 10) {
-                        Button {
-                            store.setGoogleCalendarConnected(true)
-                            store.markCalendarSyncedNow()
-                        } label: {
-                            Text(store.googleCalendarConnected ? "Google Connected" : "Quick Connect Google")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "1a1208"))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(GWTheme.gold)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            showCalendarSettings = true
-                        } label: {
-                            Text("Open Calendar Settings")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(GWTheme.gold)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.top, 2)
-                }
             }
         }
     }
 }
 
 private enum IntroStep: CaseIterable {
-    case dump
+    case pile
     case shape
     case fill
-    case sync
+    case sustain
 
     var badge: String {
         switch self {
-        case .dump: return "1"
+        case .pile: return "1"
         case .shape: return "2"
         case .fill: return "3"
-        case .sync: return "4"
+        case .sustain: return "4"
         }
     }
 
     var title: String {
         switch self {
-        case .dump: return "Dump It"
+        case .pile: return "Dump It"
         case .shape: return "Shape It"
         case .fill: return "Fill It"
-        case .sync: return "Sync"
+        case .sustain: return "Sustain It"
         }
     }
 
     var kicker: String {
         switch self {
-        case .dump: return "Expose everything before you organize anything."
-        case .shape: return "Assign each item to one spoke. Structure creates clarity."
+        case .pile: return "Capture everything before you decide anything."
+        case .shape: return "Run each item through a filter: schedule, move, eliminate, delegate, or park."
         case .fill: return "Choose intentional actions and place them on your calendar."
-        case .sync: return "Connect your primary calendar so your plan has a home."
+        case .sustain: return "Close your day, carry what matters, and reset tomorrow quickly."
         }
     }
 
     var summary: String {
         switch self {
-        case .dump:
-            return "Capture your time, energy, attention, and emotional load without editing. The goal is awareness, not fixing."
+        case .pile:
+            return "Brain dump every open loop into one trusted dump list. You are collecting reality, not solving it yet."
         case .shape:
-            return "Move each item into one of the seven spokes. This reveals what is crowded, neglected, and misaligned."
+            return "Convert raw dump items into decisions. If it belongs today, lane it into Work or Personal so Fill can schedule it."
         case .fill:
-            return "Pick one specific action per spoke and assign timing. Small focused action beats vague intention."
-        case .sync:
-            return "Start with Google Calendar sync so your Daily Big 3 and spoke actions can move from intention to scheduled reality. Additional providers can be added later."
+            return "Choose your Daily Big 3, place key tasks on the timeline, and protect focus with reminders."
+        case .sustain:
+            return "At day end, complete what you can, carry forward what remains, and prep tomorrow in five minutes."
         }
     }
 
     var practicePoints: [String] {
         switch self {
-        case .dump:
+        case .pile:
             return [
                 "List items fast. Do not prioritize yet.",
-                "Notice what explains your exhaustion.",
+                "Notice what explains your mental load.",
                 "Keep all raw input in one trusted place."
             ]
         case .shape:
             return [
-                "Use seven spokes as the primary lens.",
-                "Place each item in one category only.",
-                "Look for imbalance before making plans."
+                "Use one filter per item: Schedule, Move, Eliminate, Delegate, Park.",
+                "Assign each actionable item to Work or Personal.",
+                "Break oversized items into a Jam Session."
             ]
         case .fill:
             return [
@@ -254,11 +222,11 @@ private enum IntroStep: CaseIterable {
                 "Map action to your Daily Big 3.",
                 "Protect margin so the plan survives real life."
             ]
-        case .sync:
+        case .sustain:
             return [
-                "Connect Google first for the fastest setup.",
-                "Use Calendar Settings for provider options.",
-                "Treat calendar as your execution surface."
+                "Finish your Daily Big 3 or consciously re-plan.",
+                "Carry incomplete items forward with intention.",
+                "Use the evening reminder to set up tomorrow quickly."
             ]
         }
     }
@@ -269,14 +237,14 @@ private struct StepAnimationView: View {
 
     private var caption: String {
         switch step {
-        case .dump:
+        case .pile:
             return "Capture everything without editing"
         case .shape:
-            return "Assign each item to one spoke"
+            return "Filter every dump item into a clear next decision"
         case .fill:
             return "Turn priorities into scheduled action"
-        case .sync:
-            return "Connect your calendar to execute in real time"
+        case .sustain:
+            return "Close today and prepare tomorrow in minutes"
         }
     }
 
@@ -295,13 +263,13 @@ private struct StepAnimationView: View {
                     )
 
                 switch step {
-                case .dump:
+                case .pile:
                     dumpAnimation(t: t)
                 case .shape:
                     shapeAnimation(t: t)
                 case .fill:
                     fillAnimation(t: t)
-                case .sync:
+                case .sustain:
                     syncAnimation(t: t)
                 }
 
@@ -312,8 +280,10 @@ private struct StepAnimationView: View {
                         .foregroundStyle(GWTheme.textPrimary)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
-                        .frame(maxWidth: 236)
-                        .padding(.bottom, 10)
+                        .lineSpacing(1.5)
+                        .frame(maxWidth: 250)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 12)
                 }
             }
             .padding(1)
@@ -336,30 +306,80 @@ private struct StepAnimationView: View {
     }
 
     private func shapeAnimation(t: TimeInterval) -> some View {
-        ZStack {
-            let rotation = Angle.degrees((t.truncatingRemainder(dividingBy: 6)) * 60)
-            ForEach(0..<7, id: \.self) { i in
-                let angle = (Double(i) / 7.0) * 360.0
-                Circle()
-                    .fill(GWTheme.gold.opacity(0.35))
-                    .frame(width: 20, height: 20)
-                    .offset(y: -52)
-                    .rotationEffect(.degrees(angle))
-                    .rotationEffect(rotation)
+        // Cards dealt one-by-one from a pile to three destinations, each tagged
+        // with a coloured dot — represents routing pile items through 5 filters.
+        let cycle = t.truncatingRemainder(dividingBy: 3.0)
+
+        let dealDur = 0.48
+        let dealStarts: [Double] = [0.0, 0.78, 1.56]
+        let holdUntil = 2.2
+        let fadeEnd = 2.7
+
+        let srcX: Double = -60
+        let dstX: [Double] = [32, 50, 32]
+        let dstY: [Double] = [-40, 0, 40]
+        let dstRot: [Double] = [10, 16, -9]
+        // Green = Schedule, Blue = Delegate, Gold = Park
+        let tagColors: [Color] = [Color(hex: "5ca06d"), Color(hex: "6090c8"), GWTheme.gold]
+
+        let dealFade: Double = cycle > holdUntil
+            ? max(0.0, 1.0 - (cycle - holdUntil) / (fadeEnd - holdUntil))
+            : 1.0
+
+        return ZStack {
+            // Permanent source pile — always visible, gives impression of a full deck
+            ForEach(0..<3, id: \.self) { j in
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white.opacity(0.06 + Double(j) * 0.025))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.white.opacity(0.09), lineWidth: 0.8)
+                    )
+                    .frame(width: 52, height: 34)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.white.opacity(0.12))
+                            .frame(width: 30, height: 4)
+                    )
+                    .offset(x: srcX + Double(j) * 1.5, y: Double(j) * -2.0)
+                    .zIndex(Double(-j))
             }
 
-            Circle()
-                .stroke(GWTheme.gold.opacity(0.4), lineWidth: 2)
-                .frame(width: 130, height: 130)
+            // Dealt (flying) cards — one per filter destination
+            ForEach(0..<3, id: \.self) { i in
+                let rawP = (cycle - dealStarts[i]) / dealDur
+                let p = max(0.0, min(1.0, rawP))
+                let e = 1.0 - pow(1.0 - p, 3.0)
+                let cx = srcX + (dstX[i] - srcX) * e
+                let cy = dstY[i] * e
 
-            Circle()
-                .fill(Color.white.opacity(0.08))
-                .frame(width: 52, height: 52)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.13))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(tagColors[i].opacity(e * 0.6), lineWidth: 1)
+                        )
+                        .frame(width: 52, height: 34)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.white.opacity(0.18))
+                                .frame(width: 30, height: 4)
+                        )
 
-            Text("7")
-                .font(.system(size: 24, weight: .heavy))
-                .foregroundStyle(GWTheme.textPrimary)
-                .offset(y: -1)
+                    // Coloured filter dot appears as the card lands
+                    Circle()
+                        .fill(tagColors[i])
+                        .frame(width: 8, height: 8)
+                        .offset(x: 18, y: 10)
+                        .scaleEffect(e)
+                        .opacity(e)
+                }
+                .rotationEffect(.degrees(dstRot[i] * e))
+                .offset(x: cx, y: cy)
+                .opacity(p > 0 ? dealFade : 0.0)
+                .zIndex(Double(i + 1))
+            }
         }
     }
 

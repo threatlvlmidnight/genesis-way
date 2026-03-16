@@ -15,6 +15,7 @@ const SECTION_ORDER = [
   "Ready",
   "In Progress",
   "Blocked",
+  "Triage",
   "Review",
   "Done",
 ];
@@ -60,6 +61,27 @@ const doneChecks = [
 for (const check of doneChecks) {
   if (!check.done) continue;
   moveTaskToDone(sections, check.task);
+}
+
+// ── Kickback Triage Rule ─────────────────────────────────────────────────────
+// Convention: append `#kickback` to a task's text each time it is moved from
+// Review back to Ready.  When two or more `#kickback` markers are present the
+// task has been kicked back a 2nd time and is escalated to Triage, signalling
+// that more information is needed before it can be actioned.
+function countKickbackTags(text) {
+  return (text.match(/#kickback/gi) ?? []).length;
+}
+
+const triageEscalations = [];
+sections["Ready"] = sections["Ready"].filter((task) => {
+  if (countKickbackTags(task.text) >= 2) {
+    triageEscalations.push(task);
+    return false;
+  }
+  return true;
+});
+for (const task of triageEscalations) {
+  sections["Triage"].push(task);
 }
 
 const output = renderBoard(sections, {
