@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import UserNotifications
+import UIKit
 
 struct FillScreen: View {
     @EnvironmentObject private var store: GenesisStore
@@ -10,6 +11,7 @@ struct FillScreen: View {
     @State private var showRatingHelp = false
     @State private var planningDay = Date()
     @State private var targetedDropSlot: String?
+    @State private var keyboardVisible = false
     @FocusState private var focusedField: FillInputField?
 
     private enum FillInputField: Hashable {
@@ -167,6 +169,8 @@ struct FillScreen: View {
                                 )
                             )
                             .focused($focusedField, equals: .weeklyGoal(index))
+                            .submitLabel(.done)
+                            .onSubmit { dismissKeyboard() }
                             .font(.system(size: 12))
                             .foregroundStyle(GWTheme.textMuted)
                             .padding(.horizontal, 10)
@@ -185,6 +189,8 @@ struct FillScreen: View {
                             set: { store.setWeeklyMacroDump($0) }
                         ), axis: .vertical)
                         .focused($focusedField, equals: .weeklyMacro)
+                        .submitLabel(.done)
+                        .onSubmit { dismissKeyboard() }
                         .font(.system(size: 12))
                         .foregroundStyle(GWTheme.textMuted)
                         .lineLimit(4...)
@@ -578,7 +584,7 @@ struct FillScreen: View {
                             .focused($focusedField, equals: .big3(item.id))
                             .submitLabel(.done)
                             .onSubmit {
-                                focusedField = nil
+                                dismissKeyboard()
                             }
                             .font(.system(size: 13))
                             .foregroundStyle(item.done ? GWTheme.textGhost : GWTheme.textMuted)
@@ -677,13 +683,40 @@ struct FillScreen: View {
         } message: {
             Text("W and P codes are auto-generated task IDs. They help index tasks quickly and are not manual priority inputs.")
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardVisible = false
+        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
-                    focusedField = nil
+                    dismissKeyboard()
                 }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(GWTheme.gold)
                 .padding(.vertical, 6)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if keyboardVisible {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        dismissKeyboard()
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(GWTheme.gold)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.92))
+                    .clipShape(Capsule())
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .background(Color.black.opacity(0.35))
             }
         }
     }
@@ -1009,7 +1042,12 @@ struct FillScreen: View {
                   let dumpItem = unfilteredPileItems.first(where: { $0.id == dumpId }) {
             store.setBig3Text(id: big3Id, text: dumpItem.text)
         }
+        dismissKeyboard()
+    }
+
+    private func dismissKeyboard() {
         focusedField = nil
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     private func droppedPayloadString(_ item: NSSecureCoding?) -> String? {

@@ -1,8 +1,10 @@
 import SwiftUI
+import UIKit
 
 struct ParkScreen: View {
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
+    @State private var keyboardVisible = false
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -70,13 +72,45 @@ struct ParkScreen: View {
         }
         .padding(24)
         .background(GWTheme.background.ignoresSafeArea())
+        .onDisappear {
+            isInputFocused = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardVisible = false
+        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
                     isInputFocused = false
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(GWTheme.gold)
+                .padding(.vertical, 6)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if keyboardVisible {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        isInputFocused = false
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(GWTheme.gold)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.92))
+                    .clipShape(Capsule())
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .background(Color.black.opacity(0.35))
             }
         }
     }

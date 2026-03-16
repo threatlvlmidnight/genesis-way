@@ -10,8 +10,27 @@ struct ShapeScreen: View {
     @State private var lastActionItemId: UUID?
     @State private var jamTargetItem: DumpItem?
 
+    private var todayISO: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
     private var pendingItems: [DumpItem] {
-        store.pendingPileItems
+        let todayPending = store.pendingPileItems
+        if !todayPending.isEmpty {
+            return todayPending
+        }
+
+        let allPending = store.dumpItems.filter { ($0.filterOutcome ?? .pending) == .pending }
+        return allPending.sorted {
+            ($0.planningDayISO ?? todayISO) > ($1.planningDayISO ?? todayISO)
+        }
+    }
+
+    private var showingCrossDayFallback: Bool {
+        store.pendingPileItems.isEmpty && pendingItems.isEmpty == false
     }
 
     private var readyPendingCount: Int {
@@ -49,6 +68,15 @@ struct ShapeScreen: View {
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(GWTheme.textGhost)
                     .textCase(.uppercase)
+
+                if showingCrossDayFallback {
+                    GlassCard {
+                        Text("No pending items for today. Showing pending items from other days so you can keep shaping.")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(GWTheme.gold)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
 
                 if store.pendingPileItems.isEmpty {
                     GlassCard {
@@ -469,7 +497,10 @@ private struct DelegateScreen: View {
                     Spacer()
                     Button("Done") {
                         isAssigneeFocused = false
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(GWTheme.gold)
                     .padding(.vertical, 6)
                 }
             }

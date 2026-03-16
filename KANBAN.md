@@ -25,6 +25,7 @@
 
 ## Ready
 
+- [ ] UI: Remove duplicate settings icon on Shape screen — single gear entry point already exists via top overlay; remove any redundant in-screen instance
 - [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient
 - [ ] UI: Remove the Clear action from Shape screen
 - [ ] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming
@@ -47,13 +48,13 @@
 
 ## Review
 
-- [ ] UI: add keyboard Done button on all keyboard-entry screens — replaced TextEditor with TextField(axis:.vertical) in Fill weekly macro dump so Done button now shows
 - [ ] Polish: Adjust spacing on the keyboard Done button - it sits too close to the top of the keyboard and nearly overlaps it
 - [ ] Polish: guided setup should visually indicate which control/button to press on each step - I like the icon you added, but it should also circle or highlight the actual buttons in the UI as well #kickback
 - [ ] Polish: updated app icon refresh - added 6 selectable icon variants (Chrome default, Textile, Stone, Molten, Obsidian Glass, Monochrome)
 
 ## Done
 
+- [x] UI: add keyboard Done button on all keyboard-entry screens
 - [x] Bug: optimize first focus/open of Pile input field to remove initial lock-up/delay
 - [x] Bug: fix Fill drag-and-drop so task scheduling works reliably again
 - [x] Validate first iOS TestFlight workflow run output

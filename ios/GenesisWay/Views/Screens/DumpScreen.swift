@@ -1,6 +1,7 @@
 import AVFoundation
 import Speech
 import SwiftUI
+import UIKit
 
 struct DumpScreen: View {
     @EnvironmentObject private var store: GenesisStore
@@ -10,6 +11,7 @@ struct DumpScreen: View {
     @State private var wasRecording = false
     @State private var voiceStatusMessage: String?
     @State private var hasDeferredFocus = false
+    @State private var keyboardVisible = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -154,6 +156,15 @@ struct DumpScreen: View {
                 isInputFocused = true
             }
         }
+        .onDisappear {
+            isInputFocused = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardVisible = false
+        }
         .onChange(of: voice.isRecording) { _, isRecording in
             if wasRecording && !isRecording {
                 parseTranscriptIntoDumpItems()
@@ -165,10 +176,31 @@ struct DumpScreen: View {
                 Spacer()
                 Button("Done") {
                     isInputFocused = false
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(GWTheme.gold)
                 .padding(.vertical, 6)
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if keyboardVisible {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        isInputFocused = false
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(GWTheme.gold)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.92))
+                    .clipShape(Capsule())
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .background(Color.black.opacity(0.35))
             }
         }
     }

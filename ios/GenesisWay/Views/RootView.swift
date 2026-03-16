@@ -73,31 +73,19 @@ private struct MainTabShell: View {
             get: { store.screen },
             set: { store.navigate($0) }
         )) {
-            NavigationStack {
-                DumpScreen()
-                    .toolbarVisibility(.hidden, for: .navigationBar)
-            }
+            DumpScreen()
             .tabItem { Label("Dump", systemImage: "square.and.pencil") }
             .tag(AppScreen.dump)
 
-            NavigationStack {
-                ShapeScreen()
-                    .toolbarVisibility(.hidden, for: .navigationBar)
-            }
+            ShapeScreen()
             .tabItem { Label("Shape", systemImage: "circle.grid.cross") }
             .tag(AppScreen.shape)
 
-            NavigationStack {
-                FillScreen()
-                    .toolbarVisibility(.hidden, for: .navigationBar)
-            }
+            FillScreen()
             .tabItem { Label("Fill", systemImage: "checklist") }
             .tag(AppScreen.fill)
 
-            NavigationStack {
-                ParkScreen()
-                    .toolbarVisibility(.hidden, for: .navigationBar)
-            }
+            ParkScreen()
             .tabItem { Label("Park", systemImage: "tray.and.arrow.down") }
             .tag(AppScreen.park)
         }
