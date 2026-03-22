@@ -50,7 +50,11 @@ struct OnboardingScreen: View {
                     }
                 }
 
+                dailyFlowReminderSetupCard
+
                 PrimaryButton(title: "Begin the Journey", action: onBegin)
+                    .opacity(store.hasConfiguredDailyFlowReminders ? 1.0 : 0.45)
+                    .disabled(!store.hasConfiguredDailyFlowReminders)
 
                 Button("Already familiar? Skip to planner") {
                     onSkip()
@@ -64,6 +68,77 @@ struct OnboardingScreen: View {
             .padding(.top, 28)
         }
         .background(GWTheme.background.ignoresSafeArea())
+    }
+
+    private var dailyFlowReminderSetupCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Daily Flow Setup")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(GWTheme.textGhost)
+                    .textCase(.uppercase)
+
+                Text("Set your morning and evening reminders")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(GWTheme.textPrimary)
+
+                Toggle("Morning reminder", isOn: Binding(
+                    get: { store.morningPlanningReminderEnabled },
+                    set: { store.setMorningPlanningReminderEnabled($0) }
+                ))
+
+                if store.morningPlanningReminderEnabled {
+                    Picker("Morning time", selection: Binding(
+                        get: { store.morningPlanningReminderTime },
+                        set: { store.setMorningPlanningReminderTime($0) }
+                    )) {
+                        Text("Choose time").tag("")
+                        Text("6:30 AM").tag("6:30 AM")
+                        Text("7:00 AM").tag("7:00 AM")
+                        Text("7:30 AM").tag("7:30 AM")
+                        Text("8:00 AM").tag("8:00 AM")
+                        Text("8:30 AM").tag("8:30 AM")
+                        Text("9:00 AM").tag("9:00 AM")
+                    }
+                }
+
+                Toggle("Evening reminder", isOn: Binding(
+                    get: { store.eveningPlanningReminderEnabled },
+                    set: { store.setEveningPlanningReminderEnabled($0) }
+                ))
+
+                if store.eveningPlanningReminderEnabled {
+                    Picker("Evening time", selection: Binding(
+                        get: { store.eveningPlanningReminderTime },
+                        set: { store.setEveningPlanningReminderTime($0) }
+                    )) {
+                        Text("Choose time").tag("")
+                        Text("7:00 PM").tag("7:00 PM")
+                        Text("7:30 PM").tag("7:30 PM")
+                        Text("8:00 PM").tag("8:00 PM")
+                        Text("8:30 PM").tag("8:30 PM")
+                        Text("9:00 PM").tag("9:00 PM")
+                    }
+                }
+
+                Button("Save Reminder Setup") {
+                    store.markDailyFlowRemindersConfigured()
+                }
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color(hex: "1a1208"))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(GWTheme.gold)
+                .clipShape(Capsule())
+                .buttonStyle(.plain)
+
+                Text(store.hasConfiguredDailyFlowReminders
+                     ? "Reminder setup saved. You can adjust this anytime in Settings."
+                     : "You must save reminder setup before starting.")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(store.hasConfiguredDailyFlowReminders ? GWTheme.gold : GWTheme.textMuted)
+            }
+        }
     }
 
     private var stepSelector: some View {

@@ -1,9 +1,18 @@
 # Genesis Way Board
-> Synced: 2026-03-15T17:50:49.261Z | Branch: pre-release-2
+> Synced: 2026-03-16T12:00:00.000Z | Branch: pre-release-v1
  | Dirty: yes
 
 ## Backlog
 
+- [ ] 0.2.0 Feature Release: Authentication and user accounts (priority 1)
+- [ ] 0.3.0 Feature Release: Google Calendar push and pull sync (priority 2)
+- [ ] 0.4.0 Feature Release: Monetization baseline with tiering and entitlement gating (priority 3)
+- [ ] Spike (RC1-Auth, 1-2 days): Investigate authentication and user account architecture for v1. Questions: email/password only vs Apple/Google sign-in for v1? local-first guest mode before auth required? account recovery and verification flow requirements? minimum backend surface and provider choice (Firebase/Supabase/custom)? migration plan from local anonymous state to account-linked state? Output artifact: decision memo with recommended provider, auth flow diagram, and phased rollout plan. Definition of done: architecture recommendation approved, v1 scope boundary documented, implementation stories drafted.
+- [ ] Spike (RC1-Calendar, 1-2 days): Investigate Google Calendar push/pull sync design for v1. Questions: one-way import first vs full two-way in same milestone? source of truth and conflict policy when app and calendar both change item/time? mapping model for task <-> event IDs and deleted events? token refresh/offline retry/error UX behavior? quota/rate-limit and sync cadence strategy? Output artifact: sync contract spec (states, mapping, conflict rules) and failure-mode test matrix. Definition of done: push/pull scope for v1 locked, data contract reviewed, implementation stories drafted.
+- [ ] Spike (RC1-Monetization, 1-2 days): Investigate monetization model and entitlement architecture for v1. Questions: exact free tier boundary and premium feature gates? monthly/annual pricing and trial strategy? paywall placement in onboarding vs settings vs feature entry? restore purchase behavior across sign-in/sign-out/device change? telemetry needed to measure conversion and seminar-to-paid funnel? Output artifact: pricing and entitlements brief with paywall map and analytics event list. Definition of done: free vs paid boundaries approved, entitlement enforcement approach documented, implementation stories drafted.
+- [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
+- [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
+- [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
 - [ ] Feature: Scheduled reminders — allow user to configure recurring notifications (e.g. morning Pile reminder, evening plan-tomorrow reminder) with day-of-week and time controls in App Settings
 - [ ] Feature: Inline task editing on Pile screen — tapping an existing task item opens it for in-place text editing rather than requiring delete-and-re-add
 - [ ] Feature: Parking lot recurring review reminders — allow user to set weekly, monthly, or quarterly reminder to review the Park screen and promote items into the active Pile
@@ -22,20 +31,22 @@
 - [ ] Test voice entry and parsing
 - [ ] Feature: iOS widget support (home screen + lock screen widgets showing today's Big 3 and pile count)
 - [ ] Epic: Version 2 planning - authenticated logins, social actions (shared delegations, collaborative task handoff)
+- [ ] Polish: Adjust spacing on the keyboard Done button - it sits too close to the top of the keyboard and nearly overlaps it #kickback
+- [ ] Polish: guided setup should visually indicate which control/button to press on each step - I like the icon you added, but it should also circle or highlight the actual buttons in the UI as well #kickback
+- [ ] Polish: In Automate > Loop > Recurrence, Mon and Tue are word wrapping to 2 lines. Keep them on 1 line. Adjust font size if needed.
+- [ ] UI: Under Automate > Loop > Duration > Fixed count, keep +/- controls and also allow direct keyboard entry of the count value.
+- [ ] Polish: Get new icons centered and working on device (moved from Ready; pending final branding direction)
 
 ## Ready
 
-- [ ] UI: Remove duplicate settings icon on Shape screen — single gear entry point already exists via top overlay; remove any redundant in-screen instance
-- [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient
-- [ ] UI: Remove the Clear action from Shape screen
-- [ ] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming
-- [ ] Feature: Daily Planner should support configurable visible hour range (user chooses how many hours to show)
-- [ ] Feature: Implement repeating tasks on the Dump screen using existing repeating-task menu definitions
-- [ ] UI: Fill screen currently shows two settings icons; consolidate to one clear settings entry point
+- [x] Improvement: Increase baseline text legibility (font size/contrast), especially smallest and dimmest type from latest feedback.
+- [x] Improvement: Preserve/strengthen completion and progress feedback (mark-through, completion cues) because users report motivational value.
 
 ## In Progress
 
 - [ ] Device test pass while app is running on phone
+- [ ] Feature: As a user, I need a daily-flow experience (morning plan + end-of-day prep), including configurable reminders and links to viewing other days' flow. Scope for v1: time-based reminders only (no in-app special prompt), no default times (set during onboarding), evening reminder opens Fill for that day, cross-day support is Dump-only for now, allow editing future days, keep past days read-only. (Phase 1 started: Dump cross-day date navigation + past read-only, reminder configuration scaffold, evening reminder tap route to Fill)
+- [ ] Release: pre-release-v1 full regression run and RC sign-off (execute docs/v1-regression-test-plan.md + docs/v1-release-quick-run.md; automation: scripts/ios_smoke.sh and .github/workflows/ios-smoke.yml)
 
 ## Blocked
 
@@ -48,9 +59,12 @@
 
 ## Review
 
-- [ ] Polish: Adjust spacing on the keyboard Done button - it sits too close to the top of the keyboard and nearly overlaps it
-- [ ] Polish: guided setup should visually indicate which control/button to press on each step - I like the icon you added, but it should also circle or highlight the actual buttons in the UI as well #kickback
-- [ ] Polish: updated app icon refresh - added 6 selectable icon variants (Chrome default, Textile, Stone, Molten, Obsidian Glass, Monochrome)
+- [ ] Improvement: Add clear return-to-Home affordance from in-flow screens; validate discoverability with first-time users. Note: behavior should route to Intro screen (not Dump), button may need rename, and should be visible on Dump.
+- [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback There is good guidance at the top of the shape screen, but the text is too dark to read. Lets make this more legible
+- [ ] UI: Increase drag-and-drop handle size in Fill Task Pool rows so touch targets are easier to grab on device.
+- [ ] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
+
+- [ ] Feature: Loop action redesign - Replace Dump repeating-rule flow with Loop as the main recurrence setup. Configure Loop from an Automate menu (not Shape/Pile). Recurrence options: Daily, Weekly, or specific weekdays (Mon-Sun chips). Duration options: Forever or fixed future occurrence count. Saving Loop does NOT resolve/remove the current task from today's pile. Future occurrences generate by schedule regardless of completion and de-duplicate to one instance per day max; missed items roll forward as a single carried-over instance. If lane is unset when loop is created, future instances remain unassigned. - Test: (1) In Dump, type a task and tap the Automate (wand) menu — verify "Loop current input" is available and opens the Loop editor sheet. (2) In the editor, set Daily + Forever, leave lane Unassigned, save — verify today's pile is unchanged and a confirmation message appears. (3) Kill and reopen the app, verify the loop rule persists and appears under Loop Rules in App Settings. (4) In App Settings > Loop Rules, confirm the rule shows Daily · Forever · Unassigned, then delete it and verify it is removed. (5) Create a Weekly loop — confirm it shows the anchor weekday in App Settings. (6) Create a Specific Weekdays loop — tap chips to select Mon/Wed/Fri, confirm the summary shows those days. (7) Create a Fixed Count loop (4 occurrences) — confirm the count decrements by 1 after manual date simulation or that remainingOccurrences is set to 4 in diagnostics. (8) Create a loop from an existing captured item via "Loop captured item" sub-menu — confirm the text pre-fills in the editor. (9) Verify saving a loop on an item that already has a lane pre-sets that lane in the editor. (10) Set lane to Work on a loop, save — verify future items generated carry the Work lane.
 
 ## Done
 
@@ -153,3 +167,9 @@
 - [x] Fastlane beta lane added
 - [x] GitHub Actions iOS TestFlight workflow added
 - [x] Local board workflow docs added
+- [ ] Polish: updated app icon refresh - added 6 selectable icon variants (Chrome default, Textile, Stone, Molten, Obsidian Glass, Monochrome)
+- [ ] UI: Remove the Clear action from Shape screen
+- [ ] UI: Fill screen currently shows two settings icons; consolidate to one clear settings entry point
+- [ ] UI: Remove duplicate settings icon on Shape screen — single gear entry point already exists via top overlay; remove any redundant in-screen instance
+- [ ] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming - Test: in Shape, tap Schedule on a pending item and verify the preview updates as date/time changes; confirm appointments, timed tasks, task pool items, and pending pile items are shown for that day; save and verify the item lands on the selected day/time. Then tap Move on a pending item, verify the preview updates as the day changes, save, and confirm the item appears in that day's pending pile.
+- [ ] Feature: Daily Planner should support configurable visible hour range (user chooses how many hours to show) - Test: in App Settings, change Daily Planner start and end hours; return to Fill and verify the timeline updates to the selected range, All Day remains at the top, drag/drop still works in visible slots, and saved settings persist after closing and reopening the app.

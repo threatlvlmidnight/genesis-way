@@ -19,7 +19,95 @@ Replace spoke-first daily flow with Dan's operational loop:
 
 ## Versioned Roadmap (Release Framing)
 
-### V1: Daily Path Stabilization
+Versioning standard: Semantic Versioning (`MAJOR.MINOR.PATCH`).
+
+### 0.1.0 (Current Build)
+
+Status: current baseline build.
+
+Scope:
+
+1. Current daily-flow baseline is usable for internal testing and iteration.
+
+### 0.1.2 (Next Release - Current Version Improvements)
+
+Scope:
+
+1. Ship the current Ready-lane quality improvements and polish work.
+2. Keep this release focused on UX/readability/navigation refinements, not net-new platform features.
+
+Exit criteria:
+
+1. Ready-lane improvements are complete and validated on device.
+2. No critical regressions in core daily flow.
+
+### 0.2.0 (Feature Release 1 - Authentication and User Accounts)
+
+Scope:
+
+1. Add authentication and user account foundation.
+2. Preserve existing daily-flow behavior while introducing account-aware state.
+
+Exit criteria:
+
+1. User can sign up/sign in/sign out reliably.
+2. Account state persists correctly and safely.
+
+### 0.3.0 (Feature Release 2 - Google Calendar Push/Pull Sync)
+
+Scope:
+
+1. Add Google Calendar import (pull) and export/update (push) sync on happy path.
+2. Implement conflict and failure handling for expected sync edge cases.
+
+Exit criteria:
+
+1. Calendar push/pull sync is stable for primary usage path.
+2. Sync failures are recoverable and visible to user.
+
+### 0.4.0 (Feature Release 3 - Monetization)
+
+Scope:
+
+1. Add tiered monetization and entitlement gating.
+2. Define free vs paid boundaries without breaking core utility.
+
+Exit criteria:
+
+1. Entitlements are enforced consistently.
+2. Purchase/restore flows are functional and tested.
+
+### 1.0.0 (General Availability)
+
+Scope:
+
+1. Includes all 0.1.2 improvements.
+2. Includes all three major features shipped in order:
+- Authentication and user accounts
+- Google Calendar push/pull sync
+- Monetization and entitlement gating
+3. Final release hardening for production readiness.
+
+Exit criteria:
+
+1. Core flows are stable and release-quality.
+2. Auth + Calendar + Monetization operate together without critical blockers.
+3. QA and regression sign-off completed for GA.
+
+### 1.0 Release Feature Priorities (Locked Order)
+
+Scope lock for v1 release candidate, in required implementation order:
+
+1. Authentication and user accounts
+2. Google Calendar push and pull sync
+3. Monetization layer (tiered plans and entitlement gating)
+
+Release criteria note:
+
+1. These three features are completed and validated in sequence.
+2. Any additional UX polish or expansion items are secondary to this RC scope lock.
+
+### Legacy Phase Label: V1 Daily Path Stabilization
 
 Scope:
 
@@ -36,7 +124,7 @@ Exit criteria:
 2. Known priority bugs are closed or explicitly deferred.
 3. UX copy/navigation for the daily path is production-ready.
 
-### V1.5: Monetization Layer
+### Legacy Phase Label: V1.5 Monetization Layer
 
 Scope:
 
@@ -50,7 +138,7 @@ Exit criteria:
 2. Entitlements are enforced consistently.
 3. Monetization analytics and support hooks are in place.
 
-### V2: Backend + Accounts + Extended Platform Features
+### Legacy Phase Label: V2 Backend + Accounts + Extended Platform Features
 
 Scope:
 
@@ -201,7 +289,51 @@ Non-negotiable implementation constraints from the start:
 
 ## Milestone Map
 
-## Milestone 0 (Completed): Demo Validation
+## Milestone 0.2.0: Authentication and Accounts
+
+Goal: deliver stable account foundation without regressing daily-flow UX.
+
+1. Authentication and user accounts
+
+Exit criteria:
+
+1. User can create/sign in/out of an account and access persisted account state.
+
+## Milestone 0.3.0: Google Calendar Push/Pull Sync
+
+Goal: deliver practical Google Calendar integration for the primary user path.
+
+1. Google Calendar push/pull sync
+
+Exit criteria:
+
+1. Calendar sync supports both import (pull) and export/update (push) for Google Calendar on happy path.
+
+## Milestone 0.4.0: Monetization and Entitlements
+
+Goal: deliver revenue layer with reliable entitlement behavior.
+
+1. Monetization tiering and entitlement enforcement
+
+Exit criteria:
+
+1. Monetization gates are enforced by entitlement and recover correctly after restore/sign-in changes.
+
+## Milestone 1.0.0: General Availability
+
+Goal: consolidate 0.1.2 + 0.2.0 + 0.3.0 + 0.4.0 into GA release quality.
+
+1. Final stabilization and regression hardening
+2. GA release checklist and sign-off
+
+Exit criteria:
+
+1. No critical release blockers across core workflow and major features.
+2. End-to-end QA pass completed for GA.
+
+## Legacy Detailed Milestones (Reference)
+
+## Legacy Milestone 0 (Completed): Demo Validation
 
 Status: complete
 
@@ -209,7 +341,7 @@ Status: complete
 2. Spec published for sharing/review
 3. Roadmap reset decision made after successful demo
 
-## Milestone 1: iOS Foundation (Start Here)
+## Legacy Milestone 1: iOS Foundation (Start Here)
 
 Goal: Establish native app scaffold and durable local data model.
 
@@ -242,7 +374,7 @@ Exit criteria:
 4. Business logic is callable outside UI layer
 5. Android port notes exist for foundation modules
 
-## Milestone 2: Core Genesis Workflow (MVP)
+## Legacy Milestone 2: Core Genesis Workflow (MVP)
 
 Goal: End-to-end usable Genesis loop without external integrations.
 
@@ -260,7 +392,7 @@ Exit criteria:
 2. No blockers/crashes in core paths
 3. Local-only planning is fully functional
 
-## Milestone 3: Calendar Integrations (Google-First)
+## Legacy Milestone 3: Calendar Integrations (Google-First)
 
 Goal: Add practical event-to-task flow with Google as happy path.
 
@@ -286,7 +418,7 @@ Exit criteria:
 3. Imported items appear correctly in Fill workflow
 4. Provider contracts are documented and Android-implementable
 
-## Milestone 4: Account + Sync Infrastructure
+## Legacy Milestone 4: Account + Sync Infrastructure
 
 Goal: Make data portable and resilient beyond one device.
 
@@ -301,7 +433,7 @@ Exit criteria:
 2. Calendar connection state persists securely
 3. Sync errors are visible and recoverable
 
-## Milestone 5: Beta Readiness
+## Legacy Milestone 5: Beta Readiness
 
 Goal: Ship a testable beta to a small user cohort.
 

@@ -119,6 +119,7 @@ struct DumpItem: Identifiable, Codable {
     var filterOutcome: PileFilterOutcome?
     var planningDayISO: String?
     var carriedOver: Bool?
+    var automationNote: String?
 
     init(
         id: UUID = UUID(),
@@ -127,7 +128,8 @@ struct DumpItem: Identifiable, Codable {
         lane: TaskLane? = nil,
         filterOutcome: PileFilterOutcome? = nil,
         planningDayISO: String? = nil,
-        carriedOver: Bool? = nil
+        carriedOver: Bool? = nil,
+        automationNote: String? = nil
     ) {
         self.id = id
         self.text = text
@@ -136,6 +138,7 @@ struct DumpItem: Identifiable, Codable {
         self.filterOutcome = filterOutcome
         self.planningDayISO = planningDayISO
         self.carriedOver = carriedOver
+        self.automationNote = automationNote
     }
 }
 
@@ -204,6 +207,76 @@ struct RepeatingTaskRule: Identifiable, Codable {
         self.everyDays = max(1, everyDays)
         self.lane = lane
         self.lastGeneratedDayISO = lastGeneratedDayISO
+    }
+}
+
+enum LoopRecurrenceType: String, Codable, CaseIterable, Identifiable {
+    case daily
+    case weekly
+    case weekdays
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .daily: return "Daily"
+        case .weekly: return "Weekly"
+        case .weekdays: return "Specific weekdays"
+        }
+    }
+}
+
+enum LoopDurationType: String, Codable, CaseIterable, Identifiable {
+    case forever
+    case fixedCount
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .forever: return "Forever"
+        case .fixedCount: return "Fixed count"
+        }
+    }
+}
+
+struct LoopRule: Identifiable, Codable {
+    let id: UUID
+    var text: String
+    var lane: TaskLane?
+    var recurrenceType: LoopRecurrenceType
+    var weekdayNumbers: [Int]
+    var durationType: LoopDurationType
+    var remainingOccurrences: Int?
+    var anchorDayISO: String
+    var lastEvaluatedDayISO: String?
+
+    init(
+        id: UUID = UUID(),
+        text: String,
+        lane: TaskLane? = nil,
+        recurrenceType: LoopRecurrenceType,
+        weekdayNumbers: [Int] = [],
+        durationType: LoopDurationType,
+        remainingOccurrences: Int? = nil,
+        anchorDayISO: String,
+        lastEvaluatedDayISO: String? = nil
+    ) {
+        self.id = id
+        self.text = text
+        self.lane = lane
+        self.recurrenceType = recurrenceType
+        self.weekdayNumbers = weekdayNumbers
+            .map { min(max($0, 1), 7) }
+            .reduce(into: [Int]()) { partialResult, value in
+                if !partialResult.contains(value) {
+                    partialResult.append(value)
+                }
+            }
+        self.durationType = durationType
+        self.remainingOccurrences = durationType == .fixedCount ? max(1, remainingOccurrences ?? 1) : nil
+        self.anchorDayISO = anchorDayISO
+        self.lastEvaluatedDayISO = lastEvaluatedDayISO
     }
 }
 
@@ -281,8 +354,11 @@ struct GenesisState: Codable {
     var archivedSpokeAssignments: [String: String]?
     var archivedRhythmAnchors: [String: String]?
     var rhythmAnchors: [String: String]
+    var morningPlanningReminderEnabled: Bool?
+    var morningPlanningReminderTime: String?
     var eveningPlanningReminderEnabled: Bool
     var eveningPlanningReminderTime: String
+    var hasConfiguredDailyFlowReminders: Bool?
     var lastRolloverDayISO: String?
     var googleCalendarConnected: Bool
     var appleIcsEnabled: Bool
@@ -290,9 +366,12 @@ struct GenesisState: Codable {
     var themeStyle: AppThemeStyle?
     var hasCompletedGuidedSetup: Bool?
     var repeatingTaskRules: [RepeatingTaskRule]
+    var loopRules: [LoopRule]?
     var weeklyTopGoals: [String]
     var weeklyMacroDump: String
     var appIconStyle: AppIconStyle?
+    var plannerStartHour: Int?
+    var plannerEndHour: Int?
 
     static let initial = GenesisState(
         screen: .onboarding,
@@ -318,8 +397,11 @@ struct GenesisState: Codable {
             Spoke.spiritual.rawValue: "Morning reflection before phone",
             Spoke.family.rawValue: "One distraction-free dinner each week"
         ],
+        morningPlanningReminderEnabled: false,
+        morningPlanningReminderTime: "",
         eveningPlanningReminderEnabled: false,
-        eveningPlanningReminderTime: "8:30 PM",
+        eveningPlanningReminderTime: "",
+        hasConfiguredDailyFlowReminders: false,
         lastRolloverDayISO: nil,
         googleCalendarConnected: false,
         appleIcsEnabled: true,
@@ -327,8 +409,11 @@ struct GenesisState: Codable {
         themeStyle: .brown,
         hasCompletedGuidedSetup: false,
         repeatingTaskRules: [],
+        loopRules: [],
         weeklyTopGoals: ["", "", ""],
         weeklyMacroDump: "",
-        appIconStyle: .chrome
+        appIconStyle: .chrome,
+        plannerStartHour: 8,
+        plannerEndHour: 18
     )
 }

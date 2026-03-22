@@ -1,15 +1,13 @@
 # Local Scrum Board (No Jira)
 
-Use this board directly in VS Code with a lightweight Kanban extension.
+Single source of truth: [KANBAN.md](../KANBAN.md)
 
-## Recommended extension
+Use [KANBAN.md](../KANBAN.md) directly in VS Code for all backlog and sprint updates.
 
-1. Kanban by Marcel Joachim Kloubert (`mkloubert.vscode-kanban`)
+## Rule
 
-Optional:
-
-1. Markdown Kanban (`holooooo.markdown-kanban`)
-2. Todo Tree (`gruntfuggly.todo-tree`)
+1. Do not maintain duplicate boards in other files or extension-managed storage.
+2. Add, move, and complete tasks only in [KANBAN.md](../KANBAN.md).
 
 ## Sync command
 
@@ -22,7 +20,7 @@ npm run board:sync
 What it syncs automatically:
 
 1. Marks known completed setup items as Done when required files/settings are detected.
-2. Adds a sync line at the top of `KANBAN.md` with timestamp, branch, and dirty state.
+2. Adds a sync line at the top of [KANBAN.md](../KANBAN.md) with timestamp, branch, and dirty state.
 3. Removes malformed one-character tasks accidentally left in the board.
 
 ## Board columns

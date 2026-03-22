@@ -5,7 +5,6 @@ import UIKit
 
 struct FillScreen: View {
     @EnvironmentObject private var store: GenesisStore
-    @State private var showAppSettings = false
     @State private var reminderStatus = ""
     @State private var showBig3Help = false
     @State private var showRatingHelp = false
@@ -20,14 +19,26 @@ struct FillScreen: View {
         case weeklyMacro
     }
 
-    private let timelineSlots: [String] = [
-        "All Day",
-        "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
-        "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM"
-    ]
+    private var timelineSlots: [String] {
+        ["All Day"] + (store.plannerStartHour...store.plannerEndHour).map { hourLabel($0) }
+    }
 
     private var doneCount: Int {
         store.big3.filter { $0.done }.count
+    }
+
+    private var completedTaskCount: Int {
+        dayTaskPool.filter { $0.completed }.count
+    }
+
+    private var big3CompletionRatio: Double {
+        let total = max(store.big3.count, 1)
+        return Double(doneCount) / Double(total)
+    }
+
+    private var scheduledTaskCompletionRatio: Double {
+        guard !dayTaskPool.isEmpty else { return 0 }
+        return Double(completedTaskCount) / Double(dayTaskPool.count)
     }
 
     private struct Big3PoolChoice: Identifiable {
@@ -131,6 +142,22 @@ struct FillScreen: View {
                 header
 
                 GlassCard {
+                    VStack(alignment: .leading, spacing: 8) {
+                        rowHeader(
+                            title: "Execution Progress",
+                            trailing: "B3 \(Int((big3CompletionRatio * 100).rounded()))% · Tasks \(Int((scheduledTaskCompletionRatio * 100).rounded()))%"
+                        )
+
+                        dualExecutionProgressBar
+
+                        Text("Big 3 complete: \(doneCount)/3 • Planned tasks complete: \(completedTaskCount)/\(dayTaskPool.count)")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(GWTheme.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                GlassCard {
                     VStack(alignment: .leading, spacing: 9) {
                         Text("How Fill Works")
                             .font(.system(size: 10, weight: .bold))
@@ -156,8 +183,8 @@ struct FillScreen: View {
                         Text(isWeeklyPlanningWindow
                              ? "Weekly mode is active: align appointments, top 3 goals, and macro dump."
                              : "Weekly mode is designed for Friday/Sunday resets. You can still draft it now.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(GWTheme.textGhost)
+                            .font(.system(size: 12))
+                            .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
 
                         ForEach(Array(store.weeklyTopGoals.enumerated()), id: \.offset) { index, goal in
@@ -298,9 +325,7 @@ struct FillScreen: View {
 
                             ForEach(unfilteredWorkItems) { item in
                                 HStack(spacing: 10) {
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(GWTheme.textGhost)
+                                    dragHandle
 
                                     if item.carriedOver == true {
                                         Text("Carried")
@@ -326,9 +351,7 @@ struct FillScreen: View {
 
                             ForEach(dayWorkTasks) { task in
                                 HStack(spacing: 10) {
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(GWTheme.textGhost)
+                                    dragHandle
 
                                     Text(task.code)
                                         .font(.system(size: 10, weight: .bold))
@@ -391,9 +414,7 @@ struct FillScreen: View {
 
                             ForEach(unfilteredPersonalItems) { item in
                                 HStack(spacing: 10) {
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(GWTheme.textGhost)
+                                    dragHandle
 
                                     if item.carriedOver == true {
                                         Text("Carried")
@@ -419,9 +440,7 @@ struct FillScreen: View {
 
                             ForEach(dayPersonalTasks) { task in
                                 HStack(spacing: 10) {
-                                    Image(systemName: "line.3.horizontal")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundStyle(GWTheme.textGhost)
+                                    dragHandle
 
                                     Text(task.code)
                                         .font(.system(size: 10, weight: .bold))
@@ -523,8 +542,8 @@ struct FillScreen: View {
                     showBig3Help = true
                 }
                 Text("These are your non-negotiables for today. Check them off as completed.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(GWTheme.textGhost)
+                    .font(.system(size: 12))
+                    .foregroundStyle(GWTheme.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if big3PoolChoices.isEmpty {
@@ -589,20 +608,34 @@ struct FillScreen: View {
                             .font(.system(size: 13))
                             .foregroundStyle(item.done ? GWTheme.textGhost : GWTheme.textMuted)
                             .strikethrough(item.done)
+
+                            if item.done {
+                                Text("Completed")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Color(hex: "1a1208"))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(GWTheme.gold.opacity(0.75))
+                                    .clipShape(Capsule())
+                            }
                         }
                         Spacer()
                     }
                     .padding(12)
                     .background(Color.white.opacity(0.03))
                     .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(item.done ? GWTheme.gold.opacity(0.55) : Color.white.opacity(0.07), lineWidth: item.done ? 1.4 : 1)
+                    }
                 }
 
                 rowHeader(title: "Work", trailing: "↓") {
                     showRatingHelp = true
                 }
                 Text("Tasks tied to output, clients, and deadlines.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(GWTheme.textGhost)
+                    .font(.system(size: 12))
+                    .foregroundStyle(GWTheme.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
                 ForEach(store.workTasks) { task in
                     taskRow(task: task, codeColor: GWTheme.gold)
@@ -612,8 +645,8 @@ struct FillScreen: View {
                     showRatingHelp = true
                 }
                 Text("Tasks that protect relationships, health, and life rhythms.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(GWTheme.textGhost)
+                    .font(.system(size: 12))
+                    .foregroundStyle(GWTheme.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
                 ForEach(store.personalTasks) { task in
                     taskRow(task: task, codeColor: Color(hex: "907050"))
@@ -669,10 +702,6 @@ struct FillScreen: View {
             .padding(24)
         }
         .background(GWTheme.background.ignoresSafeArea())
-        .sheet(isPresented: $showAppSettings) {
-            AppSettingsScreen()
-                .environmentObject(store)
-        }
         .alert("Daily Big 3", isPresented: $showBig3Help) {
             Button("Got it", role: .cancel) {}
         } message: {
@@ -722,32 +751,16 @@ struct FillScreen: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Today")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(GWTheme.textGhost)
-                Text("Fill It")
-                    .font(.system(size: 30, weight: .heavy))
-                    .foregroundStyle(GWTheme.textPrimary)
-                Text("Assign intentional actions to the right time, then protect them.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(GWTheme.textMuted)
-            }
-
-            Spacer()
-
-            Button {
-                showAppSettings = true
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(GWTheme.gold)
-                    .frame(width: 34, height: 34)
-                    .background(GWTheme.gold.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
-            .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Today")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(GWTheme.textMuted)
+            Text("Fill It")
+                .font(.system(size: 30, weight: .heavy))
+                .foregroundStyle(GWTheme.textPrimary)
+            Text("Assign intentional actions to the right time, then protect them.")
+                .font(.system(size: 13))
+                .foregroundStyle(GWTheme.textMuted)
         }
     }
 
@@ -771,6 +784,62 @@ struct FillScreen: View {
                 .foregroundStyle(GWTheme.gold)
         }
         .padding(.top, 4)
+    }
+
+    private var dragHandle: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 18, weight: .bold))
+            .foregroundStyle(GWTheme.textMuted)
+            .frame(width: 28, height: 28)
+            .background(Color.white.opacity(0.04))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var dualExecutionProgressBar: some View {
+        GeometryReader { geo in
+            let halfWidth = geo.size.width / 2
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
+
+                HStack(spacing: 0) {
+                    Capsule()
+                        .fill(GWTheme.gold)
+                        .frame(width: halfWidth * big3CompletionRatio)
+
+                    Capsule()
+                        .fill(Color(hex: "5ca06d"))
+                        .frame(width: halfWidth * scheduledTaskCompletionRatio)
+
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .frame(height: 12)
+        .overlay(alignment: .bottomLeading) {
+            HStack(spacing: 12) {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(GWTheme.gold)
+                        .frame(width: 6, height: 6)
+                    Text("Big 3")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(GWTheme.textMuted)
+                }
+
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(Color(hex: "5ca06d"))
+                        .frame(width: 6, height: 6)
+                    Text("Tasks")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(GWTheme.textMuted)
+                }
+            }
+            .padding(.top, 16)
+        }
+        .padding(.bottom, 14)
     }
 
     private func taskRow(task: TaskItem, codeColor: Color) -> some View {
@@ -816,6 +885,9 @@ struct FillScreen: View {
             }
         }
         .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(task.completed ? GWTheme.gold.opacity(0.12) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func timelineSlotRow(slot: String) -> some View {
@@ -891,6 +963,9 @@ struct FillScreen: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.vertical, 2)
+                    .padding(.horizontal, 4)
+                    .background(task.completed ? GWTheme.gold.opacity(0.13) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
         }
@@ -1090,5 +1165,17 @@ struct FillScreen: View {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "MMM d"
         return formatter.string(from: planningDay)
+    }
+
+    private func hourLabel(_ hour: Int) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "h:00 a"
+
+        var components = DateComponents()
+        components.hour = hour
+        components.minute = 0
+        let date = Calendar.current.date(from: components) ?? Date()
+        return formatter.string(from: date)
     }
 }

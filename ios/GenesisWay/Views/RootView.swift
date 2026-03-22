@@ -68,63 +68,115 @@ private struct MainTabShell: View {
         }
     }
 
+    private var showsHomeButton: Bool {
+        store.screen != .onboarding
+    }
+
     var body: some View {
         TabView(selection: Binding(
             get: { store.screen },
             set: { store.navigate($0) }
         )) {
             DumpScreen()
+            .padding(.top, 42)
             .tabItem { Label("Dump", systemImage: "square.and.pencil") }
             .tag(AppScreen.dump)
 
             ShapeScreen()
+            .padding(.top, 42)
             .tabItem { Label("Shape", systemImage: "circle.grid.cross") }
             .tag(AppScreen.shape)
 
             FillScreen()
+            .padding(.top, 42)
             .tabItem { Label("Fill", systemImage: "checklist") }
             .tag(AppScreen.fill)
 
             ParkScreen()
+            .padding(.top, 42)
             .tabItem { Label("Park", systemImage: "tray.and.arrow.down") }
             .tag(AppScreen.park)
         }
-        .overlay(alignment: .topTrailing) {
-            HStack(spacing: 8) {
-                if showsGuideButton {
-                    Button {
-                        showScreenGuide = true
-                    } label: {
-                        Image(systemName: "questionmark.circle.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(GWTheme.gold)
-                            .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.08))
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
+        .safeAreaInset(edge: .top) {
+            Color.clear
+                .frame(height: 92)
+        }
+        .overlay(alignment: .top) {
+            ZStack(alignment: .bottom) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.black.opacity(0.36), Color.black.opacity(0.2)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay(alignment: .bottom) {
+                        Rectangle()
+                            .fill(GWTheme.gold.opacity(0.08))
+                            .frame(height: 1)
                     }
-                    .buttonStyle(.plain)
-                }
+                    .allowsHitTesting(false)
 
-                Button {
-                    showAppSettings = true
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(GWTheme.gold)
-                        .frame(width: 36, height: 36)
-                        .background(Color.white.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(GWTheme.gold, lineWidth: 2)
-                                .opacity(activeGuidedStep?.emphasis == .settings ? 0.95 : 0)
+                HStack(spacing: 8) {
+                    if showsHomeButton {
+                        Button {
+                            store.navigate(.onboarding)
+                            GWHaptics.light()
+                        } label: {
+                            Label("Tour", systemImage: "house.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(GWTheme.gold)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color.white.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
-                        .shadow(color: GWTheme.gold.opacity(activeGuidedStep?.emphasis == .settings ? 0.55 : 0), radius: 8)
+                        .buttonStyle(.plain)
+                    }
+
+                    Spacer(minLength: 0)
+
+                    HStack(spacing: 8) {
+                        if showsGuideButton {
+                            Button {
+                                showScreenGuide = true
+                            } label: {
+                                Image(systemName: "questionmark.circle.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(GWTheme.gold)
+                                    .frame(width: 36, height: 36)
+                                    .background(Color.white.opacity(0.08))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        Button {
+                            showAppSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(GWTheme.gold)
+                                .frame(width: 36, height: 36)
+                                .background(Color.white.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(GWTheme.gold, lineWidth: 2)
+                                        .opacity(activeGuidedStep?.emphasis == .settings ? 0.95 : 0)
+                                }
+                                .shadow(color: GWTheme.gold.opacity(activeGuidedStep?.emphasis == .settings ? 0.55 : 0), radius: 8)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 14)
+                .padding(.top, 6)
+                .padding(.bottom, 18)
             }
-            .padding(.trailing, 14)
-            .padding(.top, 8)
+            .frame(maxWidth: .infinity)
+            .frame(height: 66)
         }
         .overlay(alignment: .bottom) {
             if let emphasis = activeGuidedStep?.emphasis,

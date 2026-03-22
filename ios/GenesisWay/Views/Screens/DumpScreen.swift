@@ -6,6 +6,7 @@ import UIKit
 struct DumpScreen: View {
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
+    @State private var selectedDay = Date()
     @FocusState private var isInputFocused: Bool
     @StateObject private var voice = VoiceDumpController()
     @State private var wasRecording = false
@@ -13,11 +14,52 @@ struct DumpScreen: View {
     @State private var hasDeferredFocus = false
     @State private var keyboardVisible = false
 
+    private var dayDumpItems: [DumpItem] {
+        store.dumpItems(for: selectedDay)
+    }
+
+    private var isViewingPastDay: Bool {
+        let calendar = Calendar.current
+        let selected = calendar.startOfDay(for: selectedDay)
+        let today = calendar.startOfDay(for: Date())
+        return selected < today
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
 
+            HStack(spacing: 10) {
+                DatePicker("Day", selection: $selectedDay, displayedComponents: [.date])
+                    .labelsHidden()
+                    .datePickerStyle(.compact)
+
+                Button("Today") {
+                    selectedDay = Date()
+                }
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(isViewingPastDay ? GWTheme.gold : Color(hex: "1a1208"))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(isViewingPastDay ? Color.white.opacity(0.08) : GWTheme.gold)
+                .clipShape(Capsule())
+                .buttonStyle(.plain)
+
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 8)
+
             VStack(spacing: 14) {
+                if isViewingPastDay {
+                    GlassCard {
+                        Text("Past days are read-only. Switch to today or a future day to add or edit items.")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(GWTheme.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
                 HStack(spacing: 8) {
                     TextField("What is occupying your mind right now?", text: $input)
                         .submitLabel(.done)
@@ -31,6 +73,7 @@ struct DumpScreen: View {
                         .background(Color.white.opacity(0.05))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .foregroundStyle(GWTheme.textPrimary)
+                        .disabled(isViewingPastDay)
 
                     Button("+") {
                         addTypedDumpItem()
@@ -42,6 +85,7 @@ struct DumpScreen: View {
                         LinearGradient(colors: [GWTheme.gold, GWTheme.goldDark], startPoint: .topLeading, endPoint: .bottomTrailing)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .disabled(isViewingPastDay)
 
                     Button {
                         voice.toggleRecording()
@@ -54,6 +98,7 @@ struct DumpScreen: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
+                            .disabled(isViewingPastDay)
                 }
 
                 if !voice.transcript.isEmpty {
@@ -95,7 +140,7 @@ struct DumpScreen: View {
                         .foregroundStyle(GWTheme.gold)
                 }
 
-                if store.dumpItems.isEmpty {
+                if dayDumpItems.isEmpty {
                     VStack(spacing: 8) {
                         Text("Your list is clear")
                             .font(.system(size: 14, weight: .semibold))
@@ -108,12 +153,12 @@ struct DumpScreen: View {
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("Captured — \(store.dumpItems.count)")
+                            Text("Captured — \(dayDumpItems.count)")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(GWTheme.textGhost)
                                 .padding(.bottom, 6)
 
-                            ForEach(store.dumpItems) { item in
+                            ForEach(dayDumpItems) { item in
                                 HStack(spacing: 10) {
                                     Circle().fill(GWTheme.gold.opacity(0.35)).frame(width: 6, height: 6)
                                     Text(item.text)
@@ -125,6 +170,7 @@ struct DumpScreen: View {
                                     Button("×") { store.removeDumpItem(id: item.id) }
                                         .font(.system(size: 16, weight: .medium))
                                         .foregroundStyle(GWTheme.textGhost)
+                                        .disabled(isViewingPastDay)
                                 }
                                 .padding(.vertical, 10)
                                 Divider().overlay(GWTheme.gold.opacity(0.07))
@@ -230,6 +276,11 @@ struct DumpScreen: View {
     }
 
     private func parseTranscriptIntoDumpItems() {
+        guard !isViewingPastDay else {
+            voiceStatusMessage = "Past days are read-only. Switch to today or a future day to capture items."
+            return
+        }
+
         let parsed = aiParseDumpItems(from: voice.transcript)
         guard !parsed.isEmpty else {
             voiceStatusMessage = voice.transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -239,7 +290,7 @@ struct DumpScreen: View {
         }
 
         for item in parsed {
-            store.addDumpItem(item)
+            store.addDumpItem(item, for: selectedDay)
         }
 
         voiceStatusMessage = "Added \(parsed.count) item\(parsed.count == 1 ? "" : "s") from voice capture."
@@ -247,12 +298,13 @@ struct DumpScreen: View {
     }
 
     private func addTypedDumpItem() {
+        guard !isViewingPastDay else { return }
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             isInputFocused = false
             return
         }
-        store.addDumpItem(trimmed)
+        store.addDumpItem(trimmed, for: selectedDay)
         input = ""
         isInputFocused = true
         GWHaptics.light()

@@ -7,16 +7,20 @@ struct AppSettingsScreen: View {
     @State private var importStatus = ""
     @State private var showDiagnostics = false
     @State private var showCalendarSettings = false
-    @State private var repeatingText = ""
-    @State private var repeatingEveryDays = 1
-    @State private var repeatingLane: TaskLane = .work
-    @FocusState private var isRepeatingTextFocused: Bool
     @State private var showFindOutMore = false
 
     private var buildLabel: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
         return "v\(version) (\(build))"
+    }
+
+    private var plannerStartOptions: [Int] {
+        Array(5...21)
+    }
+
+    private var plannerEndOptions: [Int] {
+        Array(max(store.plannerStartHour + 1, 6)...22)
     }
 
     var body: some View {
@@ -93,41 +97,27 @@ struct AppSettingsScreen: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Repeating Tasks") {
-                    TextField("Task template", text: $repeatingText)
-                        .focused($isRepeatingTextFocused)
+                Section("Loop Rules") {
+                    Text("Create loops from Dump's Automate menu. This screen is for review and cleanup.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
 
-                    Stepper("Repeat every \(repeatingEveryDays) day\(repeatingEveryDays == 1 ? "" : "s")", value: $repeatingEveryDays, in: 1...30)
-
-                    Picker("Lane", selection: $repeatingLane) {
-                        Text("Work").tag(TaskLane.work)
-                        Text("Personal").tag(TaskLane.personal)
-                    }
-
-                    Button("Add Repeating Rule") {
-                        store.addRepeatingTaskRule(text: repeatingText, everyDays: repeatingEveryDays, lane: repeatingLane)
-                        repeatingText = ""
-                        repeatingEveryDays = 1
-                    }
-                    .disabled(repeatingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .foregroundStyle(GWTheme.gold)
-
-                    if store.repeatingTaskRules.isEmpty {
-                        Text("No repeating rules yet.")
+                    if store.loopRules.isEmpty {
+                        Text("No loops configured yet.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(store.repeatingTaskRules) { rule in
+                        ForEach(store.loopRules) { rule in
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(rule.text)
-                                    Text("Every \(rule.everyDays) day\(rule.everyDays == 1 ? "" : "s") • \(rule.lane == .work ? "Work" : "Personal")")
+                                    Text(loopSummary(for: rule))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Button(role: .destructive) {
-                                    store.removeRepeatingTaskRule(rule.id)
+                                    store.removeLoopRule(rule.id)
                                 } label: {
                                     Image(systemName: "trash")
                                 }
@@ -157,6 +147,25 @@ struct AppSettingsScreen: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
+                    Toggle("Morning daily-flow reminder", isOn: Binding(
+                        get: { store.morningPlanningReminderEnabled },
+                        set: { store.setMorningPlanningReminderEnabled($0) }
+                    ))
+
+                    Picker("Morning reminder time", selection: Binding(
+                        get: { store.morningPlanningReminderTime },
+                        set: { store.setMorningPlanningReminderTime($0) }
+                    )) {
+                        Text("Choose in onboarding/settings").tag("")
+                        Text("6:30 AM").tag("6:30 AM")
+                        Text("7:00 AM").tag("7:00 AM")
+                        Text("7:30 AM").tag("7:30 AM")
+                        Text("8:00 AM").tag("8:00 AM")
+                        Text("8:30 AM").tag("8:30 AM")
+                        Text("9:00 AM").tag("9:00 AM")
+                    }
+                    .disabled(!store.morningPlanningReminderEnabled)
+
                     Toggle("Evening 5-minute planning reminder", isOn: Binding(
                         get: { store.eveningPlanningReminderEnabled },
                         set: { store.setEveningPlanningReminderEnabled($0) }
@@ -166,6 +175,7 @@ struct AppSettingsScreen: View {
                         get: { store.eveningPlanningReminderTime },
                         set: { store.setEveningPlanningReminderTime($0) }
                     )) {
+                        Text("Choose in onboarding/settings").tag("")
                         Text("7:00 PM").tag("7:00 PM")
                         Text("7:30 PM").tag("7:30 PM")
                         Text("8:00 PM").tag("8:00 PM")
@@ -173,6 +183,34 @@ struct AppSettingsScreen: View {
                         Text("9:00 PM").tag("9:00 PM")
                     }
                     .disabled(!store.eveningPlanningReminderEnabled)
+
+                    Text("No reminder times are auto-defaulted. Configure your morning/evening flow reminders explicitly.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Daily Planner") {
+                    Picker("Start hour", selection: Binding(
+                        get: { store.plannerStartHour },
+                        set: { store.setPlannerStartHour($0) }
+                    )) {
+                        ForEach(plannerStartOptions, id: \.self) { hour in
+                            Text(hourLabel(hour)).tag(hour)
+                        }
+                    }
+
+                    Picker("End hour", selection: Binding(
+                        get: { store.plannerEndHour },
+                        set: { store.setPlannerEndHour($0) }
+                    )) {
+                        ForEach(plannerEndOptions, id: \.self) { hour in
+                            Text(hourLabel(hour)).tag(hour)
+                        }
+                    }
+
+                    Text("Choose the visible hour range for Fill's Daily Planner timeline.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Developer") {
@@ -275,16 +313,63 @@ struct AppSettingsScreen: View {
                     Button("Done") { dismiss() }
                         .foregroundStyle(GWTheme.gold)
                 }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") {
-                        isRepeatingTextFocused = false
-                    }
-                    .foregroundStyle(GWTheme.gold)
-                    .padding(.vertical, 6)
-                }
             }
         }
+    }
+}
+
+private func hourLabel(_ hour: Int) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "h:00 a"
+
+    var components = DateComponents()
+    components.hour = hour
+    components.minute = 0
+    let date = Calendar.current.date(from: components) ?? Date()
+    return formatter.string(from: date)
+}
+
+private func loopSummary(for rule: LoopRule) -> String {
+    let laneText: String
+    if let lane = rule.lane {
+        laneText = lane == .work ? "Work" : "Personal"
+    } else {
+        laneText = "Unassigned"
+    }
+
+    let recurrenceText: String
+    switch rule.recurrenceType {
+    case .daily:
+        recurrenceText = "Daily"
+    case .weekly:
+        recurrenceText = "Weekly"
+    case .weekdays:
+        let dayNames = rule.weekdayNumbers.map { weekdayNumberToShortName($0) }.joined(separator: ", ")
+        recurrenceText = dayNames.isEmpty ? "Specific weekdays" : dayNames
+    }
+
+    let durationText: String
+    switch rule.durationType {
+    case .forever:
+        durationText = "Forever"
+    case .fixedCount:
+        durationText = "\(rule.remainingOccurrences ?? 0) left"
+    }
+
+    return "\(recurrenceText) • \(durationText) • \(laneText)"
+}
+
+private func weekdayNumberToShortName(_ weekday: Int) -> String {
+    switch weekday {
+    case 1: return "Sun"
+    case 2: return "Mon"
+    case 3: return "Tue"
+    case 4: return "Wed"
+    case 5: return "Thu"
+    case 6: return "Fri"
+    case 7: return "Sat"
+    default: return "?"
     }
 }
 

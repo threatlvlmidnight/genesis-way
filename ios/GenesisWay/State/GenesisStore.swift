@@ -4,11 +4,16 @@ import UserNotifications
 import UIKit
 #endif
 
+extension Notification.Name {
+    static let genesisOpenFillFromReminder = Notification.Name("genesisOpenFillFromReminder")
+}
+
 final class GenesisStore: ObservableObject {
     @Published private(set) var state: GenesisState {
         didSet { persist() }
     }
     @Published private(set) var guidedSetupLaunchToken = UUID()
+    private var reminderTapObserver: NSObjectProtocol?
 
     private let storageKey = "genesis-way-ios-v1"
     private static let legacySeededTasks: Set<String> = [
@@ -68,9 +73,28 @@ final class GenesisStore: ObservableObject {
         migrateLegacySpokesToArchiveIfPresent()
         normalizeDailyPileMetadata()
         runDailyRolloverIfNeeded()
+        if state.loopRules == nil {
+            state.loopRules = []
+        }
         materializeRepeatingTasksIfNeeded()
+        materializeLoopTasksIfNeeded()
         GWTheme.setThemeStyle(state.themeStyle ?? .brown)
+
+        reminderTapObserver = NotificationCenter.default.addObserver(
+            forName: .genesisOpenFillFromReminder,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.navigate(.fill)
+        }
+
         persist()
+    }
+
+    deinit {
+        if let reminderTapObserver {
+            NotificationCenter.default.removeObserver(reminderTapObserver)
+        }
     }
 
     var screen: AppScreen {
@@ -108,14 +132,20 @@ final class GenesisStore: ObservableObject {
     var appleIcsEnabled: Bool { state.appleIcsEnabled }
     var lastCalendarSyncISO: String? { state.lastCalendarSyncISO }
     var delegatedFollowUps: [DelegateFollowUpItem] { state.delegatedFollowUps }
+    var morningPlanningReminderEnabled: Bool { state.morningPlanningReminderEnabled ?? false }
+    var morningPlanningReminderTime: String { state.morningPlanningReminderTime ?? "" }
     var eveningPlanningReminderEnabled: Bool { state.eveningPlanningReminderEnabled }
     var eveningPlanningReminderTime: String { state.eveningPlanningReminderTime }
+    var hasConfiguredDailyFlowReminders: Bool { state.hasConfiguredDailyFlowReminders ?? false }
     var appThemeStyle: AppThemeStyle { state.themeStyle ?? .brown }
     var appIconStyle: AppIconStyle { state.appIconStyle ?? .chrome }
     var shouldShowGuidedSetup: Bool { !(state.hasCompletedGuidedSetup ?? false) }
     var repeatingTaskRules: [RepeatingTaskRule] { state.repeatingTaskRules }
+    var loopRules: [LoopRule] { state.loopRules ?? [] }
     var weeklyTopGoals: [String] { state.weeklyTopGoals }
     var weeklyMacroDump: String { state.weeklyMacroDump }
+    var plannerStartHour: Int { state.plannerStartHour ?? 8 }
+    var plannerEndHour: Int { state.plannerEndHour ?? 18 }
     var hasUnreadyShapeItems: Bool {
         let todayISO = Self.todayDayISO()
         return state.dumpItems.contains { item in
@@ -140,14 +170,33 @@ final class GenesisStore: ObservableObject {
         state.reminderLeadMinutes = minutes
     }
 
+    func setMorningPlanningReminderEnabled(_ enabled: Bool) {
+        state.morningPlanningReminderEnabled = enabled
+        state.hasConfiguredDailyFlowReminders = true
+        Task { await scheduleDailyFlowRemindersIfNeeded() }
+    }
+
+    func setMorningPlanningReminderTime(_ time: String) {
+        state.morningPlanningReminderTime = time
+        state.hasConfiguredDailyFlowReminders = true
+        Task { await scheduleDailyFlowRemindersIfNeeded() }
+    }
+
     func setEveningPlanningReminderEnabled(_ enabled: Bool) {
         state.eveningPlanningReminderEnabled = enabled
-        Task { await scheduleEveningPlanningReminderIfNeeded() }
+        state.hasConfiguredDailyFlowReminders = true
+        Task { await scheduleDailyFlowRemindersIfNeeded() }
     }
 
     func setEveningPlanningReminderTime(_ time: String) {
         state.eveningPlanningReminderTime = time
-        Task { await scheduleEveningPlanningReminderIfNeeded() }
+        state.hasConfiguredDailyFlowReminders = true
+        Task { await scheduleDailyFlowRemindersIfNeeded() }
+    }
+
+    func markDailyFlowRemindersConfigured() {
+        state.hasConfiguredDailyFlowReminders = true
+        Task { await scheduleDailyFlowRemindersIfNeeded() }
     }
 
     func setAppThemeStyle(_ style: AppThemeStyle) {
@@ -200,6 +249,56 @@ final class GenesisStore: ObservableObject {
         state.repeatingTaskRules.removeAll { $0.id == id }
     }
 
+    func addLoopRule(
+        text: String,
+        lane: TaskLane?,
+        recurrenceType: LoopRecurrenceType,
+        weekdayNumbers: [Int],
+        durationType: LoopDurationType,
+        fixedCount: Int?
+    ) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        var normalizedWeekdays = weekdayNumbers
+            .map { min(max($0, 1), 7) }
+            .reduce(into: [Int]()) { partialResult, value in
+                if !partialResult.contains(value) {
+                    partialResult.append(value)
+                }
+            }
+
+        if recurrenceType != .weekdays {
+            normalizedWeekdays = []
+        } else if normalizedWeekdays.isEmpty {
+            let weekday = Calendar.current.component(.weekday, from: Date())
+            normalizedWeekdays = [weekday]
+        }
+
+        let resolvedFixedCount = durationType == .fixedCount ? max(1, fixedCount ?? 1) : nil
+
+        let rule = LoopRule(
+            text: trimmed,
+            lane: lane,
+            recurrenceType: recurrenceType,
+            weekdayNumbers: normalizedWeekdays,
+            durationType: durationType,
+            remainingOccurrences: resolvedFixedCount,
+            anchorDayISO: Self.todayDayISO()
+        )
+
+        var rules = state.loopRules ?? []
+        rules.append(rule)
+        state.loopRules = rules
+        materializeLoopTasksIfNeeded()
+    }
+
+    func removeLoopRule(_ id: UUID) {
+        guard var rules = state.loopRules else { return }
+        rules.removeAll { $0.id == id }
+        state.loopRules = rules
+    }
+
     func setWeeklyTopGoal(index: Int, text: String) {
         guard state.weeklyTopGoals.indices.contains(index) else { return }
         state.weeklyTopGoals[index] = text
@@ -207,6 +306,20 @@ final class GenesisStore: ObservableObject {
 
     func setWeeklyMacroDump(_ text: String) {
         state.weeklyMacroDump = text
+    }
+
+    func setPlannerStartHour(_ hour: Int) {
+        let clamped = min(max(hour, 5), 21)
+        state.plannerStartHour = clamped
+        if plannerEndHour <= clamped {
+            state.plannerEndHour = min(clamped + 1, 22)
+        }
+    }
+
+    func setPlannerEndHour(_ hour: Int) {
+        let minimumEnd = max(plannerStartHour + 1, 6)
+        let clamped = min(max(hour, minimumEnd), 22)
+        state.plannerEndHour = clamped
     }
 
     func addDumpItem(_ text: String) {
@@ -220,6 +333,26 @@ final class GenesisStore: ObservableObject {
                 carriedOver: false
             )
         )
+    }
+
+    func addDumpItem(_ text: String, for day: Date) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        state.dumpItems.append(
+            DumpItem(
+                text: trimmed,
+                filterOutcome: .pending,
+                planningDayISO: Self.dayISO(from: day),
+                carriedOver: false
+            )
+        )
+    }
+
+    func dumpItems(for day: Date) -> [DumpItem] {
+        let dayISO = Self.dayISO(from: day)
+        return state.dumpItems.filter { item in
+            (item.planningDayISO ?? dayISO) == dayISO
+        }
     }
 
     func removeDumpItem(id: UUID) {
@@ -247,6 +380,13 @@ final class GenesisStore: ObservableObject {
     func clearDumpItemLane(_ id: UUID) {
         guard let idx = state.dumpItems.firstIndex(where: { $0.id == id }) else { return }
         state.dumpItems[idx].lane = nil
+    }
+
+    func setAutomationNote(_ id: UUID, note: String) {
+        guard let idx = state.dumpItems.firstIndex(where: { $0.id == id }) else { return }
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        state.dumpItems[idx].automationNote = trimmed.isEmpty ? nil : trimmed
+        persist()
     }
 
     func count(for spoke: Spoke) -> Int {
@@ -532,6 +672,20 @@ final class GenesisStore: ObservableObject {
         }
     }
 
+    func appointments(for day: Date) -> [ScheduledAppointment] {
+        let dayISO = Self.dayISO(from: day)
+        return state.appointments
+            .filter { Self.dayISO(fromISODateTime: $0.scheduledAtISO) == dayISO }
+            .sorted { $0.scheduledAtISO < $1.scheduledAtISO }
+    }
+
+    func scheduledTasks(for day: Date) -> [TaskItem] {
+        let dayISO = Self.dayISO(from: day)
+        return state.tasks.filter { task in
+            task.plannedDayISO == dayISO && task.time != nil
+        }
+    }
+
     func tasksScheduled(for day: Date, at time: String) -> [TaskItem] {
         let dayISO = Self.dayISO(from: day)
         return state.tasks.filter { task in
@@ -758,7 +912,118 @@ final class GenesisStore: ObservableObject {
         return elapsed >= max(1, rule.everyDays)
     }
 
-    private func eveningPlanningReminderDate(from timeString: String) -> Date? {
+    private func materializeLoopTasksIfNeeded() {
+        let todayISO = Self.todayDayISO()
+        guard var rules = state.loopRules else { return }
+
+        for idx in rules.indices {
+            var rule = rules[idx]
+            guard shouldEvaluateLoopRule(rule, todayISO: todayISO) else { continue }
+
+            var remaining = rule.durationType == .fixedCount ? max(0, rule.remainingOccurrences ?? 0) : Int.max
+            guard remaining > 0 else {
+                rule.lastEvaluatedDayISO = todayISO
+                rules[idx] = rule
+                continue
+            }
+
+            let startISO = nextEvaluationStartISO(for: rule, todayISO: todayISO)
+            guard let startDate = Self.dateFromDayISO(startISO),
+                  let todayDate = Self.dateFromDayISO(todayISO) else {
+                continue
+            }
+
+            var cursor = startDate
+            var shouldCreateToday = false
+            var carriesMissed = false
+
+            while cursor <= todayDate {
+                let cursorISO = Self.dayISO(from: cursor)
+                let scheduled = loopRule(rule, isScheduledOn: cursor)
+                if scheduled {
+                    if rule.durationType == .fixedCount {
+                        if remaining <= 0 {
+                            break
+                        }
+                        remaining -= 1
+                    }
+
+                    if cursorISO == todayISO {
+                        shouldCreateToday = true
+                    } else {
+                        carriesMissed = true
+                    }
+                }
+
+                guard let next = Calendar.current.date(byAdding: .day, value: 1, to: cursor) else { break }
+                cursor = next
+            }
+
+            if rule.durationType == .fixedCount {
+                rule.remainingOccurrences = max(0, remaining)
+            }
+
+            if (shouldCreateToday || carriesMissed), !hasDumpItemToday(matching: rule.text, dayISO: todayISO) {
+                state.dumpItems.append(
+                    DumpItem(
+                        text: rule.text,
+                        lane: rule.lane,
+                        filterOutcome: .pending,
+                        planningDayISO: todayISO,
+                        carriedOver: !shouldCreateToday && carriesMissed
+                    )
+                )
+            }
+
+            rule.lastEvaluatedDayISO = todayISO
+            rules[idx] = rule
+        }
+
+        state.loopRules = rules.filter { rule in
+            rule.durationType == .forever || (rule.remainingOccurrences ?? 0) > 0
+        }
+    }
+
+    private func shouldEvaluateLoopRule(_ rule: LoopRule, todayISO: String) -> Bool {
+        guard let last = rule.lastEvaluatedDayISO else { return true }
+        return last != todayISO
+    }
+
+    private func nextEvaluationStartISO(for rule: LoopRule, todayISO: String) -> String {
+        guard let last = rule.lastEvaluatedDayISO,
+              let lastDate = Self.dateFromDayISO(last),
+              let next = Calendar.current.date(byAdding: .day, value: 1, to: lastDate) else {
+            return rule.anchorDayISO
+        }
+
+        let nextISO = Self.dayISO(from: next)
+        return nextISO > todayISO ? todayISO : nextISO
+    }
+
+    private func loopRule(_ rule: LoopRule, isScheduledOn date: Date) -> Bool {
+        switch rule.recurrenceType {
+        case .daily:
+            return true
+        case .weekly:
+            guard let anchorDate = Self.dateFromDayISO(rule.anchorDayISO) else { return false }
+            let anchorWeekday = Calendar.current.component(.weekday, from: anchorDate)
+            let targetWeekday = Calendar.current.component(.weekday, from: date)
+            return anchorWeekday == targetWeekday
+        case .weekdays:
+            let targetWeekday = Calendar.current.component(.weekday, from: date)
+            return rule.weekdayNumbers.contains(targetWeekday)
+        }
+    }
+
+    private func hasDumpItemToday(matching text: String, dayISO: String) -> Bool {
+        let normalized = Self.normalizedDumpText(text)
+        return state.dumpItems.contains {
+            ($0.planningDayISO ?? dayISO) == dayISO &&
+                Self.normalizedDumpText($0.text) == normalized
+        }
+    }
+
+    private func reminderDate(from timeString: String) -> Date? {
         let parser = DateFormatter()
         parser.locale = Locale(identifier: "en_US_POSIX")
         parser.dateFormat = "h:mm a"
@@ -774,11 +1039,13 @@ final class GenesisStore: ObservableObject {
         return calendar.date(from: components)
     }
 
-    private func scheduleEveningPlanningReminderIfNeeded() async {
+    private func scheduleDailyFlowRemindersIfNeeded() async {
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["genesis.evening.plan"])
+        center.removePendingNotificationRequests(withIdentifiers: ["genesis.morning.plan", "genesis.evening.plan"])
 
-        guard state.eveningPlanningReminderEnabled else { return }
+        let morningEnabled = state.morningPlanningReminderEnabled ?? false
+        let eveningEnabled = state.eveningPlanningReminderEnabled
+        guard morningEnabled || eveningEnabled else { return }
 
         let authorized: Bool
         do {
@@ -788,21 +1055,41 @@ final class GenesisStore: ObservableObject {
         }
         guard authorized else { return }
 
-        guard let fireDate = eveningPlanningReminderDate(from: state.eveningPlanningReminderTime) else { return }
+        if morningEnabled,
+           let fireDate = reminderDate(from: state.morningPlanningReminderTime ?? "") {
+            let content = UNMutableNotificationContent()
+            content.title = "Start your day with Genesis"
+            content.body = "Run Dump -> Shape -> Fill to plan your day with intention."
+            content.sound = .default
 
-        let content = UNMutableNotificationContent()
-        content.title = "Plan tomorrow in 5 minutes"
-        content.body = "Run Dump -> Shape -> Fill before your day starts."
-        content.sound = .default
+            let components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+            let request = UNNotificationRequest(identifier: "genesis.morning.plan", content: content, trigger: trigger)
 
-        let components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-        let request = UNNotificationRequest(identifier: "genesis.evening.plan", content: content, trigger: trigger)
+            do {
+                try await center.add(request)
+            } catch {
+                // Ignore scheduling failures in the store layer.
+            }
+        }
 
-        do {
-            try await center.add(request)
-        } catch {
-            // Ignore scheduling failures in the store layer.
+        if eveningEnabled,
+           let fireDate = reminderDate(from: state.eveningPlanningReminderTime) {
+            let content = UNMutableNotificationContent()
+            content.title = "Plan tomorrow in 5 minutes"
+            content.body = "Open Fill and prep tomorrow before your day starts."
+            content.sound = .default
+            content.userInfo = ["targetScreen": "fill"]
+
+            let components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+            let request = UNNotificationRequest(identifier: "genesis.evening.plan", content: content, trigger: trigger)
+
+            do {
+                try await center.add(request)
+            } catch {
+                // Ignore scheduling failures in the store layer.
+            }
         }
     }
 

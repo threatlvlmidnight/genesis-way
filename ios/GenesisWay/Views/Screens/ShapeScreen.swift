@@ -1,11 +1,23 @@
 import SwiftUI
 
+private enum ScheduleMoveMode: String, Hashable { case appointment, day }
+private enum AutomateMode: String, Hashable { case custom, loop }
+
 struct ShapeScreen: View {
     @EnvironmentObject private var store: GenesisStore
-    @State private var scheduleTargetItem: DumpItem?
-    @State private var scheduleDateTime = Date()
-    @State private var moveTargetItem: DumpItem?
-    @State private var moveDate = Date()
+    @State private var scheduleOrMoveTargetItem: DumpItem?
+    @State private var scheduleOrMoveMode: ScheduleMoveMode = .appointment
+    @State private var scheduleOrMoveDateTime = Date()
+    @State private var scheduleOrMoveDayDate = Date()
+    @State private var automateTargetItem: DumpItem?
+    @State private var automateMode: AutomateMode = .loop
+    @State private var automateNote = ""
+    @State private var automateLoopText = ""
+    @State private var automateLoopLane = "unassigned"
+    @State private var automateLoopRecurrenceType: LoopRecurrenceType = .daily
+    @State private var automateLoopWeekdays: Set<Int> = []
+    @State private var automateLoopDurationType: LoopDurationType = .forever
+    @State private var automateLoopFixedCount = 4
     @State private var delegateTargetText = ""
     @State private var lastActionItemId: UUID?
     @State private var jamTargetItem: DumpItem?
@@ -49,24 +61,29 @@ struct ShapeScreen: View {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("How Shape Works")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(GWTheme.textPrimary)
 
-                        Text("Run each dump item through one filter: Schedule, Move, Eliminate, Delegate, or Park.")
+                        Text("Run each dump item through one filter: Schedule/Move, Automate, Eliminate, Delegate, or Park.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(GWTheme.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text("Choose Work for output, deadlines, and obligations. Choose Personal for home, health, and relationship tasks.")
                             .font(.system(size: 12))
                             .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        Text("Work items are ordered top-down. Personal items are ordered bottom-up.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(GWTheme.textGhost)
+                        Text("Two lanes are intentionally enough: they keep Fill fast and force a clear decision instead of endless categorizing.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
                 Text("Dump to Process")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(GWTheme.textGhost)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(GWTheme.textMuted)
                     .textCase(.uppercase)
 
                 if showingCrossDayFallback {
@@ -78,7 +95,7 @@ struct ShapeScreen: View {
                     }
                 }
 
-                if store.pendingPileItems.isEmpty {
+                if pendingItems.isEmpty {
                     GlassCard {
                         Text("No pending dump items. Add more in Dump or continue to Fill.")
                             .font(.system(size: 12))
@@ -87,142 +104,142 @@ struct ShapeScreen: View {
                     }
                 } else {
                     GlassCard {
-                        HStack(spacing: 10) {
-                            Image(systemName: unreadyPendingCount == 0 ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                                .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 10) {
+                                Image(systemName: unreadyPendingCount == 0 ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
 
-                            Text(unreadyPendingCount == 0
-                                 ? "All pending items are ready for Fill."
-                                 : "\(unreadyPendingCount) item\(unreadyPendingCount == 1 ? "" : "s") still need Work/Personal lane selection.")
+                                Text(unreadyPendingCount == 0
+                                     ? "All pending items are ready for Fill."
+                                     : "\(unreadyPendingCount) item\(unreadyPendingCount == 1 ? "" : "s") still need Work/Personal lane selection.")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.textMuted : Color(hex: "c07060"))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            ProgressView(value: Double(readyPendingCount), total: Double(max(pendingItems.count, 1)))
+                                .tint(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
+
+                            Text("Ready: \(readyPendingCount)/\(pendingItems.count)")
                                 .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.textMuted : Color(hex: "c07060"))
-                                .fixedSize(horizontal: false, vertical: true)
+                                .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : GWTheme.textMuted)
                         }
                     }
 
-                    ForEach(pendingItems) { item in
-                        GlassCard {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(item.text)
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(GWTheme.textPrimary)
-                                    .lineLimit(nil)
-                                    .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: 14) {
+                        ForEach(pendingItems) { item in
+                            GlassCard {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(item.text)
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(GWTheme.textPrimary)
+                                        .lineLimit(nil)
+                                        .fixedSize(horizontal: false, vertical: true)
 
-                                if store.isLikelyOversizedDumpItem(item.id) {
+                                    if store.isLikelyOversizedDumpItem(item.id) {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "scissors")
+                                                .foregroundStyle(GWTheme.gold)
+                                            Text("Likely oversized. Split into thin 15-30 min slices.")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundStyle(GWTheme.textGhost)
+                                            Spacer()
+                                            Button("Jam") {
+                                                jamTargetItem = item
+                                            }
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundStyle(Color(hex: "1a1208"))
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 6)
+                                            .background(GWTheme.gold)
+                                            .clipShape(Capsule())
+                                            .buttonStyle(.plain)
+                                        }
+                                        .padding(8)
+                                        .background(GWTheme.gold.opacity(0.08))
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    }
+
                                     HStack(spacing: 8) {
-                                        Image(systemName: "scissors")
-                                            .foregroundStyle(GWTheme.gold)
-                                        Text("Likely oversized. Split into thin 15-30 min slices.")
-                                            .font(.system(size: 11, weight: .semibold))
-                                            .foregroundStyle(GWTheme.textGhost)
-                                        Spacer()
-                                        Button("Jam") {
-                                            jamTargetItem = item
+                                        laneButton("Work", lane: .work, selectedLane: item.lane) {
+                                            store.assignDumpItemLane(item.id, lane: .work)
+                                            GWHaptics.light()
                                         }
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundStyle(Color(hex: "1a1208"))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 6)
-                                        .background(GWTheme.gold)
-                                        .clipShape(Capsule())
-                                        .buttonStyle(.plain)
-                                    }
-                                    .padding(8)
-                                    .background(GWTheme.gold.opacity(0.08))
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                }
 
-                                HStack(spacing: 8) {
-                                    laneButton("Work", lane: .work, selectedLane: item.lane) {
-                                        store.assignDumpItemLane(item.id, lane: .work)
-                                        GWHaptics.light()
-                                    }
-
-                                    laneButton("Personal", lane: .personal, selectedLane: item.lane) {
-                                        store.assignDumpItemLane(item.id, lane: .personal)
-                                        GWHaptics.light()
-                                    }
-
-                                    Button("Clear") {
-                                        store.clearDumpItemLane(item.id)
-                                        GWHaptics.warning()
-                                    }
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(GWTheme.textPrimary)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.85)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 7)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 999)
-                                            .fill(Color.white.opacity(0.1))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 999)
-                                                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                            )
-                                    )
-                                    .clipShape(Capsule())
-                                    .buttonStyle(.plain)
-                                }
-
-                                LazyVGrid(
-                                    columns: [
-                                        GridItem(.flexible(minimum: 88), spacing: 8),
-                                        GridItem(.flexible(minimum: 88), spacing: 8),
-                                        GridItem(.flexible(minimum: 88), spacing: 8)
-                                    ],
-                                    alignment: .leading,
-                                    spacing: 8
-                                ) {
-                                    filterButton("Schedule", isActive: lastActionItemId == item.id) {
-                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                            lastActionItemId = item.id
-                                            scheduleDateTime = Date()
-                                            scheduleTargetItem = item
+                                        laneButton("Personal", lane: .personal, selectedLane: item.lane) {
+                                            store.assignDumpItemLane(item.id, lane: .personal)
+                                            GWHaptics.light()
                                         }
-                                        GWHaptics.medium()
                                     }
 
-                                    filterButton("Move", isActive: false) {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
-                                            lastActionItemId = item.id
-                                            moveDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-                                            moveTargetItem = item
+                                    LazyVGrid(
+                                        columns: [
+                                            GridItem(.flexible(minimum: 88), spacing: 8),
+                                            GridItem(.flexible(minimum: 88), spacing: 8),
+                                            GridItem(.flexible(minimum: 88), spacing: 8)
+                                        ],
+                                        alignment: .leading,
+                                        spacing: 8
+                                    ) {
+                                        filterButton("Move", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
+                                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                                lastActionItemId = item.id
+                                                scheduleOrMoveMode = .day
+                                                scheduleOrMoveDateTime = Date()
+                                                scheduleOrMoveDayDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+                                                scheduleOrMoveTargetItem = item
+                                            }
+                                            GWHaptics.medium()
                                         }
-                                        GWHaptics.medium()
-                                    }
 
-                                    filterButton("Eliminate", isActive: false, isDestructive: true) {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
-                                            lastActionItemId = item.id
-                                            store.applyFilterOutcome(item.id, outcome: .eliminated)
+                                        filterButton("Automate", isActive: lastActionItemId == item.id && automateTargetItem?.id == item.id) {
+                                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                                lastActionItemId = item.id
+                                                automateMode = .loop
+                                                automateNote = ""
+                                                automateLoopText = item.text
+                                                automateLoopLane = item.lane?.rawValue ?? "unassigned"
+                                                let weekday = Calendar.current.component(.weekday, from: Date())
+                                                automateLoopWeekdays = [weekday]
+                                                automateLoopRecurrenceType = .daily
+                                                automateLoopDurationType = .forever
+                                                automateLoopFixedCount = 4
+                                                automateTargetItem = item
+                                            }
+                                            GWHaptics.medium()
                                         }
-                                        GWHaptics.warning()
-                                    }
 
-                                    filterButton("Delegate", isActive: false) {
-                                        withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
-                                            lastActionItemId = item.id
-                                            delegateTargetText = item.text
-                                            store.applyFilterOutcome(item.id, outcome: .delegated)
+                                        filterButton("Eliminate", isActive: false, isDestructive: true) {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                                                lastActionItemId = item.id
+                                                store.applyFilterOutcome(item.id, outcome: .eliminated)
+                                            }
+                                            GWHaptics.warning()
                                         }
-                                        GWHaptics.medium()
-                                    }
 
-                                    filterButton("Park", isActive: false, isDestructive: true) {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
-                                            lastActionItemId = item.id
-                                            store.applyFilterOutcome(item.id, outcome: .parked)
+                                        filterButton("Delegate", isActive: false) {
+                                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                                lastActionItemId = item.id
+                                                delegateTargetText = item.text
+                                                store.applyFilterOutcome(item.id, outcome: .delegated)
+                                            }
+                                            GWHaptics.medium()
                                         }
-                                        GWHaptics.warning()
+
+                                        filterButton("Park", isActive: false, isDestructive: true) {
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                                                lastActionItemId = item.id
+                                                store.applyFilterOutcome(item.id, outcome: .parked)
+                                            }
+                                            GWHaptics.warning()
+                                        }
                                     }
                                 }
                             }
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(item.lane == nil ? Color(hex: "c07060") : Color(hex: "5ca06d"), lineWidth: 1.5)
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(item.lane == nil ? Color(hex: "c07060") : Color(hex: "5ca06d"), lineWidth: 1.5)
+                            }
                         }
                     }
                 }
@@ -230,72 +247,11 @@ struct ShapeScreen: View {
             .padding(24)
         }
         .background(GWTheme.background.ignoresSafeArea())
-        .sheet(item: $scheduleTargetItem) { item in
-            NavigationStack {
-                Form {
-                    Section("Appointment Date & Time") {
-                        DatePicker("When", selection: $scheduleDateTime, displayedComponents: [.date, .hourAndMinute])
-                    }
-
-                    Section {
-                        Text(item.text)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .navigationTitle("Schedule Item")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Cancel") {
-                            scheduleTargetItem = nil
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Add Appointment") {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
-                                store.scheduleDumpItemAsAppointment(item.id, at: scheduleDateTime, lane: item.lane ?? .work)
-                            }
-                            GWHaptics.success()
-                            scheduleTargetItem = nil
-                        }
-                    }
-                }
-            }
+        .sheet(item: $scheduleOrMoveTargetItem) { item in
+            scheduleOrMoveSheet(item: item)
         }
-        .sheet(item: $moveTargetItem) { item in
-            NavigationStack {
-                Form {
-                    Section("Move to Day") {
-                        DatePicker("Day", selection: $moveDate, displayedComponents: [.date])
-                            .datePickerStyle(.graphical)
-                    }
-
-                    Section {
-                        Text(item.text)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .navigationTitle("Move Item")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Cancel") {
-                            moveTargetItem = nil
-                        }
-                    }
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Move") {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
-                                store.moveDumpItemToDay(item.id, day: moveDate)
-                            }
-                            GWHaptics.success()
-                            moveTargetItem = nil
-                        }
-                    }
-                }
-            }
+        .sheet(item: $automateTargetItem) { item in
+            automateSheet(item: item)
         }
         .sheet(isPresented: Binding(
             get: { !delegateTargetText.isEmpty },
@@ -328,6 +284,159 @@ struct ShapeScreen: View {
             }
         } message: {
             Text("This will move the current item forward and create a 'Jam Session' refinement item in tomorrow's dump.")
+        }
+    }
+
+    private func scheduleOrMoveSheet(item: DumpItem) -> some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("", selection: $scheduleOrMoveMode) {
+                        Text("Move").tag(ScheduleMoveMode.day)
+                        Text("Schedule").tag(ScheduleMoveMode.appointment)
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                }
+                if scheduleOrMoveMode == .appointment {
+                    Section("Appointment Date & Time") {
+                        DatePicker("When", selection: $scheduleOrMoveDateTime, displayedComponents: [.date, .hourAndMinute])
+                    }
+                    previewSection(for: scheduleOrMoveDateTime, includeTimeBlocks: true)
+                } else {
+                    Section("Move to Day") {
+                        DatePicker("Day", selection: $scheduleOrMoveDayDate, displayedComponents: [.date])
+                            .datePickerStyle(.graphical)
+                    }
+                    previewSection(for: scheduleOrMoveDayDate, includeTimeBlocks: false)
+                }
+                Section {
+                    Text(item.text)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle(scheduleOrMoveMode == .appointment ? "Schedule Item" : "Move Item")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { scheduleOrMoveTargetItem = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(scheduleOrMoveMode == .appointment ? "Add Appointment" : "Move") {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                            if scheduleOrMoveMode == .appointment {
+                                store.scheduleDumpItemAsAppointment(item.id, at: scheduleOrMoveDateTime, lane: item.lane ?? .work)
+                            } else {
+                                store.moveDumpItemToDay(item.id, day: scheduleOrMoveDayDate)
+                            }
+                        }
+                        GWHaptics.success()
+                        scheduleOrMoveTargetItem = nil
+                    }
+                    .foregroundStyle(GWTheme.gold)
+                }
+            }
+        }
+    }
+
+    private func automateSheet(item: DumpItem) -> some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("", selection: $automateMode) {
+                        Text("Loop").tag(AutomateMode.loop)
+                        Text("Custom").tag(AutomateMode.custom)
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                }
+                if automateMode == .custom {
+                    Section("How will you automate this?") {
+                        TextField("Describe the automation...", text: $automateNote, axis: .vertical)
+                            .lineLimit(3...6)
+                    }
+                    Section {
+                        Text(item.text)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Section {
+                        Text("The item stays pending. Add a note describing your automation plan: a tool, a process, or a system you'll set up.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Section("Loop") {
+                        TextField("Task", text: $automateLoopText)
+                        Picker("Default lane", selection: $automateLoopLane) {
+                            Text("Unassigned").tag("unassigned")
+                            Text("Work").tag(TaskLane.work.rawValue)
+                            Text("Personal").tag(TaskLane.personal.rawValue)
+                        }
+                    }
+                    Section("Recurrence") {
+                        Picker("Type", selection: $automateLoopRecurrenceType) {
+                            ForEach(LoopRecurrenceType.allCases) { type in
+                                Text(type.title).tag(type)
+                            }
+                        }
+                        if automateLoopRecurrenceType == .weekdays {
+                            automateWeekdayChips
+                        }
+                    }
+                    Section("Duration") {
+                        Picker("Length", selection: $automateLoopDurationType) {
+                            ForEach(LoopDurationType.allCases) { type in
+                                Text(type.title).tag(type)
+                            }
+                        }
+                        if automateLoopDurationType == .fixedCount {
+                            Stepper("Occurrences: \(automateLoopFixedCount)", value: $automateLoopFixedCount, in: 1...60)
+                        }
+                    }
+                    Section {
+                        Text("Saving a Loop keeps this item pending. At most one Loop item is generated per day; missed runs roll into one carried-over item.")
+                        Text("Existing loops: \(store.loopRules.count)")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Automate")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { automateTargetItem = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(automateMode == .custom ? "Save Note" : "Save Loop") {
+                        if automateMode == .custom {
+                            let trimmed = automateNote.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !trimmed.isEmpty {
+                                store.setAutomationNote(item.id, note: trimmed)
+                            }
+                        } else {
+                            let weekdays = automateLoopWeekdays.sorted()
+                            store.addLoopRule(
+                                text: automateLoopText.trimmingCharacters(in: .whitespacesAndNewlines),
+                                lane: TaskLane(rawValue: automateLoopLane),
+                                recurrenceType: automateLoopRecurrenceType,
+                                weekdayNumbers: weekdays,
+                                durationType: automateLoopDurationType,
+                                fixedCount: automateLoopDurationType == .fixedCount ? automateLoopFixedCount : nil
+                            )
+                        }
+                        GWHaptics.success()
+                        automateTargetItem = nil
+                    }
+                    .disabled(automateMode == .loop && (
+                        automateLoopText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                        (automateLoopRecurrenceType == .weekdays && automateLoopWeekdays.isEmpty)
+                    ))
+                    .foregroundStyle(GWTheme.gold)
+                }
+            }
         }
     }
 
@@ -393,11 +502,107 @@ struct ShapeScreen: View {
             .buttonStyle(FilterActionButtonStyle())
     }
 
+    @ViewBuilder
+    private func previewSection(for day: Date, includeTimeBlocks: Bool) -> some View {
+        let appointments = store.appointments(for: day)
+        let scheduledTasks = store.scheduledTasks(for: day)
+        let taskPool = store.taskPool(for: day)
+        let pendingPile = store.pendingPileItems(for: day)
+
+        Section("Day Preview") {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(formattedPreviewDay(day))
+                    .font(.system(size: 13, weight: .semibold))
+
+                Text("\(appointments.count) appointment\(appointments.count == 1 ? "" : "s") • \(scheduledTasks.count) timed task\(scheduledTasks.count == 1 ? "" : "s") • \(taskPool.count) pool item\(taskPool.count == 1 ? "" : "s") • \(pendingPile.count) pending pile item\(pendingPile.count == 1 ? "" : "s")")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+
+                if appointments.isEmpty && scheduledTasks.isEmpty && taskPool.isEmpty && pendingPile.isEmpty {
+                    Text("Nothing is scheduled for this day yet.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                } else {
+                    if !appointments.isEmpty {
+                        previewGroup(title: "Appointments", lines: appointments.prefix(3).map { "\(formatAppointmentTime($0.scheduledAtISO)) • \($0.text)" })
+                    }
+
+                    if includeTimeBlocks && !scheduledTasks.isEmpty {
+                        previewGroup(title: "Timed Tasks", lines: scheduledTasks.prefix(3).map { "\($0.time ?? "Time") • \($0.code) \($0.text)" })
+                    }
+
+                    if !taskPool.isEmpty {
+                        previewGroup(title: "Task Pool", lines: taskPool.prefix(3).map { "\($0.code) \($0.text)" })
+                    }
+
+                    if !pendingPile.isEmpty {
+                        previewGroup(title: "Pending Pile", lines: pendingPile.prefix(3).map(\.text))
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
+    private func previewGroup(title: String, lines: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(GWTheme.textGhost)
+                .textCase(.uppercase)
+
+            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                Text("• \(line)")
+                    .font(.system(size: 11))
+                    .foregroundStyle(GWTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func formattedPreviewDay(_ day: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "EEEE, MMM d"
+        return formatter.string(from: day)
+    }
+
+    private func formatAppointmentTime(_ iso: String) -> String {
+        let isoFormatter = ISO8601DateFormatter()
+        guard let date = isoFormatter.date(from: iso) else { return "Scheduled" }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+
+    private var automateWeekdayChips: some View {
+        let options: [(Int, String)] = [(2,"Mon"),(3,"Tue"),(4,"Wed"),(5,"Thu"),(6,"Fri"),(7,"Sat"),(1,"Sun")]
+        return HStack(spacing: 8) {
+            ForEach(options, id: \.0) { weekday, label in
+                let selected = automateLoopWeekdays.contains(weekday)
+                Button(label) {
+                    if selected { automateLoopWeekdays.remove(weekday) }
+                    else { automateLoopWeekdays.insert(weekday) }
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(selected ? Color(hex: "1a1208") : GWTheme.textGhost)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(selected ? GWTheme.gold : Color.white.opacity(0.08))
+                .clipShape(Capsule())
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Step 2 of 3")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(GWTheme.textGhost)
+                .foregroundStyle(GWTheme.textMuted)
             Text("Shape It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)

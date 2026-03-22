@@ -32,8 +32,8 @@ enum GWTheme {
                 gold: Color(hex: "c8a96e"),
                 goldDark: Color(hex: "8a6830"),
                 textPrimary: Color(hex: "f0e4d0"),
-                textMuted: Color(hex: "6a5840"),
-                textGhost: Color(hex: "3a2e18")
+                textMuted: Color(hex: "b49a72"),
+                textGhost: Color(hex: "8b7454")
             )
         case .oledBlack:
             return Palette(
