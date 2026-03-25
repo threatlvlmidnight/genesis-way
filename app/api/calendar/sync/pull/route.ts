@@ -42,7 +42,8 @@ function parseGoogleStart(start?: { date?: string; dateTime?: string }): { iso: 
     return { iso: Number.isNaN(date.getTime()) ? null : date.toISOString(), allDay: false };
   }
   if (start.date) {
-    return { iso: `${start.date}T00:00:00.000Z`, allDay: true };
+    // Use noon UTC so the date is unambiguous across all timezones (UTC-12 to UTC+14).
+    return { iso: `${start.date}T12:00:00.000Z`, allDay: true };
   }
   return { iso: null, allDay: false };
 }
