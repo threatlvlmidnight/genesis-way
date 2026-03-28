@@ -16,6 +16,12 @@ struct RootView: View {
                 MainTabShell()
             }
         }
+        .overlay(alignment: .top) {
+            if store.showFeedbackIdentifiers {
+                FeedbackIdentifierBadge(text: FeedbackScreenID.main(for: store.screen))
+                    .padding(.top, 6)
+            }
+        }
     }
 }
 
@@ -436,6 +442,47 @@ private struct MainTabShell: View {
             )
         default:
             EmptyView()
+        }
+    }
+}
+
+struct FeedbackIdentifierBadge: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 11, weight: .heavy, design: .rounded))
+            .foregroundStyle(Color(hex: "1a1208"))
+            .tracking(0.4)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(GWTheme.gold.opacity(0.98))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(0.45), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.34), radius: 10, y: 4)
+            .allowsHitTesting(false)
+            .accessibilityLabel("Page identifier \(text)")
+    }
+}
+
+enum FeedbackScreenID {
+    static func main(for screen: AppScreen) -> String {
+        switch screen {
+        case .onboarding:
+            return "GW-P01 · Onboarding"
+        case .dump:
+            return "GW-P02 · Dump"
+        case .shape:
+            return "GW-P03 · Shape"
+        case .fill:
+            return "GW-P04 · Fill"
+        case .park:
+            return "GW-P05 · Park"
         }
     }
 }

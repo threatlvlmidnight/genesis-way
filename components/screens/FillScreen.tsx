@@ -82,7 +82,7 @@ export default function FillScreen({
   workTasks,
   personalTasks,
   onToggleBig3,
-  onShowIntro,
+  onOpenSettings,
   googleConnected,
   lastCalendarSync,
   onConnectGoogle,
@@ -95,7 +95,7 @@ export default function FillScreen({
   workTasks: Task[];
   personalTasks: Task[];
   onToggleBig3: (id: string) => void;
-  onShowIntro: () => void;
+  onOpenSettings: () => void;
   googleConnected: boolean;
   lastCalendarSync: string | null;
   onConnectGoogle: () => void;
@@ -268,8 +268,8 @@ export default function FillScreen({
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
-              onClick={onShowIntro}
-              title="About the Genesis Way"
+              onClick={onOpenSettings}
+              title="Open settings"
               style={{
                 width: 38,
                 height: 38,

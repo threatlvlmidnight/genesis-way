@@ -8,6 +8,54 @@ enum AppScreen: String, Codable {
     case park
 }
 
+enum AuthProvider: String, Codable {
+    case guest
+    case apple
+}
+
+enum AuthAccountState: String, Codable {
+    case guest
+    case signedIn
+}
+
+enum AuthMigrationStatus: String, Codable {
+    case notStarted
+    case succeeded
+    case failed
+}
+
+struct AuthMigrationEvent: Codable {
+    var occurredAtISO: String
+    var status: AuthMigrationStatus
+    var details: String
+    var retryCount: Int
+    var userId: String?
+}
+
+enum CalendarConnectionStatus: String, Codable {
+    case disconnected
+    case readyToConnect
+    case connected
+    case needsAttention
+}
+
+struct CalendarSourceSummary: Codable, Identifiable, Hashable {
+    var id: String
+    var title: String
+    var detail: String?
+}
+
+struct SyncedCalendarEvent: Codable, Identifiable, Hashable {
+    var id: String
+    var provider: String
+    var calendarId: String
+    var providerEventId: String
+    var title: String
+    var startAtISO: String?
+    var endAtISO: String?
+    var allDay: Bool
+}
+
 enum TaskLane: String, Codable {
     case work
     case personal
@@ -343,6 +391,7 @@ struct ParkItem: Identifiable, Codable {
 struct GenesisState: Codable {
     var screen: AppScreen
     var showIntroOnLaunch: Bool
+    var showFeedbackIdentifiers: Bool?
     var remindersEnabled: Bool
     var reminderLeadMinutes: Int
     var dumpItems: [DumpItem]
@@ -361,6 +410,16 @@ struct GenesisState: Codable {
     var hasConfiguredDailyFlowReminders: Bool?
     var lastRolloverDayISO: String?
     var googleCalendarConnected: Bool
+    var googleCalendarConnectionStatus: CalendarConnectionStatus?
+    var googleCalendarAccountLabel: String?
+    var googleCalendarAvailableCalendars: [CalendarSourceSummary]?
+    var googleCalendarSelectedCalendarIDs: [String]?
+    var googleCalendarLastError: String?
+    var googleCalendarAccessToken: String?
+    var googleCalendarRefreshToken: String?
+    var googleCalendarAccessTokenExpiresAtISO: String?
+    var googleCalendarLastPulledEventCount: Int?
+    var syncedCalendarEvents: [SyncedCalendarEvent]?
     var appleIcsEnabled: Bool
     var lastCalendarSyncISO: String?
     var themeStyle: AppThemeStyle?
@@ -372,10 +431,22 @@ struct GenesisState: Codable {
     var appIconStyle: AppIconStyle?
     var plannerStartHour: Int?
     var plannerEndHour: Int?
+    var authAccountState: AuthAccountState?
+    var authProvider: AuthProvider?
+    var authUserId: String?
+    var authLinkedUserId: String?
+    var authMigrationVersion: Int?
+    var authMigrationStatus: AuthMigrationStatus?
+    var authMigrationLastAttemptISO: String?
+    var authMigrationRetryCount: Int?
+    var authMigrationRelinkCount: Int?
+    var authMigrationLastError: String?
+    var authMigrationEvents: [AuthMigrationEvent]?
 
     static let initial = GenesisState(
         screen: .onboarding,
         showIntroOnLaunch: true,
+        showFeedbackIdentifiers: true,
         remindersEnabled: true,
         reminderLeadMinutes: 30,
         dumpItems: [],
@@ -404,6 +475,16 @@ struct GenesisState: Codable {
         hasConfiguredDailyFlowReminders: false,
         lastRolloverDayISO: nil,
         googleCalendarConnected: false,
+        googleCalendarConnectionStatus: .disconnected,
+        googleCalendarAccountLabel: nil,
+        googleCalendarAvailableCalendars: [],
+        googleCalendarSelectedCalendarIDs: [],
+        googleCalendarLastError: nil,
+        googleCalendarAccessToken: nil,
+        googleCalendarRefreshToken: nil,
+        googleCalendarAccessTokenExpiresAtISO: nil,
+        googleCalendarLastPulledEventCount: 0,
+        syncedCalendarEvents: [],
         appleIcsEnabled: true,
         lastCalendarSyncISO: nil,
         themeStyle: .brown,
@@ -414,6 +495,17 @@ struct GenesisState: Codable {
         weeklyMacroDump: "",
         appIconStyle: .chrome,
         plannerStartHour: 8,
-        plannerEndHour: 18
+        plannerEndHour: 18,
+        authAccountState: .guest,
+        authProvider: .guest,
+        authUserId: nil,
+        authLinkedUserId: nil,
+        authMigrationVersion: nil,
+        authMigrationStatus: .notStarted,
+        authMigrationLastAttemptISO: nil,
+        authMigrationRetryCount: 0,
+        authMigrationRelinkCount: 0,
+        authMigrationLastError: nil,
+        authMigrationEvents: []
     )
 }

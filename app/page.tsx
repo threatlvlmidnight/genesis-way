@@ -9,15 +9,15 @@ import ShapeScreen from "@/components/screens/ShapeScreen";
 import FillScreen from "@/components/screens/FillScreen";
 import type { Big3Item, Task } from "@/components/screens/FillScreen";
 import ParkScreen from "@/components/screens/ParkScreen";
+import SettingsScreen from "@/components/screens/SettingsScreen";
 import { mapEventsToTasks, parseIcsEvents } from "@/lib/calendar";
 import {
   beginGoogleOAuth,
   consumeGoogleOAuthFromHash,
   fetchGoogleEvents,
 } from "@/lib/googleCalendar";
-import { DEBUG } from "@/lib/debug";
 
-type Screen = "onboarding" | "dump" | "shape" | "fill" | "park";
+type Screen = "onboarding" | "dump" | "shape" | "fill" | "park" | "settings";
 
 const DEFAULT_BIG3: Big3Item[] = [
   { id: "b1", text: "Present Genesis Way POC to Dan", done: true },
@@ -70,6 +70,7 @@ export default function Home() {
   const [googleAccessToken, setGoogleAccessToken] = useState<string | null>(null);
   const [googleTokenExpiresAt, setGoogleTokenExpiresAt] = useState<number | null>(null);
   const [lastCalendarSync, setLastCalendarSync] = useState<string | null>(null);
+  const [showFeedbackIds, setShowFeedbackIds] = useState(true);
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from localStorage
@@ -92,24 +93,29 @@ export default function Home() {
           setGoogleTokenExpiresAt(saved.googleTokenExpiresAt);
         }
         if (saved.lastCalendarSync) setLastCalendarSync(saved.lastCalendarSync);
+        if (typeof saved.showFeedbackIds === "boolean") {
+          setShowFeedbackIds(saved.showFeedbackIds);
+        }
       }
     } catch {}
 
-    try {
-      const token = consumeGoogleOAuthFromHash();
-      if (token) {
-        setGoogleAccessToken(token.accessToken);
-        setGoogleTokenExpiresAt(token.expiresAt);
-        setGoogleConnected(true);
-        setLastCalendarSync(new Date().toISOString());
+    void (async () => {
+      try {
+        const token = await consumeGoogleOAuthFromHash();
+        if (token) {
+          setGoogleAccessToken(token.accessToken);
+          setGoogleTokenExpiresAt(token.expiresAt);
+          setGoogleConnected(true);
+          setLastCalendarSync(new Date().toISOString());
+        }
+      } catch {
+        setGoogleConnected(false);
+        setGoogleAccessToken(null);
+        setGoogleTokenExpiresAt(null);
+      } finally {
+        setHydrated(true);
       }
-    } catch {
-      setGoogleConnected(false);
-      setGoogleAccessToken(null);
-      setGoogleTokenExpiresAt(null);
-    }
-
-    setHydrated(true);
+    })();
   }, []);
 
   // Persist to localStorage
@@ -128,6 +134,7 @@ export default function Home() {
         googleAccessToken,
         googleTokenExpiresAt,
         lastCalendarSync,
+        showFeedbackIds,
       })
     );
   }, [
@@ -141,6 +148,7 @@ export default function Home() {
     googleAccessToken,
     googleTokenExpiresAt,
     lastCalendarSync,
+    showFeedbackIds,
     hydrated,
   ]);
 
@@ -153,7 +161,7 @@ export default function Home() {
   };
 
   const connectGoogleCalendar = () => {
-    beginGoogleOAuth(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "");
+    void beginGoogleOAuth(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "");
   };
 
   const disconnectGoogleCalendar = () => {
@@ -211,14 +219,15 @@ export default function Home() {
 
   if (!hydrated) return null;
 
-  const navTab = screen === "onboarding" ? undefined : screen;
+  const navTab = screen === "onboarding" || screen === "settings" ? undefined : screen;
 
-  const SCREEN_NUMBERS: Record<Screen, number> = {
-    onboarding: 1,
-    dump: 2,
-    shape: 3,
-    fill: 4,
-    park: 5,
+  const SCREEN_IDS: Record<Screen, { code: string; label: string }> = {
+    onboarding: { code: "GW-P01", label: "Onboarding" },
+    dump: { code: "GW-P02", label: "Dump" },
+    shape: { code: "GW-P03", label: "Shape" },
+    fill: { code: "GW-P04", label: "Fill" },
+    park: { code: "GW-P05", label: "Park" },
+    settings: { code: "GW-S01", label: "Settings" },
   };
 
   const appContent = (
@@ -232,27 +241,29 @@ export default function Home() {
     >
       {/* Screen area */}
       <div style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
-        {/* Screen number badge — debug only */}
-        {DEBUG && (
+        {showFeedbackIds && (
           <div
             style={{
               position: "absolute",
-              bottom: 10,
-              right: 10,
-              zIndex: 100,
-              background: "rgba(0,0,0,0.45)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 6,
-              padding: "2px 7px",
+              top: 10,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 200,
+              background: "rgba(200,169,110,0.95)",
+              border: "1px solid rgba(255,255,255,0.45)",
+              borderRadius: 999,
+              padding: "5px 12px",
               fontSize: 11,
-              fontWeight: 700,
-              color: "rgba(255,255,255,0.45)",
+              fontWeight: 800,
+              color: "#1a1208",
               letterSpacing: 0.5,
+              boxShadow: "0 8px 22px rgba(0,0,0,0.35)",
               pointerEvents: "none",
               userSelect: "none" as const,
             }}
+            aria-label={`Page identifier ${SCREEN_IDS[screen].code}`}
           >
-            {SCREEN_NUMBERS[screen]}
+            {SCREEN_IDS[screen].code} · {SCREEN_IDS[screen].label}
           </div>
         )}
         {screen === "onboarding" && (
@@ -283,7 +294,7 @@ export default function Home() {
             workTasks={workTasks}
             personalTasks={personalTasks}
             onToggleBig3={toggleBig3}
-            onShowIntro={() => setScreen("onboarding")}
+            onOpenSettings={() => setScreen("settings")}
             googleConnected={googleConnected}
             lastCalendarSync={lastCalendarSync}
             onConnectGoogle={connectGoogleCalendar}
@@ -302,10 +313,20 @@ export default function Home() {
             }
           />
         )}
+        {screen === "settings" && (
+          <SettingsScreen
+            showFeedbackIds={showFeedbackIds}
+            onToggleShowFeedbackIds={() =>
+              setShowFeedbackIds((previous) => !previous)
+            }
+            onBack={() => setScreen("fill")}
+            onOpenIntro={() => setScreen("onboarding")}
+          />
+        )}
       </div>
 
-      {/* Bottom nav — hidden on onboarding */}
-      {screen !== "onboarding" && (
+      {/* Bottom nav — hidden on onboarding/settings */}
+      {screen !== "onboarding" && screen !== "settings" && (
         <BottomNav
           active={navTab as "dump" | "shape" | "fill" | "park"}
           onChange={(tab) => setScreen(tab)}
