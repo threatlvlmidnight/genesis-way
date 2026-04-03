@@ -23,7 +23,7 @@ struct ShapeScreen: View {
     @State private var automateLoopWeekdays: Set<Int> = []
     @State private var automateLoopDurationType: LoopDurationType = .forever
     @State private var automateLoopFixedCount = 4
-    @State private var delegateTargetText = ""
+    @State private var delegateTargetItem: DumpItem?
     @State private var lastActionItemId: UUID?
     @State private var jamTargetItem: DumpItem?
     @State private var calendarExportDraft: CalendarExportDraft?
@@ -188,8 +188,7 @@ struct ShapeScreen: View {
                                         filterButton("Delegate", isActive: false) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
-                                                delegateTargetText = item.text
-                                                store.applyFilterOutcome(item.id, outcome: .delegated)
+                                                delegateTargetItem = item
                                             }
                                             GWHaptics.medium()
                                         }
@@ -233,15 +232,17 @@ struct ShapeScreen: View {
             automateSheet(item: item)
         }
         .sheet(isPresented: Binding(
-            get: { !delegateTargetText.isEmpty },
+            get: { delegateTargetItem != nil },
             set: { showing in
                 if !showing {
-                    delegateTargetText = ""
+                    delegateTargetItem = nil
                 }
             }
         )) {
-            DelegateScreen(taskText: delegateTargetText)
+            if let delegateTargetItem {
+                DelegateScreen(dumpItemId: delegateTargetItem.id, taskText: delegateTargetItem.text)
                 .environmentObject(store)
+            }
         }
         .sheet(item: $calendarExportDraft) { draft in
             CalendarEventComposerSheet(draft: draft) { message in
@@ -751,6 +752,7 @@ private struct FilterActionButtonStyle: ButtonStyle {
 }
 
 private struct DelegateScreen: View {
+    let dumpItemId: UUID
     let taskText: String
     @EnvironmentObject private var store: GenesisStore
     @Environment(\.dismiss) private var dismiss
@@ -820,6 +822,7 @@ private struct DelegateScreen: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
+                        store.applyFilterOutcome(dumpItemId, outcome: .delegated)
                         store.addDelegateFollowUp(taskText: taskText, assignee: assignee, followUpDate: followUpDate)
                         dismiss()
                     }
