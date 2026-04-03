@@ -33,6 +33,21 @@ struct ShapeScreen: View {
         store.pendingPileItems
     }
 
+    private var activePlanningDay: Date {
+        store.activePlanningDay
+    }
+
+    private var activeDayDumpItemCount: Int {
+        store.dumpItems(for: activePlanningDay).count
+    }
+
+    private var activePlanningDayLabel: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .medium
+        return formatter.string(from: activePlanningDay)
+    }
+
     private var readyPendingCount: Int {
         pendingItems.filter { $0.lane != nil }.count
     }
@@ -74,12 +89,29 @@ struct ShapeScreen: View {
                     .foregroundStyle(GWTheme.textMuted)
                     .textCase(.uppercase)
 
+                Text("Viewing \(activePlanningDayLabel)")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(GWTheme.gold)
+
                 if pendingItems.isEmpty {
                     GlassCard {
-                        Text("No pending dump items. Add more in Dump or continue to Fill.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textMuted)
-                            .fixedSize(horizontal: false, vertical: true)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("No pending dump items for this day.")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(GWTheme.textPrimary)
+
+                            if activeDayDumpItemCount > 0 {
+                                Text("Dump has \(activeDayDumpItemCount) item\(activeDayDumpItemCount == 1 ? "" : "s") for \(activePlanningDayLabel), but none are pending for Shape. They may already be scheduled, delegated, parked, eliminated, or promoted into Fill tasks.")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(GWTheme.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            } else {
+                                Text("Add items in Dump for \(activePlanningDayLabel), then return here to shape them.")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(GWTheme.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
                     }
                 } else {
                     GlassCard {
