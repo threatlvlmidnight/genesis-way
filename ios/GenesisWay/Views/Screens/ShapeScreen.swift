@@ -29,8 +29,12 @@ struct ShapeScreen: View {
     @State private var calendarExportDraft: CalendarExportDraft?
     @State private var calendarHandoffStatus = ""
 
+    private var dayDumpItems: [DumpItem] {
+        store.dumpItems(for: activePlanningDay)
+    }
+
     private var pendingItems: [DumpItem] {
-        store.pendingPileItems
+        dayDumpItems.filter { ($0.filterOutcome ?? .pending) == .pending }
     }
 
     private var activePlanningDay: Date {
@@ -93,7 +97,7 @@ struct ShapeScreen: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(GWTheme.gold)
 
-                if pendingItems.isEmpty {
+                if dayDumpItems.isEmpty {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("No pending dump items for this day.")
@@ -117,28 +121,40 @@ struct ShapeScreen: View {
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 10) {
-                                Image(systemName: unreadyPendingCount == 0 ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                                    .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
+                                if pendingItems.isEmpty {
+                                    Image(systemName: "arrow.triangle.2.circlepath")
+                                        .foregroundStyle(GWTheme.gold)
 
-                                Text(unreadyPendingCount == 0
-                                      ? "All pending items are ready, click Fill below."
-                                     : "\(unreadyPendingCount) item\(unreadyPendingCount == 1 ? "" : "s") still need Work/Personal lane selection.")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.textMuted : Color(hex: "c07060"))
-                                    .fixedSize(horizontal: false, vertical: true)
+                                    Text("No items are currently pending. Showing shaped items so you can change any decision.")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                } else {
+                                    Image(systemName: unreadyPendingCount == 0 ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                                        .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
+
+                                    Text(unreadyPendingCount == 0
+                                          ? "All pending items are ready, click Fill below."
+                                         : "\(unreadyPendingCount) item\(unreadyPendingCount == 1 ? "" : "s") still need Work/Personal lane selection.")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.textMuted : Color(hex: "c07060"))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
 
-                            ProgressView(value: Double(readyPendingCount), total: Double(max(pendingItems.count, 1)))
-                                .tint(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
+                            if !pendingItems.isEmpty {
+                                ProgressView(value: Double(readyPendingCount), total: Double(max(pendingItems.count, 1)))
+                                    .tint(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
 
-                            Text("Ready: \(readyPendingCount)/\(pendingItems.count)")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : GWTheme.textMuted)
+                                Text("Ready: \(readyPendingCount)/\(pendingItems.count)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : GWTheme.textMuted)
+                            }
                         }
                     }
 
                     VStack(spacing: 14) {
-                        ForEach(pendingItems) { item in
+                        ForEach(dayDumpItems) { item in
                             GlassCard {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(item.text)
@@ -146,6 +162,13 @@ struct ShapeScreen: View {
                                         .foregroundStyle(GWTheme.textPrimary)
                                         .lineLimit(nil)
                                         .fixedSize(horizontal: false, vertical: true)
+
+                                    if let outcome = item.filterOutcome, outcome != .pending {
+                                        Text("Current status: \(outcomeLabel(outcome)). Tap any action below to change it.")
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundStyle(GWTheme.gold)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
 
                                     if store.isLikelyOversizedDumpItem(item.id) {
                                         HStack(spacing: 8) {
@@ -248,7 +271,7 @@ struct ShapeScreen: View {
                             }
                             .overlay {
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(item.lane == nil ? Color(hex: "c07060") : Color(hex: "5ca06d"), lineWidth: 1.5)
+                                    .stroke((item.filterOutcome ?? .pending) == .pending && item.lane == nil ? Color(hex: "c07060") : Color(hex: "5ca06d"), lineWidth: 1.5)
                             }
                         }
                     }
@@ -301,6 +324,17 @@ struct ShapeScreen: View {
             }
         } message: {
             Text("This will move the current item forward and create a 'Jam Session' refinement item in tomorrow's dump.")
+        }
+    }
+
+    private func outcomeLabel(_ outcome: PileFilterOutcome) -> String {
+        switch outcome {
+        case .pending: return "Pending"
+        case .scheduled: return "Scheduled"
+        case .movedForward: return "Moved Forward"
+        case .eliminated: return "Eliminated"
+        case .delegated: return "Delegated"
+        case .parked: return "Parked"
         }
     }
 
