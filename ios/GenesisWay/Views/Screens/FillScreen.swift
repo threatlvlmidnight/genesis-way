@@ -82,17 +82,7 @@ struct FillScreen: View {
     }
 
     private var unfilteredPileItems: [DumpItem] {
-        let dayPending = store.pendingPileItems(for: planningDay)
-        if !dayPending.isEmpty {
-            return dayPending
-        }
-
-        let allPending = store.dumpItems.filter { ($0.filterOutcome ?? .pending) == .pending }
-        return allPending.sorted { ($0.planningDayISO ?? "") > ($1.planningDayISO ?? "") }
-    }
-
-    private var showingCrossDayPendingFallback: Bool {
-        store.pendingPileItems(for: planningDay).isEmpty && !unfilteredPileItems.isEmpty
+        store.pendingPileItems(for: planningDay)
     }
 
     private var unfilteredWorkItems: [DumpItem] {
@@ -385,13 +375,6 @@ struct FillScreen: View {
                 GlassCard {
                     VStack(alignment: .leading, spacing: 8) {
                         rowHeader(title: "Task Pool", trailing: "\(unscheduledTaskPool.count + unfilteredPileItems.count)")
-
-                        if showingCrossDayPendingFallback {
-                            Text("No pending items for this day. Showing pending items from other days so you can keep filling.")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(GWTheme.gold)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
 
                         if unscheduledTaskPool.isEmpty && unfilteredPileItems.isEmpty {
                             Text("No unscheduled tasks for this day.")
