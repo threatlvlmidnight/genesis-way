@@ -126,6 +126,14 @@ struct FillScreen: View {
         unscheduledTaskPool.count + unfilteredPileItems.count
     }
 
+    private var scheduledOutsideVisibleHours: [TaskItem] {
+        let visibleSlots = Set(timelineSlots)
+        return store.scheduledTasks(for: planningDay).filter { task in
+            guard let time = task.time else { return false }
+            return !visibleSlots.contains(time)
+        }
+    }
+
     private var carryoverHistory: [(String, [DumpItem])] {
         let carried = store.dumpItems.filter { $0.carriedOver == true }
         let grouped = Dictionary(grouping: carried) { $0.planningDayISO ?? "Unknown" }
@@ -341,6 +349,13 @@ struct FillScreen: View {
                             }
                         }
 
+                        if !scheduledOutsideVisibleHours.isEmpty {
+                            Text("\(scheduledOutsideVisibleHours.count) scheduled task\(scheduledOutsideVisibleHours.count == 1 ? " is" : "s are") outside your visible planner hours. Adjust Daily Planner hour range in Settings to view them.")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(GWTheme.gold)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
                         ForEach(timelineSlots, id: \.self) { slot in
                             timelineSlotRow(slot: slot)
                         }
@@ -412,7 +427,7 @@ struct FillScreen: View {
                                 .draggable("dump:\(item.id.uuidString)")
                             }
 
-                            ForEach(dayWorkTasks) { task in
+                            ForEach(unscheduledWorkTasks) { task in
                                 HStack(spacing: 10) {
                                     dragHandle
 
@@ -426,16 +441,6 @@ struct FillScreen: View {
                                         .foregroundStyle(task.time == nil ? GWTheme.textMuted : GWTheme.textGhost)
                                         .lineLimit(nil)
                                         .fixedSize(horizontal: false, vertical: true)
-
-                                    if task.time != nil {
-                                        Text("Placed")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .foregroundStyle(Color(hex: "1a1208"))
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 3)
-                                            .background(GWTheme.gold.opacity(0.5))
-                                            .clipShape(Capsule())
-                                    }
 
                                     if task.carriedOver {
                                         Text("Carried")
@@ -501,7 +506,7 @@ struct FillScreen: View {
                                 .draggable("dump:\(item.id.uuidString)")
                             }
 
-                            ForEach(dayPersonalTasks) { task in
+                            ForEach(unscheduledPersonalTasks) { task in
                                 HStack(spacing: 10) {
                                     dragHandle
 
@@ -515,16 +520,6 @@ struct FillScreen: View {
                                         .foregroundStyle(task.time == nil ? GWTheme.textMuted : GWTheme.textGhost)
                                         .lineLimit(nil)
                                         .fixedSize(horizontal: false, vertical: true)
-
-                                    if task.time != nil {
-                                        Text("Placed")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .foregroundStyle(Color(hex: "1a1208"))
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 3)
-                                            .background(GWTheme.gold.opacity(0.5))
-                                            .clipShape(Capsule())
-                                    }
 
                                     if task.carriedOver {
                                         Text("Carried")
