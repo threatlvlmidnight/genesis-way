@@ -658,7 +658,7 @@ struct ShapeScreen: View {
             Text("Step 2 of 3")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(GWTheme.textMuted)
-            Text("SHAPE it")
+            Text("Shape It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)
             Text("Filter the dump into actions, then order Work and Personal before Fill.")
