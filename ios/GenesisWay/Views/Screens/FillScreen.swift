@@ -8,7 +8,6 @@ struct FillScreen: View {
     @State private var reminderStatus = ""
     @State private var showBig3Help = false
     @State private var showRatingHelp = false
-    @State private var planningDay = Date()
     @State private var targetedDropSlot: String?
     @State private var keyboardVisible = false
     @State private var isAutoSyncingCalendar = false
@@ -20,6 +19,17 @@ struct FillScreen: View {
         case big3(UUID)
         case weeklyGoal(Int)
         case weeklyMacro
+    }
+
+    private var planningDay: Date {
+        store.activePlanningDay
+    }
+
+    private var planningDayBinding: Binding<Date> {
+        Binding(
+            get: { store.activePlanningDay },
+            set: { store.setActivePlanningDay($0) }
+        )
     }
 
     private var timelineSlots: [String] {
@@ -120,6 +130,10 @@ struct FillScreen: View {
 
     private var dayPersonalTasks: [TaskItem] {
         dayTaskPool.filter { $0.lane == .personal }
+    }
+
+    private var planningDayAppointments: [ScheduledAppointment] {
+        store.appointments(for: planningDay)
     }
 
     private var unresolvedPlanningCount: Int {
@@ -242,15 +256,15 @@ struct FillScreen: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 8) {
-                        rowHeader(title: "Today's Appointments", trailing: "\(store.todayAppointments.count)")
+                        rowHeader(title: "Today's Appointments", trailing: "\(planningDayAppointments.count)")
 
-                        if store.todayAppointments.isEmpty {
+                        if planningDayAppointments.isEmpty {
                             Text("No scheduled appointments yet. Use Schedule in Shape to place an item on your timeline.")
                                 .font(.system(size: 11))
                                 .foregroundStyle(GWTheme.textGhost)
                                 .fixedSize(horizontal: false, vertical: true)
                         } else {
-                            ForEach(store.todayAppointments) { appointment in
+                            ForEach(planningDayAppointments) { appointment in
                                 HStack(spacing: 10) {
                                     Text(appointment.code)
                                         .font(.system(size: 10, weight: .bold))
@@ -281,7 +295,7 @@ struct FillScreen: View {
                     VStack(alignment: .leading, spacing: 10) {
                         rowHeader(title: "Daily Planner", trailing: formattedPlanningDay())
 
-                        DatePicker("Daily Planner", selection: $planningDay, displayedComponents: [.date])
+                        DatePicker("Daily Planner", selection: planningDayBinding, displayedComponents: [.date])
                             .datePickerStyle(.compact)
                             .tint(GWTheme.gold)
 

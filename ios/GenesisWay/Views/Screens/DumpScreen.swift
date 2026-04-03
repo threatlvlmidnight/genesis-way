@@ -6,13 +6,23 @@ import UIKit
 struct DumpScreen: View {
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
-    @State private var selectedDay = Date()
     @FocusState private var isInputFocused: Bool
     @StateObject private var voice = VoiceDumpController()
     @State private var wasRecording = false
     @State private var voiceStatusMessage: String?
     @State private var hasDeferredFocus = false
     @State private var keyboardVisible = false
+
+    private var selectedDay: Date {
+        store.activePlanningDay
+    }
+
+    private var selectedDayBinding: Binding<Date> {
+        Binding(
+            get: { store.activePlanningDay },
+            set: { store.setActivePlanningDay($0) }
+        )
+    }
 
     private var dayDumpItems: [DumpItem] {
         store.dumpItems(for: selectedDay)
@@ -30,12 +40,12 @@ struct DumpScreen: View {
             header
 
             HStack(spacing: 10) {
-                DatePicker("Day", selection: $selectedDay, displayedComponents: [.date])
+                DatePicker("Day", selection: selectedDayBinding, displayedComponents: [.date])
                     .labelsHidden()
                     .datePickerStyle(.compact)
 
                 Button("Today") {
-                    selectedDay = Date()
+                    store.setActivePlanningDayToToday()
                 }
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(isViewingPastDay ? GWTheme.gold : Color(hex: "1a1208"))

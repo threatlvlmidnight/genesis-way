@@ -390,6 +390,7 @@ struct ParkItem: Identifiable, Codable {
 
 struct GenesisState: Codable {
     var screen: AppScreen
+    var activePlanningDayISO: String?
     var showIntroOnLaunch: Bool
     var showFeedbackIdentifiers: Bool?
     var remindersEnabled: Bool
@@ -445,6 +446,7 @@ struct GenesisState: Codable {
 
     static let initial = GenesisState(
         screen: .onboarding,
+        activePlanningDayISO: nil,
         showIntroOnLaunch: true,
         showFeedbackIdentifiers: true,
         remindersEnabled: true,

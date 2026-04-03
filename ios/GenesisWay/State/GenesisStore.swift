@@ -429,11 +429,21 @@ final class GenesisStore: ObservableObject {
     var remindersEnabled: Bool { state.remindersEnabled }
     var reminderLeadMinutes: Int { state.reminderLeadMinutes }
     var big3: [Big3Item] { state.big3 }
+    var activePlanningDay: Date {
+        guard let iso = state.activePlanningDayISO,
+              let date = Self.dateFromDayISO(iso) else {
+            return Calendar.current.startOfDay(for: Date())
+        }
+        return date
+    }
+    var activePlanningDayISO: String {
+        state.activePlanningDayISO ?? Self.todayDayISO()
+    }
     var shapedDumpItems: [DumpItem] {
         pendingPileItems
     }
     var pendingPileItems: [DumpItem] {
-        pendingPileItems(for: Date())
+        pendingPileItems(for: activePlanningDay)
     }
     var workTasks: [TaskItem] { state.tasks.filter { $0.lane == .work } }
     var personalTasks: [TaskItem] { state.tasks.filter { $0.lane == .personal } }
@@ -487,11 +497,11 @@ final class GenesisStore: ObservableObject {
     var plannerStartHour: Int { state.plannerStartHour ?? 8 }
     var plannerEndHour: Int { state.plannerEndHour ?? 18 }
     var hasUnreadyShapeItems: Bool {
-        let todayISO = Self.todayDayISO()
+        let selectedDayISO = activePlanningDayISO
         return state.dumpItems.contains { item in
             let outcome = item.filterOutcome ?? .pending
-            let dayISO = item.planningDayISO ?? todayISO
-            return outcome == .pending && dayISO == todayISO && item.lane == nil
+            let dayISO = item.planningDayISO ?? selectedDayISO
+            return outcome == .pending && dayISO == selectedDayISO && item.lane == nil
         }
     }
 
@@ -510,6 +520,14 @@ final class GenesisStore: ObservableObject {
 
     func beginJourney() { state.screen = .dump }
     func skipToPlanner() { state.screen = .fill }
+
+    func setActivePlanningDay(_ day: Date) {
+        state.activePlanningDayISO = Self.dayISO(from: day)
+    }
+
+    func setActivePlanningDayToToday() {
+        state.activePlanningDayISO = Self.todayDayISO()
+    }
 
     func signInWithAppleScaffold() {
         // Sprint 2 scaffold: local signed-in state until full Apple Sign In flow lands.
