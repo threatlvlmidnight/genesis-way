@@ -1,0 +1,69 @@
+
+
+Think of everything you have to do in 3 steps. 1. Think of it as a project as a whole. Then the project has a list of tasks that need to be done. Each one of those tasks is broken down into thin vertical slices. So instead of "write report", its the steps, like researching, outlining, drafting and editing. 
+
+For each of those tasks they need to go through the filter step. This is where the filters come in (eliminate, delegate -> goes into delegate grid, etc.) Prioritization happens during the filter layer. The filter layer happens in the Fill step. 
+
+So the idea is to go through all 3 steps each day? 
+
+15 to 30 minute task. If its longer than that, may need a jam session for further refinment into thin vertical slices. Stories larger than that you can schedule jam session to further refine. 
+
+Ideas that are not ready or not needed to focus on right now, the user can move them to the parking lot. 
+
+Notification in the evening asking if the user wants to take 5 minutes and plan the next day (custom time)
+
+
+
+So spokes are mainly for long term goal planning
+Instead of the spokes, we need categories like Work is top down, personal is bottom up. This information should be in the audio transcript. 
+
+Dans process
+Friday or Sunday - Consider the whole week. Looks at the apointments for the week, moves them from his digital calendar into his written daily planner. Then he asks what are my top 3 goals for the week? Then he enteres his specific tasks, and places them on his written daily calendar strategically based on what is already there. 
+
+Then he will take some time to reflect on his goals, the people he leads and what they need (essentially dumping whatever the next steps further down the line are)
+
+So there is a weekly dump at the macro level, then a more micro level dump daily. 
+
+An ordered to do list never worked for Dan, but instead having thin vertical slices and then the control to slot the tasks where its most efficient, using his codes. 
+
+
+Dont use the 7 spokes for the rest of the steps (dump, shape and fill). We will move that to a goal setting process that we will add later. 
+
+We need to re-imagine the shape step as below:
+
+The user needs 2 lists, work and personal. the work part is priority top down, Personal tasks are bottom up. User can drag items between the two lists and drag to prioritize. 
+
+Each day should have a daily calendar showing appointments (timeline) and a list. This begs the question each day, I have the list of appoints on my timeline, where do I slot in these work and personal tasks. 
+
+Start with appoint ments > then work > then personal
+
+Then each task gets a unique id. This does not corespond to anything with priority or whatever, this is just a way to index tasks. The user may or may not have to see the unique ID, the software can handle that. This is the W1, w2 codes etc. The user shouldnt enter these, we should generate them for each code. (this is really a hold over from a paper based system as the code will do this for us, but we do need to be aware of the concept. )
+
+The pile isnt a storage location, its an action. Items are entered into the pile, and then you go to step to Shape. this is where we will take each item in the pile and run them through the 5 filters. We can use 5 direction arrows to indicate the 5 filters. we can play with that later. 
+
+Filters dont prioritize when the action should be done, the determine what kind of action (or lack of action) needs to be done. Almost a pre-priozation step. Delegate step could set an auto follow up with who you dellegated to. 
+
+The next step is "when will I do each task?" This step should see the user through answering that question. 
+
+One major insight here is PLAN ALL THE ITEMS IN THE LIST BEFORE YOU START WORKING THEM, even if theres a simple task you can do quickly. You sould have every item assigned before you start your day. 
+
+Items can be marked as 
+* Scheduled
+-> Moved forward
+V (arrow down) Eliminated 
+
+Then, on the daily timeline, he drops each item (as the item code) onto the timeline roughly where he will do it for the day. 
+Then as he completes items during the day, he marks them off the list, and they get marked off the timeline as well. 
+
+Items that dont get completed automactilly get moved to the next day with a little label indicating they were carried. 
+
+So the final step will be a timeline. Users should be able to select items on either the timeline or the list and re-schedle them (to the day, not on the days individual timeline). 
+
+EACH DAY HAS A PILE. Tasks not done each day get automatically added to the next days pile, then they will go through the same Pile, Shape, Fill pattern on the next day. 
+
+
+THIS IS THE MAIN FLOW WE SHOULD IMPLEMENT:
+So start the day with a pile which is everything left over from yesterday or scheduled for that day
+Then you add any new items for the day
+then you go to shape, and decide what action (5 filters) needs to be taken for that a (or not take)
+Then finally you get to your fill page. This shows your daily planner, and allows you to drag and drop your items still in your pile onto the daily planner to make a schedule. At the end of the day, items not completed are added to the unfiltered pile for the next day to repeat the task. 

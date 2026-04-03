@@ -11,6 +11,9 @@ struct FillScreen: View {
     @State private var planningDay = Date()
     @State private var targetedDropSlot: String?
     @State private var keyboardVisible = false
+    @State private var isAutoSyncingCalendar = false
+    @State private var isRetryingCalendarSync = false
+    @State private var hideCalendarErrorBannerForSession = false
     @FocusState private var focusedField: FillInputField?
 
     private enum FillInputField: Hashable {
@@ -159,7 +162,7 @@ struct FillScreen: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 9) {
-                        Text("How Fill Works")
+                        Text("How fill works")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(GWTheme.textGhost)
                             .textCase(.uppercase)
@@ -168,7 +171,7 @@ struct FillScreen: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(GWTheme.textPrimary)
 
-                        Text("1. Choose your Daily Big 3\n2. Place work and personal tasks on today\n3. Schedule reminders so your plan survives the day")
+                        Text("1. Ask: When will I do this?\n2. Move work and personal tasks to your timeline or another day\n3. Finish your day on paper before your day begins\n4. Schedule reminders so your plan stays on track")
                             .font(.system(size: 12))
                             .foregroundStyle(GWTheme.textMuted)
                             .lineSpacing(2)
@@ -277,6 +280,66 @@ struct FillScreen: View {
                         Text("Drag tasks from Task Pool onto a time block. Use Move Day to reschedule without assigning a time.")
                             .font(.system(size: 11))
                             .foregroundStyle(GWTheme.textGhost)
+
+                        if store.googleCalendarConnected {
+                            if isAutoSyncingCalendar {
+                                Text("Syncing linked calendars...")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(GWTheme.textGhost)
+                            }
+
+                            if shouldShowCalendarErrorBanner {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(Color(hex: "c07060"))
+
+                                        Text(calendarBannerMessage)
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundStyle(Color(hex: "c07060"))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+
+                                    HStack(spacing: 10) {
+                                        Button(isRetryingCalendarSync ? "Retrying..." : "Retry Sync") {
+                                            Task { await retryCalendarSyncFromBanner() }
+                                        }
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(Color(hex: "1a1208"))
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(GWTheme.gold)
+                                        .clipShape(Capsule())
+                                        .buttonStyle(.plain)
+                                        .disabled(isRetryingCalendarSync)
+
+                                        Button("Dismiss") {
+                                            hideCalendarErrorBannerForSession = true
+                                        }
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .buttonStyle(.plain)
+
+                                        Spacer()
+                                    }
+                                }
+                                .padding(10)
+                                .background(Color(hex: "c07060").opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+
+                            if let lastSync = formattedLastCalendarSync {
+                                Text("Last synced \(lastSync)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(GWTheme.textGhost)
+                            }
+
+                            if store.googleCalendarLastPulledEventCount > 0 {
+                                Text("Linked calendar events loaded: \(store.googleCalendarLastPulledEventCount)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Color(hex: "5ca06d"))
+                            }
+                        }
 
                         ForEach(timelineSlots, id: \.self) { slot in
                             timelineSlotRow(slot: slot)
@@ -748,6 +811,14 @@ struct FillScreen: View {
                 .background(Color.black.opacity(0.35))
             }
         }
+        .task(id: planningDayISO) {
+            await runCalendarAutoSyncIfNeeded()
+        }
+        .onChange(of: store.googleCalendarLastError) { _, newValue in
+            if newValue == nil || newValue?.isEmpty == true {
+                hideCalendarErrorBannerForSession = false
+            }
+        }
     }
 
     private var header: some View {
@@ -758,9 +829,10 @@ struct FillScreen: View {
             Text("Fill It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)
-            Text("Assign intentional actions to the right time, then protect them.")
+            Text("Sync your calendar, then assign each task to a time (drag and drop).")
                 .font(.system(size: 13))
                 .foregroundStyle(GWTheme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -788,11 +860,12 @@ struct FillScreen: View {
 
     private var dragHandle: some View {
         Image(systemName: "line.3.horizontal")
-            .font(.system(size: 18, weight: .bold))
+            .font(.system(size: 20, weight: .bold))
             .foregroundStyle(GWTheme.textMuted)
-            .frame(width: 28, height: 28)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .frame(width: 40, height: 40)
+            .contentShape(Rectangle())
+            .background(Color.white.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private var dualExecutionProgressBar: some View {
@@ -892,6 +965,7 @@ struct FillScreen: View {
 
     private func timelineSlotRow(slot: String) -> some View {
         let scheduled = store.tasksScheduled(for: planningDay, at: slot)
+        let syncedEvents = syncedEventsForSlot(slot)
 
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
@@ -900,9 +974,11 @@ struct FillScreen: View {
                     .foregroundStyle(GWTheme.gold)
                     .frame(width: 58, alignment: .leading)
 
-                Text(scheduled.isEmpty ? "Drop task here" : "\(scheduled.count) task\(scheduled.count == 1 ? "" : "s")")
+                Text((scheduled.isEmpty && syncedEvents.isEmpty)
+                     ? "Drop task here"
+                     : "\(scheduled.count) task\(scheduled.count == 1 ? "" : "s") · \(syncedEvents.count) event\(syncedEvents.count == 1 ? "" : "s")")
                     .font(.system(size: 11))
-                    .foregroundStyle(scheduled.isEmpty ? GWTheme.textGhost : GWTheme.textMuted)
+                    .foregroundStyle((scheduled.isEmpty && syncedEvents.isEmpty) ? GWTheme.textGhost : GWTheme.textMuted)
 
                 Spacer()
             }
@@ -968,6 +1044,32 @@ struct FillScreen: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
+
+            if !syncedEvents.isEmpty {
+                ForEach(syncedEvents) { event in
+                    HStack(spacing: 8) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color(hex: "5ca06d"))
+
+                        Text(event.title)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color(hex: "9bc4a6"))
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer()
+
+                        Text(event.allDay ? "All day" : "Google")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(Color(hex: "5ca06d"))
+                    }
+                    .padding(.vertical, 2)
+                    .padding(.horizontal, 4)
+                    .background(Color(hex: "5ca06d").opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
         }
         .padding(10)
         .background(Color.white.opacity(0.03))
@@ -995,6 +1097,118 @@ struct FillScreen: View {
             }
 
             return true
+        }
+    }
+
+    // Parses ISO 8601 strings including those with fractional seconds (e.g. .000Z)
+    // returned by the Vercel sync endpoint.
+    private func parseISO(_ iso: String) -> Date? {
+        let plain = ISO8601DateFormatter()
+        if let d = plain.date(from: iso) { return d }
+        let frac = ISO8601DateFormatter()
+        frac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return frac.date(from: iso)
+    }
+
+    private func syncedEventsForSlot(_ slot: String) -> [SyncedCalendarEvent] {
+        let plannedDayISO = planningDayISO
+        return store.syncedCalendarEvents
+            .filter { event in
+                if event.allDay {
+                    // All-day events: use raw date prefix to avoid timezone day shifts.
+                    let rawDate = String((event.startAtISO ?? "").prefix(10))
+                    return slot == "All Day" && rawDate == plannedDayISO
+                }
+
+                guard let startISO = event.startAtISO,
+                      let date = parseISO(startISO) else {
+                    return false
+                }
+
+                return dayISO(from: startISO) == plannedDayISO && hourLabel(Calendar.current.component(.hour, from: date)) == slot
+            }
+            .sorted { lhs, rhs in
+                (lhs.startAtISO ?? "") < (rhs.startAtISO ?? "")
+            }
+    }
+
+    private func dayISO(from iso: String?) -> String? {
+        guard let iso, let date = parseISO(iso) else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
+    private func runCalendarAutoSyncIfNeeded() async {
+        guard store.googleCalendarConnected,
+              store.hasGoogleCalendarAccessToken,
+              !isAutoSyncingCalendar else {
+            return
+        }
+
+        let shouldSync: Bool
+        if let lastSyncISO = store.lastCalendarSyncISO,
+           let lastSync = ISO8601DateFormatter().date(from: lastSyncISO) {
+            shouldSync = Date().timeIntervalSince(lastSync) > (15 * 60)
+        } else {
+            shouldSync = true
+        }
+
+        guard shouldSync else { return }
+
+        await MainActor.run {
+            isAutoSyncingCalendar = true
+        }
+        _ = await store.syncGoogleCalendarNow()
+        await MainActor.run {
+            isAutoSyncingCalendar = false
+        }
+    }
+
+    private var shouldShowCalendarErrorBanner: Bool {
+        guard !hideCalendarErrorBannerForSession,
+              let calendarError = store.googleCalendarLastError,
+              !calendarError.isEmpty else {
+            return false
+        }
+        return true
+    }
+
+    private var calendarBannerMessage: String {
+        let lowercasedError = (store.googleCalendarLastError ?? "").lowercased()
+        if lowercasedError.contains("401") || lowercasedError.contains("unauthorized") {
+            return "Calendar connection needs renewal. Reconnect in Calendar Settings."
+        }
+
+        if !store.syncedCalendarEvents.isEmpty {
+            return "Calendar sync unavailable. Showing cached events. Tap Retry Sync to refresh."
+        }
+
+        return "Calendar sync unavailable. You can keep planning and retry when ready."
+    }
+
+    private var formattedLastCalendarSync: String? {
+        guard let iso = store.lastCalendarSyncISO,
+              let date = ISO8601DateFormatter().date(from: iso) else {
+            return nil
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func retryCalendarSyncFromBanner() async {
+        guard !isRetryingCalendarSync else { return }
+
+        await MainActor.run {
+            isRetryingCalendarSync = true
+        }
+        _ = await store.syncGoogleCalendarNow()
+        await MainActor.run {
+            isRetryingCalendarSync = false
         }
     }
 

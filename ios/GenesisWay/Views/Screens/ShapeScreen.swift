@@ -1,4 +1,9 @@
 import SwiftUI
+import EventKit
+import EventKitUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 private enum ScheduleMoveMode: String, Hashable { case appointment, day }
 private enum AutomateMode: String, Hashable { case custom, loop }
@@ -21,6 +26,8 @@ struct ShapeScreen: View {
     @State private var delegateTargetText = ""
     @State private var lastActionItemId: UUID?
     @State private var jamTargetItem: DumpItem?
+    @State private var calendarExportDraft: CalendarExportDraft?
+    @State private var calendarHandoffStatus = ""
 
     private var todayISO: String {
         let formatter = DateFormatter()
@@ -60,11 +67,11 @@ struct ShapeScreen: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("How Shape Works")
+                        Text("How Shape It Works")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(GWTheme.textPrimary)
 
-                        Text("Run each dump item through one filter: Schedule/Move, Automate, Eliminate, Delegate, or Park.")
+                        Text("Finish your day on paper before the day begins. Quickly tag each item as Work or Personal, then run each item through one filter: Eliminate, Automate, Delegate, Schedule, or Park.")
                             .font(.system(size: 13))
                             .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -110,7 +117,7 @@ struct ShapeScreen: View {
                                     .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.gold : Color(hex: "c07060"))
 
                                 Text(unreadyPendingCount == 0
-                                     ? "All pending items are ready for Fill."
+                                      ? "All pending items are ready, click Fill below."
                                      : "\(unreadyPendingCount) item\(unreadyPendingCount == 1 ? "" : "s") still need Work/Personal lane selection.")
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundStyle(unreadyPendingCount == 0 ? GWTheme.textMuted : Color(hex: "c07060"))
@@ -181,15 +188,12 @@ struct ShapeScreen: View {
                                         alignment: .leading,
                                         spacing: 8
                                     ) {
-                                        filterButton("Move", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
+                                        filterButton("Eliminate", isActive: false, isDestructive: true) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
-                                                scheduleOrMoveMode = .day
-                                                scheduleOrMoveDateTime = Date()
-                                                scheduleOrMoveDayDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-                                                scheduleOrMoveTargetItem = item
+                                                store.applyFilterOutcome(item.id, outcome: .eliminated)
                                             }
-                                            GWHaptics.medium()
+                                            GWHaptics.warning()
                                         }
 
                                         filterButton("Automate", isActive: lastActionItemId == item.id && automateTargetItem?.id == item.id) {
@@ -209,19 +213,22 @@ struct ShapeScreen: View {
                                             GWHaptics.medium()
                                         }
 
-                                        filterButton("Eliminate", isActive: false, isDestructive: true) {
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
-                                                lastActionItemId = item.id
-                                                store.applyFilterOutcome(item.id, outcome: .eliminated)
-                                            }
-                                            GWHaptics.warning()
-                                        }
-
                                         filterButton("Delegate", isActive: false) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
                                                 delegateTargetText = item.text
                                                 store.applyFilterOutcome(item.id, outcome: .delegated)
+                                            }
+                                            GWHaptics.medium()
+                                        }
+
+                                        filterButton("Schedule", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
+                                            withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                                lastActionItemId = item.id
+                                                scheduleOrMoveMode = .day
+                                                scheduleOrMoveDateTime = Date()
+                                                scheduleOrMoveDayDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+                                                scheduleOrMoveTargetItem = item
                                             }
                                             GWHaptics.medium()
                                         }
@@ -263,6 +270,11 @@ struct ShapeScreen: View {
         )) {
             DelegateScreen(taskText: delegateTargetText)
                 .environmentObject(store)
+        }
+        .sheet(item: $calendarExportDraft) { draft in
+            CalendarEventComposerSheet(draft: draft) { message in
+                calendarHandoffStatus = message
+            }
         }
         .alert("Create Jam Session?", isPresented: Binding(
             get: { jamTargetItem != nil },
@@ -315,6 +327,32 @@ struct ShapeScreen: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
+
+                if scheduleOrMoveMode == .appointment {
+                    Section("Calendar Handoff") {
+                        Button("Export to Calendar") {
+                            scheduleItemAndPrepareCalendarExport(item)
+                        }
+                        .foregroundStyle(GWTheme.gold)
+
+                        Button("Open Calendar") {
+                            scheduleItemAndOpenCalendar(item)
+                        }
+                        .foregroundStyle(GWTheme.textMuted)
+
+                        Text("Export opens a prefilled Apple Calendar event composer. If export fails, your item stays scheduled in Genesis.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if !calendarHandoffStatus.isEmpty {
+                    Section("Status") {
+                        Text(calendarHandoffStatus)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             .navigationTitle(scheduleOrMoveMode == .appointment ? "Schedule Item" : "Move Item")
             .navigationBarTitleDisplayMode(.inline)
@@ -327,6 +365,8 @@ struct ShapeScreen: View {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
                             if scheduleOrMoveMode == .appointment {
                                 store.scheduleDumpItemAsAppointment(item.id, at: scheduleOrMoveDateTime, lane: item.lane ?? .work)
+                                calendarHandoffStatus = "Scheduled in Genesis. Use Calendar Handoff to export or open calendar."
+                                return
                             } else {
                                 store.moveDumpItemToDay(item.id, day: scheduleOrMoveDayDate)
                             }
@@ -338,6 +378,49 @@ struct ShapeScreen: View {
                 }
             }
         }
+    }
+
+    private func scheduleItemAndPrepareCalendarExport(_ item: DumpItem) {
+        let start = scheduleOrMoveDateTime
+        let end = Calendar.current.date(byAdding: .minute, value: 45, to: start) ?? start.addingTimeInterval(45 * 60)
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+            store.scheduleDumpItemAsAppointment(item.id, at: start, lane: item.lane ?? .work)
+        }
+        GWHaptics.success()
+
+        let draft = CalendarExportDraft(
+            title: item.text,
+            startDate: start,
+            endDate: end,
+            notes: "Created from Genesis Way Shape."
+        )
+
+        scheduleOrMoveTargetItem = nil
+        DispatchQueue.main.async {
+            calendarExportDraft = draft
+        }
+    }
+
+    private func scheduleItemAndOpenCalendar(_ item: DumpItem) {
+        let date = scheduleOrMoveDateTime
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+            store.scheduleDumpItemAsAppointment(item.id, at: date, lane: item.lane ?? .work)
+        }
+
+        let timestamp = date.timeIntervalSinceReferenceDate
+        if let url = URL(string: "calshow:\(timestamp)") {
+            #if canImport(UIKit)
+            UIApplication.shared.open(url)
+            #endif
+            calendarHandoffStatus = "Scheduled in Genesis and opened Calendar."
+        } else {
+            calendarHandoffStatus = "Scheduled in Genesis. Could not open Calendar app."
+        }
+
+        GWHaptics.success()
+        scheduleOrMoveTargetItem = nil
     }
 
     private func automateSheet(item: DumpItem) -> some View {
@@ -603,13 +686,85 @@ struct ShapeScreen: View {
             Text("Step 2 of 3")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(GWTheme.textMuted)
-            Text("Shape It")
+            Text("SHAPE it")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)
             Text("Filter the dump into actions, then order Work and Personal before Fill.")
                 .font(.system(size: 13))
                 .foregroundStyle(GWTheme.textMuted)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct CalendarExportDraft: Identifiable {
+    let id = UUID()
+    let title: String
+    let startDate: Date
+    let endDate: Date
+    let notes: String
+}
+
+private struct CalendarEventComposerSheet: UIViewControllerRepresentable {
+    let draft: CalendarExportDraft
+    let onCompletionMessage: (String) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onCompletionMessage: onCompletionMessage)
+    }
+
+    func makeUIViewController(context: Context) -> EKEventEditViewController {
+        let controller = EKEventEditViewController()
+        let eventStore = EKEventStore()
+        controller.eventStore = eventStore
+        controller.editViewDelegate = context.coordinator
+        controller.event = buildEvent(in: eventStore)
+        context.coordinator.requestCalendarAccessIfNeeded(eventStore: eventStore)
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: EKEventEditViewController, context: Context) {}
+
+    private func buildEvent(in store: EKEventStore) -> EKEvent {
+        let event = EKEvent(eventStore: store)
+        event.title = draft.title
+        event.startDate = draft.startDate
+        event.endDate = draft.endDate
+        event.notes = draft.notes
+        event.calendar = store.defaultCalendarForNewEvents
+        return event
+    }
+
+    final class Coordinator: NSObject, EKEventEditViewDelegate {
+        let onCompletionMessage: (String) -> Void
+
+        init(onCompletionMessage: @escaping (String) -> Void) {
+            self.onCompletionMessage = onCompletionMessage
+        }
+
+        func requestCalendarAccessIfNeeded(eventStore: EKEventStore) {
+            eventStore.requestFullAccessToEvents { granted, _ in
+                if !granted {
+                    DispatchQueue.main.async {
+                        self.onCompletionMessage("Calendar permission is needed to export events. The item is still scheduled in Genesis.")
+                    }
+                }
+            }
+        }
+
+        func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
+            switch action {
+            case .saved:
+                onCompletionMessage("Event exported to Calendar.")
+            case .deleted:
+                onCompletionMessage("Calendar event was removed from composer.")
+            case .canceled:
+                onCompletionMessage("Calendar export canceled. The item remains scheduled in Genesis.")
+            @unknown default:
+                onCompletionMessage("Calendar handoff finished.")
+            }
+
+            controller.dismiss(animated: true)
         }
     }
 }

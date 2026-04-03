@@ -145,9 +145,10 @@ struct DumpScreen: View {
                         Text("Your list is clear")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(GWTheme.textMuted)
-                        Text("Start dumping everything you are carrying.")
+                        Text("Get everything out of your head. List tasks at Work, Home, Hobby, School. Don't filter. Don't worry about the order.")
                             .font(.system(size: 12))
                             .foregroundStyle(GWTheme.textGhost)
+                            .multilineTextAlignment(.center)
                     }
                     .padding(.top, 28)
                 } else {
@@ -318,9 +319,10 @@ struct DumpScreen: View {
             Text("Dump It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)
-            Text("Get everything out of your head. Don't filter.")
+            Text("Get everything out of your head. List tasks at Work, Home, Hobby, School. Don't filter. Don't worry about the order.")
                 .font(.system(size: 13))
                 .foregroundStyle(GWTheme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)

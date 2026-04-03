@@ -105,3 +105,56 @@ Feature:
 - Branding and Positioning
 - Monetization and Packaging
 - Collaboration Discovery
+
+## 2026-04-02 Dan Input (Onboarding + Core Flow)
+- Participants: Dan
+- Context: Post-review content and functional feedback across Onboarding, Dump, Shape, Fill, and Park flows.
+- Summary: Copy and sequencing changes are straightforward and high impact; three functional issues are release-critical (Shape-to-Fill item handoff, calendar sync failure, and Parking Lot carryover persistence).
+
+#### Raw Feedback
+- Onboarding terminology update: change "Sustain it" to "Finish it".
+- Add Work/Home/Hobby/School prompt in onboarding and dump guidance.
+- Genesis Pattern language should read: Dump it - Shape it - Fill it - Finish it - Rest.
+- Shape onboarding and Shape screen should enforce and clearly present filters: Eliminate, Automate, Delegate, Schedule, Park.
+- Fill onboarding and Fill screen should emphasize syncing calendar and assigning tasks to time.
+- Functional regression: Shape items no longer appear in Fill.
+- Functional issue: calendar will not sync.
+- Park terminology and framing update: "Parking Lot" with Someday/Maybe subtitle.
+- Functional issue: Parking Lot should carry items across consecutive days.
+
+#### Feedback by Category
+Improvement:
+- Refresh onboarding copy for all 4 steps with consistent terminology and instructional sequence.
+- Align Shape filter naming and order in onboarding and task controls.
+- Update Fill instructional text to focus on calendar sync, time assignment, reminders, and margin.
+- Rename Park to Parking Lot and update supporting microcopy.
+
+Bug:
+- Shape-to-Fill transfer regression (items processed in Shape are not visible in Fill).
+- Calendar sync failure on Fill path.
+- Parking Lot carryover persistence regression across days.
+
+Feature:
+- No net-new feature requested; feedback is primarily UX/copy refinement plus bug fixes.
+
+#### Product Signals
+- Dan is optimizing for language clarity and operational simplicity in the daily loop.
+- Copy consistency is tightly coupled with coaching method adoption.
+- Reliability issues in Fill/Calendar/Parking Lot undermine trust in the workflow and should be treated as top-priority fixes.
+
+#### Decisions
+- Create a dedicated epic for Dan's 2026-04-02 feedback round.
+- Prioritize functional regressions before non-blocking copy polish.
+- Keep terms aligned across onboarding and runtime screens (Finish it, Parking Lot, filter set).
+- Normalize calendar wording in UX copy to "synced".
+
+#### Prioritized Actions
+- [P0] Fix Shape-to-Fill transfer regression so shaped items appear in Fill timeline/input list - Engineering - Immediate.
+- [P0] Fix calendar sync reliability in Fill path (sync initiation + error handling + user feedback) - Engineering - Immediate.
+- [P0] Fix Parking Lot day-to-day carryover persistence - Engineering - Immediate.
+- [P1] Apply onboarding copy updates for Dump, Shape, Fill, Finish plus Genesis Pattern language normalization - Product/Design/Engineering - Next sprint.
+- [P1] Apply Dump/Shape/Fill/Park in-screen copy and label updates (including filter button text and section names) - Product/Design/Engineering - Next sprint.
+- [P1] Run targeted regression on daily loop after fixes (Dump -> Shape -> Fill -> Parking Lot) - QA/Engineering - Next sprint.
+
+#### Open Questions
+- Proposed finalized Finish It wording: "Finish your task list or consciously move each item forward. Run each incomplete item through the filters."

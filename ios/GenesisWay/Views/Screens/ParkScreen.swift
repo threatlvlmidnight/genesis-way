@@ -9,10 +9,10 @@ struct ParkScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("The Park")
+            Text("Parking Lot")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)
-            Text("Not now. Not never. Just not today.")
+            Text("Someday/Maybe List. Not now. Not never. Just not today.")
                 .font(.system(size: 13))
                 .foregroundStyle(GWTheme.textMuted)
 

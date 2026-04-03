@@ -2,14 +2,210 @@
 > Synced: 2026-03-16T12:00:00.000Z | Branch: pre-release-v1
  | Dirty: yes
 
+## Roadmap Sprint Plan
+
+Planning assumptions:
+
+- Sprints are session-paced, not time-boxed — multiple sprints can be completed in a single working session
+- One roadmap epic plus one stabilization/polish lane per sprint
+- Do not start Calendar implementation that depends on user identity until Auth A1-A7 is complete
+- Do not start Monetization implementation until Auth and Calendar are both stable on device
+
+**Demo Release Target: Friday March 27, 2026**
+Dan is demoing the app for a potential client on Friday. A build including auth and calendar sync (0.3.0) must ship before then. Monetization (0.4.0) is explicitly deferred past Friday — do not pull monetization work into pre-demo sprints.
+- Sprints 1–5 are pre-demo priority. Complete these in order before Friday.
+- Sprint 1 scope note: if session time is limited before Friday, the demo-critical path is to complete Sprint 1 RC blockers first, then move directly to Sprints 2–5. Polish/UI items in Sprint 1 not needed for demo stability can be deferred post-demo.
+- Sprints 6–8 are post-demo and should not be started until after Friday.
+
+### Sprint 1 - 0.1.2 hardening and RC readiness [DEMO-CRITICAL — complete before Friday March 27]
+
+Goal: finish the daily-flow stabilization work and clear the minimum release blockers needed to start the auth and calendar epics. **Post-demo polish and new features have been pulled out and moved to Backlog to keep this sprint as short as possible.**
+
+Pull first:
+
+- Device test pass while app is running on phone
+- Feature: As a user, I need a daily-flow experience (morning plan + end-of-day prep), including configurable reminders and links to viewing other days' flow. Scope for v1: time-based reminders only (no in-app special prompt), no default times (set during onboarding), evening reminder opens Fill for that day, cross-day support is Dump-only for now, allow editing future days, keep past days read-only. (Phase 1 started: Dump cross-day date navigation + past read-only, reminder configuration scaffold, evening reminder tap route to Fill)
+- Release: pre-release-v1 full regression run and RC sign-off (execute docs/v1-regression-test-plan.md + docs/v1-release-quick-run.md; automation: scripts/ios_smoke.sh and .github/workflows/ios-smoke.yml)
+- UI: Fill screen currently shows two settings icons; consolidate to one clear settings entry point
+- UI: Remove duplicate settings icon on Shape screen — single gear entry point already exists via top overlay; remove any redundant in-screen instance
+- UI: Remove the Clear action from Shape screen
+- Polish: updated app icon refresh - added 6 selectable icon variants (Chrome default, Textile, Stone, Molten, Obsidian Glass, Monochrome)
+
+Exit criteria:
+
+- Core daily flow is stable on device
+- RC regression completes without Sev 1 / Sev 2 blockers
+- No embarrassing duplicate UI controls visible during demo
+- Ready to start Sprint 2 (Auth) immediately after
+
+### Sprint 2 - 0.2.0 auth foundation vertical slice
+
+Goal: establish account identity and secure session handling without breaking the guest-first local flow.
+
+Pull first:
+
+- Auth A1: Add AuthClient abstraction and Supabase implementation scaffold.
+- Auth A2: Add secure session storage in Keychain.
+- Auth A3: Add Settings entry points — Sign in, Sign out, account status.
+- Auth A4: Implement Apple Sign In flow and callback handling.
+
+Exit criteria:
+
+- Guest-first flow still works
+- Apple Sign In succeeds end-to-end
+- Session persists safely across relaunch
+
+### Sprint 3 - 0.2.0 auth migration hardening plus calendar groundwork
+
+Goal: finish account-linking safety work and unblock the Calendar epic in parallel.
+
+Pull first:
+
+- Auth A5: Implement anonymous-to-account data linking migration.
+- Auth A6: Add migration diagnostics events and failure retry behavior.
+- Auth A7: Add regression tests for migration idempotency and account relinking.
+- A1.4 Add formal XCTest coverage for migration safety and metadata normalization (AC: old saved payload loads without crash and gets pending/day defaults)
+- Cal A1: Replace implicit OAuth flow in lib/googleCalendar.ts with Authorization Code + PKCE; update scope to calendar.readonly; add /api/calendar/oauth/callback server-side token exchange route.
+- Cal A2: Create Supabase schema — user_calendar_connections and synced_calendar_events tables with RLS policies and unique constraints.
+
+Exit criteria:
+
+- Existing local users can link an account without data loss
+- Auth regressions are covered by tests
+- Calendar backend prerequisites are ready for native connect flow
+
+### Sprint 4 - 0.3.0 calendar connect and pull
+
+Goal: make Fill reliably useful alongside Google Calendar without introducing provider write-back complexity.
+
+Pull first:
+
+- Cal A3: iOS native OAuth — ASWebAuthenticationSession Authorization Code + PKCE; after exchange present calendar picker; store selected_calendar_ids in Supabase; show connected state. (Depends on Auth A1-A2)
+- Cal A4: Event pull service — /api/calendar/sync/pull; reads selected calendars, refreshes token if expired, fetches events for day ±7 days, and upserts them into synced_calendar_events using a full-replace strategy for the pull window.
+- Cal A7: Calendar Settings screen — replace stub with real connected/disconnected state, connect/disconnect with calendar picker, Sync Now, last-synced display. (Depends on Cal A3, Cal A4)
+
+Exit criteria:
+
+- User can connect Google Calendar on device
+- Fill shows pulled Google events reliably with selected calendars
+- Reconnect / disconnect basics work
+
+### Sprint 5 - 0.3.0 calendar export handoff, Fill integration, and failure UX
+
+Goal: finish the pull-based calendar experience and add explicit export/open-calendar handoff from Shape.
+
+Pull first:
+
+- Cal A5: Shape scheduling export handoff — after a user schedules a task in Shape, tapping Export to Calendar immediately opens a prefilled Apple calendar event composer (EventKitUI / EKEventEditViewController); keep Open Calendar as a secondary convenience action; no direct Google Calendar create APIs.
+- Cal A6: Fill timeline integration — trigger pull on Fill open (15-min throttle); render synced_calendar_events as read-only reference blocks; inline re-auth prompt on 401. (Depends on Cal A4)
+- Cal A8: Offline cache and error UX — serve cached events on failure; non-blocking banner with retry; inline re-auth prompt on Fill (dismissible per session); non-blocking export/open-calendar failure messaging in Shape.
+- Post-beta bug triage pass
+
+Exit criteria:
+
+- Shape export handoff works on device
+- Fill pull and cached reference blocks behave correctly
+- Offline, retry, and re-auth flows are validated
+
+### Sprint 6 - 0.4.0 monetization foundation and paywall [POST-DEMO — do not start before Friday March 27]
+
+Goal: add entitlements and purchase flow only after the core app and calendar habit loop are trustworthy.
+
+Pull first:
+
+- Mon A1: Add monetization domain model and entitlement service abstraction; support states for active subscription, offer-code access, expired access, and preview mode.
+- Mon A2: Integrate StoreKit 2 + RevenueCat for monthly and annual subscriptions; keep product IDs and displayed price copy configurable so pricing can be tuned without code churn.
+- Mon A3: Build the paywall shown after Intro > Start the Journey; include monthly and annual plans, Restore Purchases, code redemption entry point, and continue-to-preview option.
+- Mon A4: Add preview mode gating across the app — unpaid users can browse but cannot add new tasks; all task-creation entry points should route to the paywall.
+
+Exit criteria:
+
+- Purchases and restore work end-to-end in sandbox/TestFlight
+- Preview mode gating is enforced consistently
+- Paywall does not break onboarding or guest flow
+
+### Sprint 7 - 0.4.0 monetization hardening and launch-readiness [POST-DEMO — do not start before Friday March 27]
+
+Goal: finish subscription lifecycle handling, seminar/tester access, and launch instrumentation.
+
+Pull first:
+
+- Mon A5: Add Settings account/subscription screen with current plan, entitlement status, manage subscription, restore purchases, redeemed-code status, and sign-in/account linkage hooks.
+- Mon A6: Add offer-code and cohort-access support for seminar/testing rollouts using Apple offer codes first; support time-boxed access such as 3-month cohort grants without custom billing infrastructure.
+- Mon A7: Add entitlement restore and lifecycle handling for reinstall, device change, sign-in/sign-out, renewal, cancellation, billing issue, and expiration states using trusted third-party vendor flows.
+- Mon A8: Add monetization telemetry events and funnel tracking — paywall shown, plan selected, purchase started, purchase completed, restore started/completed, code redeemed, preview entered, paywall exit, entitlement expired.
+- Review session 2026-03-14: Clarify trailing note "Sni" and convert into actionable ticket(s)
+
+Exit criteria:
+
+- Entitlement lifecycle is stable in real-world edge cases
+- Seminar/testing cohort access is operational
+- Monetization funnel is measurable before GA
+
+### Sprint 8 - 1.0 release hardening and beta-to-GA cutover [POST-DEMO]
+
+Goal: run the final integrated release pass after Auth, Calendar, and Monetization are all live together.
+
+Pull first:
+
+- External tester group created
+- Beta App Review submitted
+- Post-beta bug triage pass
+- Release: pre-release-v1 full regression run and RC sign-off (execute docs/v1-regression-test-plan.md + docs/v1-release-quick-run.md; automation: scripts/ios_smoke.sh and .github/workflows/ios-smoke.yml)
+
+Exit criteria:
+
+- Integrated auth + calendar + monetization flows pass regression
+- Beta findings are triaged and only accepted-risk issues remain
+- Board is clean enough to declare 1.0 scope complete
+
+## Deferred Until After 1.0
+
+Keep these in Backlog, but do not pull them into active sprints unless they directly unblock the 1.0 path:
+
+- Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
+- Future: Indexed note system per task — allow users to attach freeform notes to any task, viewable and editable from Pile/Shape/Park, so they can track context and retrieve it later
+- Android port
+- Future: deeper calendar integration for Genesis Way after the v1 Google pull + local export milestone; evaluate provider write-back, Apple Calendar parity, or both.
+- Test voice entry and parsing
+- Feature: iOS widget support (home screen + lock screen widgets showing today's Big 3 and pile count)
+- Epic: Version 2 planning - authenticated logins, social actions (shared delegations, collaborative task handoff)
+- UI: Add links to Dan's website/branding and a lightweight Find out more page
+- Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
+- Feature: Scheduled reminders — allow user to configure recurring notifications (e.g. morning Pile reminder, evening plan-tomorrow reminder) with day-of-week and time controls in App Settings
+- Feature: Parking lot recurring review reminders — allow user to set weekly, monthly, or quarterly reminder to review the Park screen and promote items into the active Pile
+- Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
+
 ## Backlog
 
 - [ ] 0.2.0 Feature Release: Authentication and user accounts (priority 1)
-- [ ] 0.3.0 Feature Release: Google Calendar push and pull sync (priority 2)
+- [ ] 0.3.0 Feature Release: Google Calendar pull integration + local calendar export handoff (priority 2)
 - [ ] 0.4.0 Feature Release: Monetization baseline with tiering and entitlement gating (priority 3)
-- [ ] Spike (RC1-Auth, 1-2 days): Investigate authentication and user account architecture for v1. Questions: email/password only vs Apple/Google sign-in for v1? local-first guest mode before auth required? account recovery and verification flow requirements? minimum backend surface and provider choice (Firebase/Supabase/custom)? migration plan from local anonymous state to account-linked state? Output artifact: decision memo with recommended provider, auth flow diagram, and phased rollout plan. Definition of done: architecture recommendation approved, v1 scope boundary documented, implementation stories drafted.
-- [ ] Spike (RC1-Calendar, 1-2 days): Investigate Google Calendar push/pull sync design for v1. Questions: one-way import first vs full two-way in same milestone? source of truth and conflict policy when app and calendar both change item/time? mapping model for task <-> event IDs and deleted events? token refresh/offline retry/error UX behavior? quota/rate-limit and sync cadence strategy? Output artifact: sync contract spec (states, mapping, conflict rules) and failure-mode test matrix. Definition of done: push/pull scope for v1 locked, data contract reviewed, implementation stories drafted.
-- [ ] Spike (RC1-Monetization, 1-2 days): Investigate monetization model and entitlement architecture for v1. Questions: exact free tier boundary and premium feature gates? monthly/annual pricing and trial strategy? paywall placement in onboarding vs settings vs feature entry? restore purchase behavior across sign-in/sign-out/device change? telemetry needed to measure conversion and seminar-to-paid funnel? Output artifact: pricing and entitlements brief with paywall map and analytics event list. Definition of done: free vs paid boundaries approved, entitlement enforcement approach documented, implementation stories drafted.
+
+- [ ] Epic: GW-E06 Dan Feedback Round (2026-04-02) - onboarding language alignment + daily-loop reliability
+
+### GW-E06 Sprint Breakdown
+- Sprint E06.1 (UI copy polish): GW-P01a, GW-P01b, GW-P01c, GW-P01d, GW-P01e, GW-P02, GW-P03a, GW-P03b, GW-P03c, GW-P04a, GW-P04b, GW-P05a
+- Sprint E06.2 (Reliability fixes): GW-P04c, GW-P04d, GW-P05b
+- Sprint E06.3 (Validation): GW-QA01 using docs/2026-04-03-gw-e06-testing-plan.md
+
+- [ ] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
+- [ ] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
+- [ ] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
+- [ ] GW-P01d Onboarding / Finish It copy update: rename Sustain It to Finish It, add tagline, and set In Practice copy to "Finish your task list or consciously move each item forward. Run each incomplete item through the filters."
+- [ ] GW-P01e Onboarding / Genesis Pattern normalization: update all onboarding pattern labels to "Dump it - Shape it - Fill it - Finish it - Rest" while preserving arrows.
+- [ ] GW-P02 Dump screen guidance copy update: "Get everything out of your head. List tasks at Work, Home, Hobby, School. Don't filter. Don't worry about the order."
+- [ ] GW-P03a Shape screen terminology update: title/labels to "SHAPE it" and "How Shape It Works" with Work/Personal tagging and filter instructions.
+- [ ] GW-P03b Shape screen process microcopy update: in DUMP TO PROCESS, change "all pending items are ready for fill" to "all pending items are ready, click Fill below".
+- [ ] GW-P03c Shape screen filter button relabel: Eliminate | Automate | Delegate | Schedule | Park.
+- [ ] GW-P04a Fill screen top description update: "Sync your calendar, then assign each task to a time (drag and drop)."
+- [ ] GW-P04b Fill "How fill works" section update: When will I do this? Move tasks to timeline/day, finish your day on paper before it begins, schedule reminders.
+- [ ] GW-P04c BUG: Shape -> Fill handoff regression; ensure shaped items consistently appear in Fill again.
+- [ ] GW-P04d BUG: Calendar will not sync; restore pull/sync flow and add visible failure feedback + retry path.
+- [ ] GW-P05a Park screen rename: change "The Park" to "Parking Lot" with subtitle "Someday/Maybe List. Not now. Not never. Just not today."
+- [ ] GW-P05b BUG: Parking Lot carryover persistence across consecutive days.
+- [ ] GW-QA01 Regression pass: execute docs/2026-04-03-gw-e06-testing-plan.md and verify Dump -> Shape -> Fill -> Parking Lot flow after GW-E06 items (including sync and cross-day persistence).
+
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
 - [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
@@ -20,14 +216,47 @@
 - [ ] Future: Indexed note system per task — allow users to attach freeform notes to any task, viewable and editable from Pile/Shape/Park, so they can track context and retrieve it later
 - [ ] External tester group created
 - [ ] Beta App Review submitted
-- [ ] Post-beta bug triage pass
+- [x] Post-beta bug triage pass
 - [ ] Review session 2026-03-14: Clarify trailing note "Sni" and convert into actionable ticket(s)
 - [ ] Android port
-- [ ] Epic: end-to-end calendar syncing for Genesis Way. Question: is the first milestone Google happy-path only, or Google + Apple ICS in the same pass? - First milestone is google calendar integration only. then apple calendar.
+- [ ] Future: deeper calendar integration for Genesis Way. Question: after the v1 Google pull + local export milestone, do we want provider write-back, Apple Calendar parity, or both in the next pass?
 - [ ] End-of-day carryover badges and history view
 - [ ] A1.4 Add formal XCTest coverage for migration safety and metadata normalization (AC: old saved payload loads without crash and gets pending/day defaults)
-- [ ] Epic - Monetization
-- [ ] V1.5: Tiered subscription service and pricing model (monetization layer)
+
+### Post-Demo Sprint 1 Cleanup (pull into first sprint after Friday March 27)
+- [ ] UI: Each screen's guidance page should be step-by-step (e.g. "Step 1: Empty your head fully...")
+- [ ] UI: Add a 5-filters subsection to the Shape guidance screen explaining each filter (Delegate, Do, Delete, Park, Schedule)
+- [ ] UI: Add a graphic or animation to the 5-filters subsection in Shape guidance to visually illustrate each filter
+- [ ] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
+- [ ] UI: Allow reordering items within the same hour bucket in Daily Planner
+- [ ] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming - Test: in Shape, tap Schedule on a pending item and verify the preview updates as date/time changes; confirm appointments, timed tasks, task pool items, and pending pile items are shown for that day; save and verify the item lands on the selected day/time. Then tap Move on a pending item, verify the preview updates as the day changes, save, and confirm the item appears in that day's pending pile.
+- [ ] Feature: Daily Planner should support configurable visible hour range (user chooses how many hours to show) - Test: in App Settings, change Daily Planner start and end hours; return to Fill and verify the timeline updates to the selected range, All Day remains at the top, drag/drop still works in visible slots, and saved settings persist after closing and reopening the app.
+- [ ] Epic: Google Calendar integration (v1) — pull selected calendars into Fill as read-only reference blocks, plus local calendar export handoff from Shape; Authorization Code + PKCE OAuth, calendar picker, Supabase schema with RLS (see docs/2026-03-24-rc1-calendar-spike-decision-memo.md). Depends on Auth epic for Cal A3+.
+- [ ] Cal A1: Replace implicit OAuth flow in lib/googleCalendar.ts with Authorization Code + PKCE; update scope to calendar.readonly; add /api/calendar/oauth/callback server-side token exchange route.
+- [ ] Cal A2: Create Supabase schema — user_calendar_connections and synced_calendar_events tables with RLS policies and unique constraints.
+- [ ] Cal A3: iOS native OAuth — ASWebAuthenticationSession Authorization Code + PKCE; after exchange present calendar picker; store selected_calendar_ids in Supabase; show connected state. (Depends on Auth A1–A2)
+- [ ] Cal A4: Event pull service — /api/calendar/sync/pull; reads selected calendars, refreshes token if expired, fetches events for day ±7 days, and upserts them into synced_calendar_events using a full-replace strategy for the pull window.
+- [ ] Cal A5: Shape scheduling export handoff — after a user schedules a task in Shape, tapping Export to Calendar immediately opens a prefilled Apple calendar event composer (EventKitUI / EKEventEditViewController); keep Open Calendar as a secondary convenience action; no direct Google Calendar create APIs.
+- [ ] Cal A6: Fill timeline integration — trigger pull on Fill open (15-min throttle); render synced_calendar_events as read-only reference blocks; inline re-auth prompt on 401. (Depends on Cal A4)
+- [ ] Cal A7: Calendar Settings screen — replace stub with real connected/disconnected state, connect/disconnect with calendar picker, Sync Now, last-synced display. (Depends on Cal A3, Cal A4)
+- [ ] Cal A8: Offline cache and error UX — serve cached events on failure; non-blocking banner with retry; inline re-auth prompt on Fill (dismissible per session); non-blocking export/open-calendar failure messaging in Shape.
+- [ ] Epic: Monetization (v1) — StoreKit 2 + RevenueCat subscriptions, no free tier, preview mode when unpaid, offer-code access for seminar/testing cohorts, paywall after Start the Journey.
+- [ ] Mon A1: Add monetization domain model and entitlement service abstraction; support states for active subscription, offer-code access, expired access, and preview mode.
+- [ ] Mon A2: Integrate StoreKit 2 + RevenueCat for monthly and annual subscriptions; keep product IDs and displayed price copy configurable so pricing can be tuned without code churn.
+- [ ] Mon A3: Build the paywall shown after Intro > Start the Journey; include monthly and annual plans, Restore Purchases, code redemption entry point, and continue-to-preview option.
+- [ ] Mon A4: Add preview mode gating across the app — unpaid users can browse but cannot add new tasks; all task-creation entry points should route to the paywall.
+- [ ] Mon A5: Add Settings account/subscription screen with current plan, entitlement status, manage subscription, restore purchases, redeemed-code status, and sign-in/account linkage hooks.
+- [ ] Mon A6: Add offer-code and cohort-access support for seminar/testing rollouts using Apple offer codes first; support time-boxed access such as 3-month cohort grants without custom billing infrastructure.
+- [ ] Mon A7: Add entitlement restore and lifecycle handling for reinstall, device change, sign-in/sign-out, renewal, cancellation, billing issue, and expiration states using trusted third-party vendor flows.
+- [ ] Mon A8: Add monetization telemetry events and funnel tracking — paywall shown, plan selected, purchase started, purchase completed, restore started/completed, code redeemed, preview entered, paywall exit, entitlement expired.
+- [ ] Epic: Authentication (v1) — Supabase Auth + Apple Sign In + guest-first local mode + anonymous-to-account migration (see docs/2026-03-21-rc1-auth-spike-decision-memo.md)
+- [ ] Auth A1: Add AuthClient abstraction and Supabase implementation scaffold.
+- [ ] Auth A2: Add secure session storage in Keychain.
+- [ ] Auth A3: Add Settings entry points — Sign in, Sign out, account status.
+- [ ] Auth A4: Implement Apple Sign In flow and callback handling.
+- [ ] Auth A5: Implement anonymous-to-account data linking migration.
+- [ ] Auth A6: Add migration diagnostics events and failure retry behavior.
+- [ ] Auth A7: Add regression tests for migration idempotency and account relinking.
 - [ ] Test voice entry and parsing
 - [ ] Feature: iOS widget support (home screen + lock screen widgets showing today's Big 3 and pile count)
 - [ ] Epic: Version 2 planning - authenticated logins, social actions (shared delegations, collaborative task handoff)
@@ -36,17 +265,21 @@
 - [ ] Polish: In Automate > Loop > Recurrence, Mon and Tue are word wrapping to 2 lines. Keep them on 1 line. Adjust font size if needed.
 - [ ] UI: Under Automate > Loop > Duration > Fixed count, keep +/- controls and also allow direct keyboard entry of the count value.
 - [ ] Polish: Get new icons centered and working on device (moved from Ready; pending final branding direction)
+- [ ] Improvement: Remove the "genesis pattern" box control on intro screens.
+- [ ] Improvement: Reorder Shape 5-filters to Eliminate (Red), Automate, Delegate, Move, Park; keep non-Eliminate actions gray.
+- [ ] Improvement: Swap Schedule and Move positions; show Schedule on the primary button and make Schedule the default (first toggle option) when selected.
+- [ ] Improvement: Add a way to view scheduled delegate follow-up reminders.
+- [ ] Improvement: Keep delegated tasks visible in Fill stage and render them in a distinct color state.
 
 ## Ready
 
-- [x] Improvement: Increase baseline text legibility (font size/contrast), especially smallest and dimmest type from latest feedback.
-- [x] Improvement: Preserve/strengthen completion and progress feedback (mark-through, completion cues) because users report motivational value.
+- [ ] Sprint E06.2: Reliability fixes (GW-P04c Shape->Fill handoff, GW-P04d calendar sync, GW-P05b Parking Lot carryover)
+
 
 ## In Progress
 
-- [ ] Device test pass while app is running on phone
-- [ ] Feature: As a user, I need a daily-flow experience (morning plan + end-of-day prep), including configurable reminders and links to viewing other days' flow. Scope for v1: time-based reminders only (no in-app special prompt), no default times (set during onboarding), evening reminder opens Fill for that day, cross-day support is Dump-only for now, allow editing future days, keep past days read-only. (Phase 1 started: Dump cross-day date navigation + past read-only, reminder configuration scaffold, evening reminder tap route to Fill)
-- [ ] Release: pre-release-v1 full regression run and RC sign-off (execute docs/v1-regression-test-plan.md + docs/v1-release-quick-run.md; automation: scripts/ios_smoke.sh and .github/workflows/ios-smoke.yml)
+- [ ] Validation: Run end-to-end calendar sync on device (connect Google, select calendars, trigger Fill pull, verify read-only timeline render, force retry/re-auth path, verify cached fallback behavior)
+- [ ] Sprint E06.1: UI copy polish implementation (Onboarding, Dump, Shape, Fill, Parking Lot labels and guidance)
 
 ## Blocked
 
@@ -61,13 +294,21 @@
 
 - [ ] Improvement: Add clear return-to-Home affordance from in-flow screens; validate discoverability with first-time users. Note: behavior should route to Intro screen (not Dump), button may need rename, and should be visible on Dump.
 - [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback There is good guidance at the top of the shape screen, but the text is too dark to read. Lets make this more legible
-- [ ] UI: Increase drag-and-drop handle size in Fill Task Pool rows so touch targets are easier to grab on device.
 - [ ] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
 
 - [ ] Feature: Loop action redesign - Replace Dump repeating-rule flow with Loop as the main recurrence setup. Configure Loop from an Automate menu (not Shape/Pile). Recurrence options: Daily, Weekly, or specific weekdays (Mon-Sun chips). Duration options: Forever or fixed future occurrence count. Saving Loop does NOT resolve/remove the current task from today's pile. Future occurrences generate by schedule regardless of completion and de-duplicate to one instance per day max; missed items roll forward as a single carried-over instance. If lane is unset when loop is created, future instances remain unassigned. - Test: (1) In Dump, type a task and tap the Automate (wand) menu — verify "Loop current input" is available and opens the Loop editor sheet. (2) In the editor, set Daily + Forever, leave lane Unassigned, save — verify today's pile is unchanged and a confirmation message appears. (3) Kill and reopen the app, verify the loop rule persists and appears under Loop Rules in App Settings. (4) In App Settings > Loop Rules, confirm the rule shows Daily · Forever · Unassigned, then delete it and verify it is removed. (5) Create a Weekly loop — confirm it shows the anchor weekday in App Settings. (6) Create a Specific Weekdays loop — tap chips to select Mon/Wed/Fri, confirm the summary shows those days. (7) Create a Fixed Count loop (4 occurrences) — confirm the count decrements by 1 after manual date simulation or that remainingOccurrences is set to 4 in diagnostics. (8) Create a loop from an existing captured item via "Loop captured item" sub-menu — confirm the text pre-fills in the editor. (9) Verify saving a loop on an item that already has a lane pre-sets that lane in the editor. (10) Set lane to Work on a loop, save — verify future items generated carry the Work lane.
 
 ## Done
 
+- [x] Sprint 5 complete: calendar export handoff, Fill integration, and failure UX shipped (Shape Export to Calendar composer + Open Calendar handoff, Fill pull-on-open throttle + read-only synced blocks, non-blocking retry/dismiss banner with cached-event fallback messaging, and final triage pass)
+- [x] Sprint 4 complete: calendar connect and pull shipped on device (native Google OAuth handoff/callback, calendar picker and connected state, /api/calendar/sync/pull + Sync Now wiring, Fill read-only pulled event rendering with 15-minute pull throttle, and inline retry/re-auth handling)
+- [x] Sprint 3 complete: auth migration hardening delivered (linkage/relink safety, diagnostics events/viewer/export, auto/manual retry, regression probe) and calendar groundwork delivered (Google OAuth Authorization Code + PKCE callback route and Supabase calendar schema draft)
+- [x] Sprint 2 complete: auth foundation vertical slice closed with live Supabase Apple sign-in exchange, keychain session persistence, settings account controls, remote sign-out invalidation, and Apple Sign In entitlement wiring
+- [x] Sprint 1 complete: 0.1.2 hardening and RC readiness lane closed on branch pre-release-v1
+- [x] Sprint 1 QA note: smoke build/launch passes and daily-flow reminder setup hardened; complete physical-device spot pass before external demo handoff
+- [x] Spike (RC1-Monetization): Monetization model and entitlement architecture for v1. Decision: StoreKit 2 + RevenueCat, no free tier, paywall after Start the Journey, preview mode for unpaid users, Apple offer codes for seminar/testing access.
+- [x] Spike (RC1-Auth): Authentication and user account architecture for v1. Decision: Supabase Auth + Apple Sign In + guest-first local mode. Memo: docs/2026-03-21-rc1-auth-spike-decision-memo.md
+- [x] Spike (RC1-Calendar): Google Calendar integration design for v1. Decision: pull selected calendars into Fill, keep Genesis tasks local, add explicit Export to Calendar / Open Calendar handoff from Shape, calendar picker, Authorization Code + PKCE OAuth, foreground-only cadence. Memo: docs/2026-03-24-rc1-calendar-spike-decision-memo.md
 - [x] UI: add keyboard Done button on all keyboard-entry screens
 - [x] Bug: optimize first focus/open of Pile input field to remove initial lock-up/delay
 - [x] Bug: fix Fill drag-and-drop so task scheduling works reliably again
@@ -92,6 +333,7 @@
 - [x] Onboarding refresh: kept pile/fill animations and replaced the other two with new paradigm visuals/flows
 - [x] Review session 2026-03-14: Shape intro animation refreshed to geometric triangle draw sequence
 - [x] Review session 2026-03-14: Fill task pool simplified to drag-handle interactions (removed Add buttons)
+- [x] UI: Increase drag-and-drop handle size in Fill Task Pool rows so touch targets are easier to grab on device.
 - [x] Review session 2026-03-14: Fill placed-state indicator added (tasks remain visible with Placed styling)
 - [x] Review session 2026-03-14: Fill timeline now includes explicit All Day slot at top
 - [x] Review session 2026-03-14: Fill planning guardrail requires all tasks to be assigned before Start Day
@@ -173,3 +415,8 @@
 - [ ] UI: Remove duplicate settings icon on Shape screen — single gear entry point already exists via top overlay; remove any redundant in-screen instance
 - [ ] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming - Test: in Shape, tap Schedule on a pending item and verify the preview updates as date/time changes; confirm appointments, timed tasks, task pool items, and pending pile items are shown for that day; save and verify the item lands on the selected day/time. Then tap Move on a pending item, verify the preview updates as the day changes, save, and confirm the item appears in that day's pending pile.
 - [ ] Feature: Daily Planner should support configurable visible hour range (user chooses how many hours to show) - Test: in App Settings, change Daily Planner start and end hours; return to Fill and verify the timeline updates to the selected range, All Day remains at the top, drag/drop still works in visible slots, and saved settings persist after closing and reopening the app.
+- [x] Improvement: Increase baseline text legibility (font size/contrast), especially smallest and dimmest type from latest feedback.
+- [x] Improvement: Preserve/strengthen completion and progress feedback (mark-through, completion cues) because users report motivational value.
+- [x] Device test pass while app is running on phone
+- [x] Feature: As a user, I need a daily-flow experience (morning plan + end-of-day prep), including configurable reminders and links to viewing other days' flow. Scope for v1: time-based reminders only (no in-app special prompt), no default times (set during onboarding), evening reminder opens Fill for that day, cross-day support is Dump-only for now, allow editing future days, keep past days read-only. (Phase 1 started: Dump cross-day date navigation + past read-only, reminder configuration scaffold, evening reminder tap route to Fill)
+- [x] Release: pre-release-v1 full regression run and RC sign-off (execute docs/v1-regression-test-plan.md + docs/v1-release-quick-run.md; automation: scripts/ios_smoke.sh and .github/workflows/ios-smoke.yml)
