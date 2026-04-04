@@ -443,6 +443,10 @@ struct GenesisState: Codable {
     var authMigrationRelinkCount: Int?
     var authMigrationLastError: String?
     var authMigrationEvents: [AuthMigrationEvent]?
+    var parkingLotReviewReminderEnabled: Bool?
+    var parkingLotReviewReminderFrequency: String?
+    var parkingLotReviewReminderTime: String?
+    var lastParkingLotReviewISO: String?
 
     static let initial = GenesisState(
         screen: .onboarding,
@@ -508,6 +512,10 @@ struct GenesisState: Codable {
         authMigrationRetryCount: 0,
         authMigrationRelinkCount: 0,
         authMigrationLastError: nil,
-        authMigrationEvents: []
+        authMigrationEvents: [],
+        parkingLotReviewReminderEnabled: false,
+        parkingLotReviewReminderFrequency: "weekly",
+        parkingLotReviewReminderTime: "",
+        lastParkingLotReviewISO: nil
     )
 }

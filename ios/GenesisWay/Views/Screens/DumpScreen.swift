@@ -11,6 +11,9 @@ struct DumpScreen: View {
     @State private var wasRecording = false
     @State private var voiceStatusMessage: String?
     @State private var hasDeferredFocus = false
+    @State private var editingItemId: UUID? = nil
+    @State private var editingText = ""
+    @FocusState private var isEditFocused: Bool
 
     private var selectedDay: Date {
         store.activePlanningDay
@@ -193,16 +196,42 @@ struct DumpScreen: View {
                             ForEach(dayDumpItems) { item in
                                 HStack(spacing: 10) {
                                     Circle().fill(GWTheme.gold.opacity(0.35)).frame(width: 6, height: 6)
-                                    Text(item.text)
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(GWTheme.textMuted)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .lineLimit(nil)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Button("×") { store.removeDumpItem(id: item.id) }
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(GWTheme.textGhost)
-                                        .disabled(isViewingPastDay)
+
+                                    if editingItemId == item.id {
+                                        TextField("Edit item", text: $editingText)
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(GWTheme.textPrimary)
+                                            .focused($isEditFocused)
+                                            .submitLabel(.done)
+                                            .onSubmit { commitEdit() }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    } else {
+                                        Text(item.text)
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(GWTheme.textMuted)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .lineLimit(nil)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .contentShape(Rectangle())
+                                            .onTapGesture {
+                                                guard !isViewingPastDay else { return }
+                                                editingItemId = item.id
+                                                editingText = item.text
+                                                isEditFocused = true
+                                            }
+                                    }
+
+                                    if editingItemId == item.id {
+                                        Button("Save") { commitEdit() }
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(GWTheme.gold)
+                                            .buttonStyle(.plain)
+                                    } else {
+                                        Button("×") { store.removeDumpItem(id: item.id) }
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundStyle(GWTheme.textGhost)
+                                            .disabled(isViewingPastDay)
+                                    }
                                 }
                                 .padding(.vertical, 10)
                                 Divider().overlay(GWTheme.gold.opacity(0.07))
@@ -247,6 +276,7 @@ struct DumpScreen: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
+                    if editingItemId != nil { commitEdit() }
                     isInputFocused = false
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
@@ -301,6 +331,14 @@ struct DumpScreen: View {
 
         voiceStatusMessage = "Added \(parsed.count) item\(parsed.count == 1 ? "" : "s") from voice capture."
         voice.clearTranscript()
+    }
+
+    private func commitEdit() {
+        guard let id = editingItemId else { return }
+        store.updateDumpItemText(id: id, text: editingText)
+        editingItemId = nil
+        editingText = ""
+        isEditFocused = false
     }
 
     private func addTypedDumpItem() {

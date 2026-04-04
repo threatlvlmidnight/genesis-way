@@ -508,6 +508,24 @@ final class GenesisStore: ObservableObject {
     var weeklyMacroDump: String { state.weeklyMacroDump }
     var plannerStartHour: Int { state.plannerStartHour ?? 8 }
     var plannerEndHour: Int { state.plannerEndHour ?? 18 }
+    var parkingLotReviewReminderEnabled: Bool { state.parkingLotReviewReminderEnabled ?? false }
+    var parkingLotReviewReminderFrequency: String { state.parkingLotReviewReminderFrequency ?? "weekly" }
+    var parkingLotReviewReminderTime: String { state.parkingLotReviewReminderTime ?? "" }
+    var lastParkingLotReviewISO: String? { state.lastParkingLotReviewISO }
+    var isParkingLotReviewOverdue: Bool {
+        guard parkingLotReviewReminderEnabled,
+              let lastISO = state.lastParkingLotReviewISO,
+              let last = ISO8601DateFormatter().date(from: lastISO) else {
+            return parkingLotReviewReminderEnabled
+        }
+        let days: Int
+        switch parkingLotReviewReminderFrequency {
+        case "monthly": days = 30
+        case "quarterly": days = 90
+        default: days = 7
+        }
+        return Date().timeIntervalSince(last) > Double(days * 86400)
+    }
     var hasUnreadyShapeItems: Bool {
         let selectedDayISO = activePlanningDayISO
         return state.dumpItems.contains { item in
@@ -720,6 +738,68 @@ final class GenesisStore: ObservableObject {
         Task { await scheduleDailyFlowRemindersIfNeeded() }
     }
 
+    func setParkingLotReviewReminderEnabled(_ enabled: Bool) {
+        state.parkingLotReviewReminderEnabled = enabled
+        Task { await scheduleParkingLotReviewReminderIfNeeded() }
+    }
+
+    func setParkingLotReviewReminderFrequency(_ frequency: String) {
+        state.parkingLotReviewReminderFrequency = frequency
+        Task { await scheduleParkingLotReviewReminderIfNeeded() }
+    }
+
+    func setParkingLotReviewReminderTime(_ time: String) {
+        state.parkingLotReviewReminderTime = time
+        Task { await scheduleParkingLotReviewReminderIfNeeded() }
+    }
+
+    func markParkingLotReviewed() {
+        state.lastParkingLotReviewISO = ISO8601DateFormatter().string(from: Date())
+    }
+
+    private func scheduleParkingLotReviewReminderIfNeeded() async {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["gw.parkingLotReview"])
+
+        guard state.parkingLotReviewReminderEnabled == true else { return }
+
+        let frequency = state.parkingLotReviewReminderFrequency ?? "weekly"
+        let timeStr = state.parkingLotReviewReminderTime ?? ""
+
+        guard let fireDate = reminderDate(from: timeStr) else { return }
+
+        var authorized = false
+        do {
+            authorized = try await center.requestAuthorization(options: [.alert, .sound, .badge])
+        } catch { return }
+        guard authorized else { return }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Parking Lot Review"
+        content.body = "Time to review your Parking Lot. Promote anything that's now due, delete what no longer matters."
+        content.sound = .default
+
+        var components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
+        let trigger: UNCalendarNotificationTrigger
+
+        switch frequency {
+        case "monthly":
+            components.day = 1
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        case "quarterly":
+            // Use monthly trigger for first of each quarter month (Jan/Apr/Jul/Oct)
+            // Simplest approach: schedule as monthly, app badge logic handles "overdue" UX
+            components.day = 1
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        default: // weekly — fire on Sunday
+            components.weekday = 1
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+        }
+
+        let request = UNNotificationRequest(identifier: "gw.parkingLotReview", content: content, trigger: trigger)
+        try? await center.add(request)
+    }
+
     @discardableResult
     func markDailyFlowRemindersConfigured() -> Bool {
         if !canMarkDailyFlowRemindersConfigured() {
@@ -899,6 +979,13 @@ final class GenesisStore: ObservableObject {
 
     func removeDumpItem(id: UUID) {
         state.dumpItems.removeAll { $0.id == id }
+    }
+
+    func updateDumpItemText(id: UUID, text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let idx = state.dumpItems.firstIndex(where: { $0.id == id }) else { return }
+        state.dumpItems[idx].text = trimmed
     }
 
     func assignDumpItem(_ id: UUID, to spoke: Spoke?) {

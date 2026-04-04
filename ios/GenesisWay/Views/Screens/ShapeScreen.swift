@@ -235,6 +235,11 @@ struct ShapeScreen: View {
                                         }
                                     }
 
+                                    Text("Work = output, deadlines & obligations · Personal = home, health & relationships")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(GWTheme.textGhost)
+                                        .fixedSize(horizontal: false, vertical: true)
+
                                     LazyVGrid(
                                         columns: [
                                             GridItem(.flexible(minimum: 88), spacing: 8),

@@ -198,6 +198,9 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Epic: GW-E09 Guidance & Discoverability Sprint (2026-04-03) - step-by-step in-screen guidance for Dump, Shape, Fill; 5-filter explainer; board tidy
 - Sprint E09.1 (Implementation): GW-P09a, GW-P09b, GW-P09c
 
+- Epic: GW-E10 UX & Usability Sprint (2026-04-04) - Work/Personal lane clarity in Shape, inline task editing on Dump, Parking Lot recurring review reminders
+- Sprint E10.1 (Implementation): GW-P10a, GW-P10b, GW-P10c
+
 - [x] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
 - [x] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
 - [x] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
@@ -232,12 +235,16 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] GW-P09b POLISH: Step-by-step guidance on Fill screen — upgrade the "How fill works" card to numbered steps matching the GW-P04a/b copy: Step 1 = Sync your calendar, Step 2 = Assign each task to a time, Step 3 = Finish your day on paper before it begins, Step 4 = Start your day.
 - [x] GW-P09c IMPROVEMENT: Shape 5-filters explainer — add a collapsible or static sub-card beneath "How Shape It Works" that explains each filter with a short one-liner: Eliminate (won't do it, delete it), Automate (repeating task — create a Loop), Delegate (assign to someone + follow-up reminder), Move (pick a date or time), Park (not now, not never — Parking Lot).
 
+- [x] GW-P10a IMPROVEMENT: Work vs Personal lane clarity — add a one-line sub-hint beneath the Work/Personal lane buttons on each Shape item explaining the distinction: Work = output, deadlines, obligations; Personal = home, health, relationships. Closes Review lane UX/Copy feedback item.
+- [x] GW-P10b FEATURE: Inline task editing on Dump screen — tapping an existing captured item opens it for one-tap in-place text editing rather than delete-and-re-add. Add store.updateDumpItemText(id:text:) and switch item row to TextField on tap; save on submit or dismiss.
+- [x] GW-P10c FEATURE: Parking Lot recurring review reminders — add a weekly/monthly/quarterly UNUserNotificationCenter repeating reminder that prompts the user to review their Parking Lot; configure frequency and time in App Settings Reminders section; show badge in Park screen when review is overdue.
+
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
 - [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
 - [ ] Feature: Scheduled reminders — allow user to configure recurring notifications (e.g. morning Pile reminder, evening plan-tomorrow reminder) with day-of-week and time controls in App Settings
-- [ ] Feature: Inline task editing on Pile screen — tapping an existing task item opens it for in-place text editing rather than requiring delete-and-re-add
-- [ ] Feature: Parking lot recurring review reminders — allow user to set weekly, monthly, or quarterly reminder to review the Park screen and promote items into the active Pile
+- [x] Feature: Inline task editing on Pile screen — tapping an existing task item opens it for in-place text editing rather than requiring delete-and-re-add
+- [x] Feature: Parking lot recurring review reminders — allow user to set weekly, monthly, or quarterly reminder to review the Park screen and promote items into the active Pile
 - [x] Fix: Skip intro onboarding cards on re-open — write a "hasCompletedOnboarding" flag to persistent storage when user taps "Begin journey"; only show intro cards when flag is absent or reset via App Settings
 - [ ] Future: Indexed note system per task — allow users to attach freeform notes to any task, viewable and editable from Pile/Shape/Park, so they can track context and retrieve it later
 - [ ] External tester group created
@@ -304,6 +311,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 
 - [ ] Validation: Run end-to-end calendar sync on device (connect Google, select calendars, trigger Fill pull, verify read-only timeline render, force retry/re-auth path, verify cached fallback behavior)
 - [ ] Sprint E06.3: GW-QA01 validation pass using docs/2026-04-03-gw-e06-testing-plan.md on simulator and physical device
+- [x] Sprint E10.1: GW-P10a through GW-P10c implementation pass
 
 ## Blocked
 
@@ -317,13 +325,14 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 ## Review
 
 - [x] Improvement: Add clear return-to-Home affordance from in-flow screens; validate discoverability with first-time users. Note: behavior should route to Intro screen (not Dump), button may need rename, and should be visible on Dump.
-- [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback
+- [x] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback
 - [x] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
 
 - [ ] Feature: Loop action redesign - Replace Dump repeating-rule flow with Loop as the main recurrence setup. Configure Loop from an Automate menu (not Shape/Pile). Recurrence options: Daily, Weekly, or specific weekdays (Mon-Sun chips). Duration options: Forever or fixed future occurrence count. Saving Loop does NOT resolve/remove the current task from today's pile. Future occurrences generate by schedule regardless of completion and de-duplicate to one instance per day max; missed items roll forward as a single carried-over instance. If lane is unset when loop is created, future instances remain unassigned. - Test: (1) In Dump, type a task and tap the Automate (wand) menu — verify "Loop current input" is available and opens the Loop editor sheet. (2) In the editor, set Daily + Forever, leave lane Unassigned, save — verify today's pile is unchanged and a confirmation message appears. (3) Kill and reopen the app, verify the loop rule persists and appears under Loop Rules in App Settings. (4) In App Settings > Loop Rules, confirm the rule shows Daily · Forever · Unassigned, then delete it and verify it is removed. (5) Create a Weekly loop — confirm it shows the anchor weekday in App Settings. (6) Create a Specific Weekdays loop — tap chips to select Mon/Wed/Fri, confirm the summary shows those days. (7) Create a Fixed Count loop (4 occurrences) — confirm the count decrements by 1 after manual date simulation or that remainingOccurrences is set to 4 in diagnostics. (8) Create a loop from an existing captured item via "Loop captured item" sub-menu — confirm the text pre-fills in the editor. (9) Verify saving a loop on an item that already has a lane pre-sets that lane in the editor. (10) Set lane to Work on a loop, save — verify future items generated carry the Work lane.
 
 ## Done
 
+- [x] Sprint E10.1 complete: UX & usability sprint shipped (Work/Personal one-liner hint on Shape lane buttons, inline tap-to-edit on Dump items with commit-on-submit, Parking Lot recurring review reminders with frequency/time settings and overdue badge in Park)
 - [x] Sprint E09.1 complete: Guidance & discoverability sprint shipped (Dump empty-state → 3-step numbered GlassCard, Fill guidance → 4-step numbered GlassCard, Shape 5-filters explainer subsection added with inline Eliminate/Automate/Delegate/Move/Park one-liners)
 - [x] Sprint E08.1 complete: Polish & refinement sprint shipped (keyboard Done button deduped across 3 screens, Loop weekday chips fixed to 10pt single-line, Loop fixed count now supports direct TextField entry, delegated dump items appear in Fill Task Pool with amber "Delegated" badge + assignee, Pending Delegations card added to Parking Lot with mark-complete action)
 - [x] Sprint E07.1 complete: UX polish sprint shipped (onboarding skip persistence, genesis pattern card removed, Shape filter reorder Eliminate→Automate→Delegate→Move→Park, Schedule/Move picker swapped to Schedule-first, Shape guidance upgraded to textPrimary, all " 2" duplicate files removed)

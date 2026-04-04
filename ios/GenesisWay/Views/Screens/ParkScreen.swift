@@ -16,6 +16,39 @@ struct ParkScreen: View {
                 .font(.system(size: 13))
                 .foregroundStyle(GWTheme.textMuted)
 
+            if store.isParkingLotReviewOverdue {
+                GlassCard {
+                    HStack(spacing: 12) {
+                        Image(systemName: "clock.badge.exclamationmark")
+                            .font(.system(size: 16))
+                            .foregroundStyle(GWTheme.gold)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Review due")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(GWTheme.textPrimary)
+                            Text("Go through each item — promote, delete, or keep for later.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(GWTheme.textMuted)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer()
+
+                        Button("Done") {
+                            store.markParkingLotReviewed()
+                        }
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color(hex: "1a1208"))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(GWTheme.gold)
+                        .clipShape(Capsule())
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
             HStack(spacing: 8) {
                 TextField("Park an item for later", text: $input)
                     .submitLabel(.done)

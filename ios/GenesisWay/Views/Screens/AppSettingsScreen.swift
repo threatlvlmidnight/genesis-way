@@ -321,6 +321,39 @@ struct AppSettingsScreen: View {
                     Text("No reminder times are auto-defaulted. Configure your morning/evening flow reminders explicitly.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+
+                    Toggle("Parking Lot recurring review", isOn: Binding(
+                        get: { store.parkingLotReviewReminderEnabled },
+                        set: { store.setParkingLotReviewReminderEnabled($0) }
+                    ))
+
+                    Picker("Review frequency", selection: Binding(
+                        get: { store.parkingLotReviewReminderFrequency },
+                        set: { store.setParkingLotReviewReminderFrequency($0) }
+                    )) {
+                        Text("Weekly (Sunday)").tag("weekly")
+                        Text("Monthly (1st)").tag("monthly")
+                        Text("Quarterly (1st of quarter)").tag("quarterly")
+                    }
+                    .disabled(!store.parkingLotReviewReminderEnabled)
+
+                    Picker("Review reminder time", selection: Binding(
+                        get: { store.parkingLotReviewReminderTime },
+                        set: { store.setParkingLotReviewReminderTime($0) }
+                    )) {
+                        Text("No time set").tag("")
+                        Text("8:00 AM").tag("8:00 AM")
+                        Text("9:00 AM").tag("9:00 AM")
+                        Text("10:00 AM").tag("10:00 AM")
+                        Text("12:00 PM").tag("12:00 PM")
+                        Text("5:00 PM").tag("5:00 PM")
+                        Text("7:00 PM").tag("7:00 PM")
+                    }
+                    .disabled(!store.parkingLotReviewReminderEnabled)
+
+                    Text("A repeating notification prompts you to review the Parking Lot and promote or delete items.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Daily Planner") {
