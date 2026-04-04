@@ -189,22 +189,23 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Sprint E06.2 (Reliability fixes): GW-P04c, GW-P04d, GW-P05b
 - Sprint E06.3 (Validation): GW-QA01 using docs/2026-04-03-gw-e06-testing-plan.md
 
-- [ ] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
-- [ ] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
-- [ ] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
-- [ ] GW-P01d Onboarding / Finish It copy update: rename Sustain It to Finish It, add tagline, and set In Practice copy to "Finish your task list or consciously move each item forward. Run each incomplete item through the filters."
-- [ ] GW-P01e Onboarding / Genesis Pattern normalization: update all onboarding pattern labels to "Dump it - Shape it - Fill it - Finish it - Rest" while preserving arrows.
-- [ ] GW-P02 Dump screen guidance copy update: "Get everything out of your head. List tasks at Work, Home, Hobby, School. Don't filter. Don't worry about the order."
-- [ ] GW-P03a Shape screen terminology update: title/labels to "SHAPE it" and "How Shape It Works" with Work/Personal tagging and filter instructions.
-- [ ] GW-P03b Shape screen process microcopy update: in DUMP TO PROCESS, change "all pending items are ready for fill" to "all pending items are ready, click Fill below".
-- [ ] GW-P03c Shape screen filter button relabel: Eliminate | Automate | Delegate | Schedule | Park.
-- [ ] GW-P04a Fill screen top description update: "Sync your calendar, then assign each task to a time (drag and drop)."
-- [ ] GW-P04b Fill "How fill works" section update: When will I do this? Move tasks to timeline/day, finish your day on paper before it begins, schedule reminders.
-- [ ] GW-P04c BUG: Shape -> Fill handoff regression; ensure shaped items consistently appear in Fill again.
-- [ ] GW-P04d BUG: Calendar will not sync; restore pull/sync flow and add visible failure feedback + retry path.
-- [ ] GW-P05a Park screen rename: change "The Park" to "Parking Lot" with subtitle "Someday/Maybe List. Not now. Not never. Just not today."
-- [ ] GW-P05b BUG: Parking Lot carryover persistence across consecutive days.
+- [x] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
+- [x] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
+- [x] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
+- [x] GW-P01d Onboarding / Finish It copy update: rename Sustain It to Finish It, add tagline, and set In Practice copy to "Finish your task list or consciously move each item forward. Run each incomplete item through the filters."
+- [x] GW-P01e Onboarding / Genesis Pattern normalization: update all onboarding pattern labels to "Dump it - Shape it - Fill it - Finish it - Rest" while preserving arrows.
+- [x] GW-P02 Dump screen guidance copy update: "Get everything out of your head. List tasks at Work, Home, Hobby, School. Don't filter. Don't worry about the order."
+- [x] GW-P03a Shape screen terminology update: title/labels to Shape It and How Shape It Works with Work/Personal tagging and filter instructions.
+- [x] GW-P03b Shape screen process microcopy update: in DUMP TO PROCESS, change "all pending items are ready for fill" to "all pending items are ready, click Fill below".
+- [x] GW-P03c Shape screen filter button relabel: Eliminate | Automate | Delegate | Schedule | Park.
+- [x] GW-P04a Fill screen top description update: "Sync your calendar, then assign each task to a time (drag and drop)."
+- [x] GW-P04b Fill "How fill works" section update: When will I do this? Move tasks to timeline/day, finish your day on paper before it begins, schedule reminders.
+- [x] GW-P04c BUG: Shape -> Fill handoff regression; ensure shaped items consistently appear in Fill again.
+- [x] GW-P04d BUG: Calendar will not sync; restore pull/sync flow and add visible failure feedback + retry path.
+- [x] GW-P05a Park screen rename: change "The Park" to "Parking Lot" with subtitle "Someday/Maybe List. Not now. Not never. Just not today."
+- [x] GW-P05b BUG: Parking Lot carryover persistence across consecutive days.
 - [ ] GW-QA01 Regression pass: execute docs/2026-04-03-gw-e06-testing-plan.md and verify Dump -> Shape -> Fill -> Parking Lot flow after GW-E06 items (including sync and cross-day persistence).
+- [x] GW-P06 HIGH PRIORITY follow-on (pull immediately after GW-E06): Calendar link/session hardening - when app reopens next day after initial setup, calendar sync remains connected and operational (no broken sync state). Include token/session refresh reliability, reconnect UX, and next-day cold-start regression coverage.
 
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
