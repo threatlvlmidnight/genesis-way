@@ -23,6 +23,7 @@ struct ShapeScreen: View {
     @State private var automateLoopWeekdays: Set<Int> = []
     @State private var automateLoopDurationType: LoopDurationType = .forever
     @State private var automateLoopFixedCount = 4
+    @State private var automateLoopFixedCountText = "4"
     @State private var delegateTargetItem: DumpItem?
     @State private var lastActionItemId: UUID?
     @State private var jamTargetItem: DumpItem?
@@ -235,6 +236,7 @@ struct ShapeScreen: View {
                                                 automateLoopRecurrenceType = .daily
                                                 automateLoopDurationType = .forever
                                                 automateLoopFixedCount = 4
+                                                automateLoopFixedCountText = "4"
                                                 automateTargetItem = item
                                             }
                                             GWHaptics.medium()
@@ -515,6 +517,23 @@ struct ShapeScreen: View {
                         }
                         if automateLoopDurationType == .fixedCount {
                             Stepper("Occurrences: \(automateLoopFixedCount)", value: $automateLoopFixedCount, in: 1...60)
+                                .onChange(of: automateLoopFixedCount) { _, newVal in
+                                    automateLoopFixedCountText = "\(newVal)"
+                                }
+                            HStack {
+                                Text("Or type count:")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.secondary)
+                                TextField("1–60", text: $automateLoopFixedCountText)
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 60)
+                                    .onChange(of: automateLoopFixedCountText) { _, raw in
+                                        if let n = Int(raw), (1...60).contains(n) {
+                                            automateLoopFixedCount = n
+                                        }
+                                    }
+                            }
                         }
                     }
                     Section {
@@ -709,9 +728,10 @@ struct ShapeScreen: View {
                     if selected { automateLoopWeekdays.remove(weekday) }
                     else { automateLoopWeekdays.insert(weekday) }
                 }
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(selected ? Color(hex: "1a1208") : GWTheme.textGhost)
-                .padding(.horizontal, 10)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
                 .padding(.vertical, 6)
                 .background(selected ? GWTheme.gold : Color.white.opacity(0.08))
                 .clipShape(Capsule())

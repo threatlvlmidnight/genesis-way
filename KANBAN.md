@@ -192,6 +192,9 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Epic: GW-E07 UX Polish Sprint (2026-04-03) - onboarding skip persistence, genesis pattern removal, Shape filter reorder, guidance legibility
 - Sprint E07.1 (Implementation): GW-P07a, GW-P07b, GW-P07c, GW-P07d, GW-P07e
 
+- Epic: GW-E08 Polish & Refinement Sprint (2026-04-03) - keyboard button spacing, Loop chip wrap, Loop fixed count entry, delegated tasks in Fill, delegate reminder view
+- Sprint E08.1 (Implementation): GW-P08a, GW-P08b, GW-P08c, GW-P08d, GW-P08e
+
 - [x] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
 - [x] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
 - [x] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
@@ -215,6 +218,12 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] GW-P07c IMPROVEMENT: Reorder Shape 5-filter grid to Eliminate (red), Automate, Delegate, Move, Park; rename "Schedule" grid button to "Move"; inside the Move sheet swap segment order to Schedule | Move with Schedule as default (appointment mode first).
 - [x] GW-P07d IMPROVEMENT: Shape guidance text legibility — upgrade guidance body copy from textMuted to textPrimary so it reads clearly in all themes.
 - [x] GW-P07e CLEANUP: Remove all duplicate " 2" files from docs/, scripts/, and assets now that E06 validation sign-off is complete.
+
+- [x] GW-P08a POLISH: Keyboard Done button overlap — remove redundant safeAreaInset Done capsule from DumpScreen, FillScreen, ParkScreen; rely solely on ToolbarItemGroup(placement: .keyboard) for a single, native-placement Done button.
+- [x] GW-P08b POLISH: Loop Recurrence weekday chips word-wrap — Mon/Tue chips are wrapping to 2 lines; fix by using a smaller font size (10pt) so all 7 chips fit on one line.
+- [x] GW-P08c POLISH: Loop Fixed Count — add direct TextField keyboard entry alongside the Stepper so users can type a count without tapping +/-.
+- [x] GW-P08d IMPROVEMENT: Delegated dump items visible in Fill — show today's delegated DumpItems in a distinct "Delegated" sub-section inside the Task Pool with amber/muted tint and assignee label.
+- [x] GW-P08e IMPROVEMENT: View scheduled delegate follow-up reminders — add a "Pending Delegations" card in ParkScreen showing open DelegateFollowUpItem entries with due date and mark-complete action.
 
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
@@ -270,16 +279,16 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] Test voice entry and parsing
 - [ ] Feature: iOS widget support (home screen + lock screen widgets showing today's Big 3 and pile count)
 - [ ] Epic: Version 2 planning - authenticated logins, social actions (shared delegations, collaborative task handoff)
-- [ ] Polish: Adjust spacing on the keyboard Done button - it sits too close to the top of the keyboard and nearly overlaps it #kickback
+- [x] Polish: Adjust spacing on the keyboard Done button - it sits too close to the top of the keyboard and nearly overlaps it #kickback
 - [ ] Polish: guided setup should visually indicate which control/button to press on each step - I like the icon you added, but it should also circle or highlight the actual buttons in the UI as well #kickback
-- [ ] Polish: In Automate > Loop > Recurrence, Mon and Tue are word wrapping to 2 lines. Keep them on 1 line. Adjust font size if needed.
-- [ ] UI: Under Automate > Loop > Duration > Fixed count, keep +/- controls and also allow direct keyboard entry of the count value.
+- [x] Polish: In Automate > Loop > Recurrence, Mon and Tue are word wrapping to 2 lines. Keep them on 1 line. Adjust font size if needed.
+- [x] UI: Under Automate > Loop > Duration > Fixed count, keep +/- controls and also allow direct keyboard entry of the count value.
 - [ ] Polish: Get new icons centered and working on device (moved from Ready; pending final branding direction)
 - [x] Improvement: Remove the "genesis pattern" box control on intro screens.
 - [x] Improvement: Reorder Shape 5-filters to Eliminate (Red), Automate, Delegate, Move, Park; keep non-Eliminate actions gray.
 - [x] Improvement: Swap Schedule and Move positions; show Schedule on the primary button and make Schedule the default (first toggle option) when selected.
-- [ ] Improvement: Add a way to view scheduled delegate follow-up reminders.
-- [ ] Improvement: Keep delegated tasks visible in Fill stage and render them in a distinct color state.
+- [x] Improvement: Add a way to view scheduled delegate follow-up reminders.
+- [x] Improvement: Keep delegated tasks visible in Fill stage and render them in a distinct color state.
 
 ## Ready
 
@@ -308,6 +317,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 
 ## Done
 
+- [x] Sprint E08.1 complete: Polish & refinement sprint shipped (keyboard Done button deduped across 3 screens, Loop weekday chips fixed to 10pt single-line, Loop fixed count now supports direct TextField entry, delegated dump items appear in Fill Task Pool with amber "Delegated" badge + assignee, Pending Delegations card added to Parking Lot with mark-complete action)
 - [x] Sprint E07.1 complete: UX polish sprint shipped (onboarding skip persistence, genesis pattern card removed, Shape filter reorder Eliminate→Automate→Delegate→Move→Park, Schedule/Move picker swapped to Schedule-first, Shape guidance upgraded to textPrimary, all " 2" duplicate files removed)
 - [x] Sprint 5 complete: calendar export handoff, Fill integration, and failure UX shipped (Shape Export to Calendar composer + Open Calendar handoff, Fill pull-on-open throttle + read-only synced blocks, non-blocking retry/dismiss banner with cached-event fallback messaging, and final triage pass)
 - [x] Sprint 4 complete: calendar connect and pull shipped on device (native Google OAuth handoff/callback, calendar picker and connected state, /api/calendar/sync/pull + Sync Now wiring, Fill read-only pulled event rendering with 15-minute pull throttle, and inline retry/re-auth handling)

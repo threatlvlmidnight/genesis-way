@@ -9,7 +9,6 @@ struct FillScreen: View {
     @State private var showBig3Help = false
     @State private var showRatingHelp = false
     @State private var targetedDropSlot: String?
-    @State private var keyboardVisible = false
     @State private var isAutoSyncingCalendar = false
     @State private var isRetryingCalendarSync = false
     @State private var hideCalendarErrorBannerForSession = false
@@ -109,6 +108,10 @@ struct FillScreen: View {
 
     private var unscheduledPersonalTasks: [TaskItem] {
         unscheduledTaskPool.filter { $0.lane == .personal }
+    }
+
+    private var delegatedDumpItems: [DumpItem] {
+        store.dumpItems(for: planningDay).filter { $0.filterOutcome == .delegated }
     }
 
     private var planningDayISO: String {
@@ -567,6 +570,48 @@ struct FillScreen: View {
                                     Button("Add to Big 3 #3") { assignTask(task, toBig3Slot: 2) }
                                 }
                             }
+
+                            if !delegatedDumpItems.isEmpty {
+                                Text("Delegated")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(GWTheme.textGhost)
+                                    .textCase(.uppercase)
+                                    .padding(.top, 4)
+
+                                ForEach(delegatedDumpItems) { item in
+                                    let followUp = store.delegatedFollowUps.first(where: { $0.taskText == item.text })
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "arrow.forward.circle")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(GWTheme.gold.opacity(0.7))
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(item.text)
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(GWTheme.textMuted)
+                                                .lineLimit(nil)
+                                                .fixedSize(horizontal: false, vertical: true)
+
+                                            if let fu = followUp, !fu.assignee.isEmpty {
+                                                Text("→ \(fu.assignee)")
+                                                    .font(.system(size: 10, weight: .medium))
+                                                    .foregroundStyle(GWTheme.gold.opacity(0.75))
+                                            }
+                                        }
+
+                                        Spacer()
+
+                                        Text("Delegated")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(GWTheme.gold.opacity(0.8))
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 3)
+                                            .background(GWTheme.gold.opacity(0.12))
+                                            .clipShape(Capsule())
+                                    }
+                                    .padding(.vertical, 2)
+                                }
+                            }
                         }
                     }
                 }
@@ -784,12 +829,6 @@ struct FillScreen: View {
         } message: {
             Text("W and P codes are auto-generated task IDs. They help index tasks quickly and are not manual priority inputs.")
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            keyboardVisible = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            keyboardVisible = false
-        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -799,25 +838,6 @@ struct FillScreen: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(GWTheme.gold)
                 .padding(.vertical, 6)
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            if keyboardVisible {
-                HStack {
-                    Spacer()
-                    Button("Done") {
-                        dismissKeyboard()
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(GWTheme.gold)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.92))
-                    .clipShape(Capsule())
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .background(Color.black.opacity(0.35))
             }
         }
         .task(id: planningDayISO) {
