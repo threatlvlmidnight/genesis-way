@@ -189,6 +189,9 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Sprint E06.2 (Reliability fixes): GW-P04c, GW-P04d, GW-P05b
 - Sprint E06.3 (Validation): GW-QA01 using docs/2026-04-03-gw-e06-testing-plan.md
 
+- Epic: GW-E07 UX Polish Sprint (2026-04-03) - onboarding skip persistence, genesis pattern removal, Shape filter reorder, guidance legibility
+- Sprint E07.1 (Implementation): GW-P07a, GW-P07b, GW-P07c, GW-P07d, GW-P07e
+
 - [x] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
 - [x] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
 - [x] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
@@ -207,13 +210,19 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] GW-QA01 Regression pass: execute docs/2026-04-03-gw-e06-testing-plan.md and verify Dump -> Shape -> Fill -> Parking Lot flow after GW-E06 items (including sync and cross-day persistence).
 - [x] GW-P06 HIGH PRIORITY follow-on (pull immediately after GW-E06): Calendar link/session hardening - when app reopens next day after initial setup, calendar sync remains connected and operational (no broken sync state). Include token/session refresh reliability, reconnect UX, and next-day cold-start regression coverage.
 
+- [x] GW-P07a FIX: Skip intro onboarding on re-open — write showIntroOnLaunch=false in beginJourney() and skipToPlanner() so the intro cards only show once; accessible via App Settings reset.
+- [x] GW-P07b IMPROVEMENT: Remove "genesis pattern" GlassCard from OnboardingScreen; keep the daily flow reminder setup card and Begin the Journey CTA unchanged.
+- [x] GW-P07c IMPROVEMENT: Reorder Shape 5-filter grid to Eliminate (red), Automate, Delegate, Move, Park; rename "Schedule" grid button to "Move"; inside the Move sheet swap segment order to Schedule | Move with Schedule as default (appointment mode first).
+- [x] GW-P07d IMPROVEMENT: Shape guidance text legibility — upgrade guidance body copy from textMuted to textPrimary so it reads clearly in all themes.
+- [x] GW-P07e CLEANUP: Remove all duplicate " 2" files from docs/, scripts/, and assets now that E06 validation sign-off is complete.
+
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
 - [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
 - [ ] Feature: Scheduled reminders — allow user to configure recurring notifications (e.g. morning Pile reminder, evening plan-tomorrow reminder) with day-of-week and time controls in App Settings
 - [ ] Feature: Inline task editing on Pile screen — tapping an existing task item opens it for in-place text editing rather than requiring delete-and-re-add
 - [ ] Feature: Parking lot recurring review reminders — allow user to set weekly, monthly, or quarterly reminder to review the Park screen and promote items into the active Pile
-- [ ] Fix: Skip intro onboarding cards on re-open — write a "hasCompletedOnboarding" flag to persistent storage when user taps "Begin journey"; only show intro cards when flag is absent or reset via App Settings
+- [x] Fix: Skip intro onboarding cards on re-open — write a "hasCompletedOnboarding" flag to persistent storage when user taps "Begin journey"; only show intro cards when flag is absent or reset via App Settings
 - [ ] Future: Indexed note system per task — allow users to attach freeform notes to any task, viewable and editable from Pile/Shape/Park, so they can track context and retrieve it later
 - [ ] External tester group created
 - [ ] Beta App Review submitted
@@ -266,15 +275,13 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] Polish: In Automate > Loop > Recurrence, Mon and Tue are word wrapping to 2 lines. Keep them on 1 line. Adjust font size if needed.
 - [ ] UI: Under Automate > Loop > Duration > Fixed count, keep +/- controls and also allow direct keyboard entry of the count value.
 - [ ] Polish: Get new icons centered and working on device (moved from Ready; pending final branding direction)
-- [ ] Improvement: Remove the "genesis pattern" box control on intro screens.
-- [ ] Improvement: Reorder Shape 5-filters to Eliminate (Red), Automate, Delegate, Move, Park; keep non-Eliminate actions gray.
-- [ ] Improvement: Swap Schedule and Move positions; show Schedule on the primary button and make Schedule the default (first toggle option) when selected.
+- [x] Improvement: Remove the "genesis pattern" box control on intro screens.
+- [x] Improvement: Reorder Shape 5-filters to Eliminate (Red), Automate, Delegate, Move, Park; keep non-Eliminate actions gray.
+- [x] Improvement: Swap Schedule and Move positions; show Schedule on the primary button and make Schedule the default (first toggle option) when selected.
 - [ ] Improvement: Add a way to view scheduled delegate follow-up reminders.
 - [ ] Improvement: Keep delegated tasks visible in Fill stage and render them in a distinct color state.
 
 ## Ready
-
-- [ ] Post-E06 cleanup: remove duplicate generated files with trailing " 2" names from docs/scripts/assets after validation sign-off
 
 
 ## In Progress
@@ -294,13 +301,14 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 ## Review
 
 - [ ] Improvement: Add clear return-to-Home affordance from in-flow screens; validate discoverability with first-time users. Note: behavior should route to Intro screen (not Dump), button may need rename, and should be visible on Dump.
-- [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback There is good guidance at the top of the shape screen, but the text is too dark to read. Lets make this more legible
+- [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback
 - [ ] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
 
 - [ ] Feature: Loop action redesign - Replace Dump repeating-rule flow with Loop as the main recurrence setup. Configure Loop from an Automate menu (not Shape/Pile). Recurrence options: Daily, Weekly, or specific weekdays (Mon-Sun chips). Duration options: Forever or fixed future occurrence count. Saving Loop does NOT resolve/remove the current task from today's pile. Future occurrences generate by schedule regardless of completion and de-duplicate to one instance per day max; missed items roll forward as a single carried-over instance. If lane is unset when loop is created, future instances remain unassigned. - Test: (1) In Dump, type a task and tap the Automate (wand) menu — verify "Loop current input" is available and opens the Loop editor sheet. (2) In the editor, set Daily + Forever, leave lane Unassigned, save — verify today's pile is unchanged and a confirmation message appears. (3) Kill and reopen the app, verify the loop rule persists and appears under Loop Rules in App Settings. (4) In App Settings > Loop Rules, confirm the rule shows Daily · Forever · Unassigned, then delete it and verify it is removed. (5) Create a Weekly loop — confirm it shows the anchor weekday in App Settings. (6) Create a Specific Weekdays loop — tap chips to select Mon/Wed/Fri, confirm the summary shows those days. (7) Create a Fixed Count loop (4 occurrences) — confirm the count decrements by 1 after manual date simulation or that remainingOccurrences is set to 4 in diagnostics. (8) Create a loop from an existing captured item via "Loop captured item" sub-menu — confirm the text pre-fills in the editor. (9) Verify saving a loop on an item that already has a lane pre-sets that lane in the editor. (10) Set lane to Work on a loop, save — verify future items generated carry the Work lane.
 
 ## Done
 
+- [x] Sprint E07.1 complete: UX polish sprint shipped (onboarding skip persistence, genesis pattern card removed, Shape filter reorder Eliminate→Automate→Delegate→Move→Park, Schedule/Move picker swapped to Schedule-first, Shape guidance upgraded to textPrimary, all " 2" duplicate files removed)
 - [x] Sprint 5 complete: calendar export handoff, Fill integration, and failure UX shipped (Shape Export to Calendar composer + Open Calendar handoff, Fill pull-on-open throttle + read-only synced blocks, non-blocking retry/dismiss banner with cached-event fallback messaging, and final triage pass)
 - [x] Sprint 4 complete: calendar connect and pull shipped on device (native Google OAuth handoff/callback, calendar picker and connected state, /api/calendar/sync/pull + Sync Now wiring, Fill read-only pulled event rendering with 15-minute pull throttle, and inline retry/re-auth handling)
 - [x] Sprint 3 complete: auth migration hardening delivered (linkage/relink safety, diagnostics events/viewer/export, auto/manual retry, regression probe) and calendar groundwork delivered (Google OAuth Authorization Code + PKCE callback route and Supabase calendar schema draft)

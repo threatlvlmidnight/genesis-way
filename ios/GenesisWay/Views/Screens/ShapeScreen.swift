@@ -73,17 +73,17 @@ struct ShapeScreen: View {
 
                         Text("Finish your day on paper before the day begins. Quickly tag each item as Work or Personal, then run each item through one filter: Eliminate, Automate, Delegate, Schedule, or Park.")
                             .font(.system(size: 13))
-                            .foregroundStyle(GWTheme.textMuted)
+                            .foregroundStyle(GWTheme.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text("Choose Work for output, deadlines, and obligations. Choose Personal for home, health, and relationship tasks.")
                             .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textMuted)
+                            .foregroundStyle(GWTheme.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text("Two lanes are intentionally enough: they keep Fill fast and force a clear decision instead of endless categorizing.")
                             .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textMuted)
+                            .foregroundStyle(GWTheme.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -248,10 +248,10 @@ struct ShapeScreen: View {
                                             GWHaptics.medium()
                                         }
 
-                                        filterButton("Schedule", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
+                                        filterButton("Move", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
-                                                scheduleOrMoveMode = .day
+                                                scheduleOrMoveMode = .appointment
                                                 scheduleOrMoveDateTime = Date()
                                                 scheduleOrMoveDayDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
                                                 scheduleOrMoveTargetItem = item
@@ -343,8 +343,8 @@ struct ShapeScreen: View {
             Form {
                 Section {
                     Picker("", selection: $scheduleOrMoveMode) {
-                        Text("Move").tag(ScheduleMoveMode.day)
                         Text("Schedule").tag(ScheduleMoveMode.appointment)
+                        Text("Move").tag(ScheduleMoveMode.day)
                     }
                     .pickerStyle(.segmented)
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))

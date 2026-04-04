@@ -530,8 +530,14 @@ final class GenesisStore: ObservableObject {
         isSignedIn && (state.authMigrationStatus ?? .notStarted) == .failed
     }
 
-    func beginJourney() { state.screen = .dump }
-    func skipToPlanner() { state.screen = .fill }
+    func beginJourney() {
+        state.showIntroOnLaunch = false
+        state.screen = .dump
+    }
+    func skipToPlanner() {
+        state.showIntroOnLaunch = false
+        state.screen = .fill
+    }
 
     func setActivePlanningDay(_ day: Date) {
         state.activePlanningDayISO = Self.dayISO(from: day)

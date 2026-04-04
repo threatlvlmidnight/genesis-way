@@ -31,26 +31,6 @@ struct OnboardingScreen: View {
 
                 showcaseCard
 
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Genesis Pattern")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(GWTheme.textGhost)
-                            .textCase(.uppercase)
-
-                        Text("Dump it -> Shape it -> Fill it -> Finish it -> Rest")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(GWTheme.textPrimary)
-
-                        Text("The four-step flow gets you moving now. The six-week path deepens rhythm, boundaries, and completion.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textMuted)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(nil)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-
                 dailyFlowReminderSetupCard
 
                 PrimaryButton(title: "Begin the Journey", action: onBegin)
