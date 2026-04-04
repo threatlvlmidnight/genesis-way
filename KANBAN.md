@@ -274,13 +274,13 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 
 ## Ready
 
-- [ ] Sprint E06.2: Reliability fixes (GW-P04c Shape->Fill handoff, GW-P04d calendar sync, GW-P05b Parking Lot carryover)
+- [ ] Post-E06 cleanup: remove duplicate generated files with trailing " 2" names from docs/scripts/assets after validation sign-off
 
 
 ## In Progress
 
 - [ ] Validation: Run end-to-end calendar sync on device (connect Google, select calendars, trigger Fill pull, verify read-only timeline render, force retry/re-auth path, verify cached fallback behavior)
-- [ ] Sprint E06.1: UI copy polish implementation (Onboarding, Dump, Shape, Fill, Parking Lot labels and guidance)
+- [ ] Sprint E06.3: GW-QA01 validation pass using docs/2026-04-03-gw-e06-testing-plan.md on simulator and physical device
 
 ## Blocked
 

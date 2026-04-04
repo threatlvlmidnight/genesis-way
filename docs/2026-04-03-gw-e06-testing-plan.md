@@ -30,6 +30,59 @@ Record for each run:
 - Device and iOS version
 - Install type (clean install or upgrade)
 
+## Master Checklist
+
+Use this as the validation sprint run sheet.
+
+### Metadata
+- Build/commit:
+- Tester:
+- Device:
+- iOS version:
+- Install type:
+
+### P0 Reliability
+- [ ] Shape and Fill are on the same selected day as Dump.
+- [ ] Dump items for the selected day appear in Shape.
+- [ ] Shape keeps day items visible even after state changes so decisions can be revised.
+- [ ] Delegate cancel leaves the item in Shape.
+- [ ] Delegate save keeps the item visible in Shape with delegated status.
+- [ ] Shape decisions appear correctly in Fill for the selected day.
+- [ ] Task Pool shows unscheduled items only.
+- [ ] Scheduled tasks appear on the timeline or show the out-of-visible-hours warning.
+- [ ] Parking Lot items persist across day changes and relaunch.
+- [ ] Calendar sync succeeds when already connected.
+- [ ] Calendar sync failure shows a non-blocking error state.
+- [ ] Calendar sync retry recovers after connectivity or token issues are resolved.
+- [ ] Next-day or cold-start reopen keeps calendar connection operational.
+
+### Copy and UI Consistency
+- [ ] Onboarding step 1 uses updated Dump It language and Work/Home/Hobby/School prompt.
+- [ ] Onboarding Shape step uses Eliminate, Automate, Delegate, Schedule, Park.
+- [ ] Onboarding Fill step removes Daily Big 3 language and emphasizes synced calendar/time placement.
+- [ ] Onboarding step 4 says Finish It, not Sustain It.
+- [ ] Genesis Pattern reads Dump it -> Shape it -> Fill it -> Finish it -> Rest.
+- [ ] Dump screen header/guidance matches approved wording.
+- [ ] Shape screen title casing matches Dump It and Fill It.
+- [ ] Shape instructional block says How Shape It Works.
+- [ ] Shape ready-state microcopy says click Fill below.
+- [ ] Fill header says Sync your calendar, then assign each task to a time (drag and drop).
+- [ ] Fill How fill works block matches approved sequence.
+- [ ] Park screen title is Parking Lot with approved subtitle.
+- [ ] No legacy wording remains: Sustain, The Park, sinked.
+
+### Shared-Day Flow
+- [ ] Changing the day in Dump changes the viewed day in Fill.
+- [ ] Changing the day in Fill changes the viewed day in Dump.
+- [ ] Shape reflects the same selected shared day.
+- [ ] Fill appointments card follows the shared selected day, not just today.
+
+### Regression Sequence
+- [ ] Run full path: Onboarding -> Dump -> Shape -> Fill -> Parking Lot.
+- [ ] Kill and relaunch app mid-flow.
+- [ ] Confirm state persists after relaunch.
+- [ ] Verify no Sev 1 or Sev 2 defects remain in GW-E06 scope.
+
 ## Traceability Matrix (Ticket -> Tests)
 
 ### GW-P01a Onboarding / Dump It copy update
