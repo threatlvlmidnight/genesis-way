@@ -186,8 +186,8 @@ struct FillScreen: View {
                 }
 
                 GlassCard {
-                    VStack(alignment: .leading, spacing: 9) {
-                        Text("How fill works")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("How Fill It Works")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(GWTheme.textGhost)
                             .textCase(.uppercase)
@@ -196,11 +196,30 @@ struct FillScreen: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(GWTheme.textPrimary)
 
-                        Text("1. Ask: When will I do this?\n2. Move work and personal tasks to your timeline or another day\n3. Finish your day on paper before your day begins\n4. Schedule reminders so your plan stays on track")
-                            .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textMuted)
-                            .lineSpacing(2)
-                            .multilineTextAlignment(.leading)
+                        ForEach([
+                            ("1", "Sync your calendar", "Connect Google Calendar in Settings so your existing commitments are visible on the timeline."),
+                            ("2", "Assign each task to a time", "Drag tasks from the Task Pool onto a time block. Use Move Day to shift tasks without assigning a time."),
+                            ("3", "Finish your day on paper first", "Your plan is useless if it stays in your head. Lock it in here before the day begins."),
+                            ("4", "Start your day", "Tap Start Day when everything is placed. Your Big 3 sets the daily north star.")
+                        ], id: \.0) { num, title, detail in
+                            HStack(alignment: .top, spacing: 10) {
+                                Text(num)
+                                    .font(.system(size: 11, weight: .heavy))
+                                    .foregroundStyle(GWTheme.gold)
+                                    .frame(width: 18, alignment: .center)
+                                    .padding(.top, 1)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(title)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(GWTheme.textPrimary)
+                                    Text(detail)
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
                     }
                 }
 

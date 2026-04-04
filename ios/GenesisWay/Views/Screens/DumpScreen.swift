@@ -150,16 +150,38 @@ struct DumpScreen: View {
                 }
 
                 if dayDumpItems.isEmpty {
-                    VStack(spacing: 8) {
-                        Text("Your list is clear")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(GWTheme.textMuted)
-                        Text("Get everything out of your head. List tasks at Work, Home, Hobby, School. Don't filter. Don't worry about the order.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textGhost)
-                            .multilineTextAlignment(.center)
+                    GlassCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("How to Dump It")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(GWTheme.textGhost)
+                                .textCase(.uppercase)
+
+                            ForEach([
+                                ("1", "Empty your head fully", "Type every task, worry, idea, or obligation — Work, Home, Hobby, School. All of it."),
+                                ("2", "Don't filter yet", "No sorting, no prioritising. Capture first, judge later. The goal is an empty mind."),
+                                ("3", "Tap Shape when done", "Once everything is out, head to Shape to run each item through the five filters.")
+                            ], id: \.0) { num, title, detail in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Text(num)
+                                        .font(.system(size: 11, weight: .heavy))
+                                        .foregroundStyle(GWTheme.gold)
+                                        .frame(width: 18, alignment: .center)
+                                        .padding(.top, 1)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(title)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(GWTheme.textPrimary)
+                                        Text(detail)
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(GWTheme.textMuted)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            }
+                        }
                     }
-                    .padding(.top, 28)
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {

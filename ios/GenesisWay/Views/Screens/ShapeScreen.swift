@@ -86,6 +86,34 @@ struct ShapeScreen: View {
                             .font(.system(size: 12))
                             .foregroundStyle(GWTheme.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
+
+                        Divider().opacity(0.15).padding(.vertical, 2)
+
+                        Text("The Five Filters")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(GWTheme.textGhost)
+                            .textCase(.uppercase)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach([
+                                ("Eliminate", "Won't do it. Delete it."),
+                                ("Automate", "Repeating task — create a Loop rule so it recurs automatically."),
+                                ("Delegate", "Hand it off — assign to someone and set a follow-up reminder."),
+                                ("Move", "Pick a date or time. Schedule it as an appointment or move to another day."),
+                                ("Park", "Not now, not never — move to the Parking Lot for someday/maybe review.")
+                            ], id: \.0) { filter, description in
+                                HStack(alignment: .top, spacing: 8) {
+                                    Text(filter)
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundStyle(GWTheme.gold)
+                                        .frame(width: 72, alignment: .leading)
+                                    Text(description)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
                     }
                 }
 

@@ -195,6 +195,9 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Epic: GW-E08 Polish & Refinement Sprint (2026-04-03) - keyboard button spacing, Loop chip wrap, Loop fixed count entry, delegated tasks in Fill, delegate reminder view
 - Sprint E08.1 (Implementation): GW-P08a, GW-P08b, GW-P08c, GW-P08d, GW-P08e
 
+- Epic: GW-E09 Guidance & Discoverability Sprint (2026-04-03) - step-by-step in-screen guidance for Dump, Shape, Fill; 5-filter explainer; board tidy
+- Sprint E09.1 (Implementation): GW-P09a, GW-P09b, GW-P09c
+
 - [x] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
 - [x] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
 - [x] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
@@ -225,6 +228,10 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] GW-P08d IMPROVEMENT: Delegated dump items visible in Fill — show today's delegated DumpItems in a distinct "Delegated" sub-section inside the Task Pool with amber/muted tint and assignee label.
 - [x] GW-P08e IMPROVEMENT: View scheduled delegate follow-up reminders — add a "Pending Delegations" card in ParkScreen showing open DelegateFollowUpItem entries with due date and mark-complete action.
 
+- [x] GW-P09a POLISH: Step-by-step guidance on Dump screen — replace flat empty-state copy with numbered "Step 1 / Step 2 / Step 3" guidance card visible when list is empty; copy: Step 1 = Empty your head fully, Step 2 = Don't filter yet, Step 3 = Tap Shape when done.
+- [x] GW-P09b POLISH: Step-by-step guidance on Fill screen — upgrade the "How fill works" card to numbered steps matching the GW-P04a/b copy: Step 1 = Sync your calendar, Step 2 = Assign each task to a time, Step 3 = Finish your day on paper before it begins, Step 4 = Start your day.
+- [x] GW-P09c IMPROVEMENT: Shape 5-filters explainer — add a collapsible or static sub-card beneath "How Shape It Works" that explains each filter with a short one-liner: Eliminate (won't do it, delete it), Automate (repeating task — create a Loop), Delegate (assign to someone + follow-up reminder), Move (pick a date or time), Park (not now, not never — Parking Lot).
+
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
 - [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
@@ -243,10 +250,10 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] A1.4 Add formal XCTest coverage for migration safety and metadata normalization (AC: old saved payload loads without crash and gets pending/day defaults)
 
 ### Post-Demo Sprint 1 Cleanup (pull into first sprint after Friday March 27)
-- [ ] UI: Each screen's guidance page should be step-by-step (e.g. "Step 1: Empty your head fully...")
-- [ ] UI: Add a 5-filters subsection to the Shape guidance screen explaining each filter (Delegate, Do, Delete, Park, Schedule)
+- [x] UI: Each screen's guidance page should be step-by-step (e.g. "Step 1: Empty your head fully...")
+- [x] UI: Add a 5-filters subsection to the Shape guidance screen explaining each filter (Delegate, Do, Delete, Park, Schedule)
 - [ ] UI: Add a graphic or animation to the 5-filters subsection in Shape guidance to visually illustrate each filter
-- [ ] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
+- [x] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
 - [ ] UI: Allow reordering items within the same hour bucket in Daily Planner
 - [ ] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming - Test: in Shape, tap Schedule on a pending item and verify the preview updates as date/time changes; confirm appointments, timed tasks, task pool items, and pending pile items are shown for that day; save and verify the item lands on the selected day/time. Then tap Move on a pending item, verify the preview updates as the day changes, save, and confirm the item appears in that day's pending pile.
 - [ ] Feature: Daily Planner should support configurable visible hour range (user chooses how many hours to show) - Test: in App Settings, change Daily Planner start and end hours; return to Fill and verify the timeline updates to the selected range, All Day remains at the top, drag/drop still works in visible slots, and saved settings persist after closing and reopening the app.
@@ -309,14 +316,15 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 
 ## Review
 
-- [ ] Improvement: Add clear return-to-Home affordance from in-flow screens; validate discoverability with first-time users. Note: behavior should route to Intro screen (not Dump), button may need rename, and should be visible on Dump.
+- [x] Improvement: Add clear return-to-Home affordance from in-flow screens; validate discoverability with first-time users. Note: behavior should route to Intro screen (not Dump), button may need rename, and should be visible on Dump.
 - [ ] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback
-- [ ] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
+- [x] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
 
 - [ ] Feature: Loop action redesign - Replace Dump repeating-rule flow with Loop as the main recurrence setup. Configure Loop from an Automate menu (not Shape/Pile). Recurrence options: Daily, Weekly, or specific weekdays (Mon-Sun chips). Duration options: Forever or fixed future occurrence count. Saving Loop does NOT resolve/remove the current task from today's pile. Future occurrences generate by schedule regardless of completion and de-duplicate to one instance per day max; missed items roll forward as a single carried-over instance. If lane is unset when loop is created, future instances remain unassigned. - Test: (1) In Dump, type a task and tap the Automate (wand) menu — verify "Loop current input" is available and opens the Loop editor sheet. (2) In the editor, set Daily + Forever, leave lane Unassigned, save — verify today's pile is unchanged and a confirmation message appears. (3) Kill and reopen the app, verify the loop rule persists and appears under Loop Rules in App Settings. (4) In App Settings > Loop Rules, confirm the rule shows Daily · Forever · Unassigned, then delete it and verify it is removed. (5) Create a Weekly loop — confirm it shows the anchor weekday in App Settings. (6) Create a Specific Weekdays loop — tap chips to select Mon/Wed/Fri, confirm the summary shows those days. (7) Create a Fixed Count loop (4 occurrences) — confirm the count decrements by 1 after manual date simulation or that remainingOccurrences is set to 4 in diagnostics. (8) Create a loop from an existing captured item via "Loop captured item" sub-menu — confirm the text pre-fills in the editor. (9) Verify saving a loop on an item that already has a lane pre-sets that lane in the editor. (10) Set lane to Work on a loop, save — verify future items generated carry the Work lane.
 
 ## Done
 
+- [x] Sprint E09.1 complete: Guidance & discoverability sprint shipped (Dump empty-state → 3-step numbered GlassCard, Fill guidance → 4-step numbered GlassCard, Shape 5-filters explainer subsection added with inline Eliminate/Automate/Delegate/Move/Park one-liners)
 - [x] Sprint E08.1 complete: Polish & refinement sprint shipped (keyboard Done button deduped across 3 screens, Loop weekday chips fixed to 10pt single-line, Loop fixed count now supports direct TextField entry, delegated dump items appear in Fill Task Pool with amber "Delegated" badge + assignee, Pending Delegations card added to Parking Lot with mark-complete action)
 - [x] Sprint E07.1 complete: UX polish sprint shipped (onboarding skip persistence, genesis pattern card removed, Shape filter reorder Eliminate→Automate→Delegate→Move→Park, Schedule/Move picker swapped to Schedule-first, Shape guidance upgraded to textPrimary, all " 2" duplicate files removed)
 - [x] Sprint 5 complete: calendar export handoff, Fill integration, and failure UX shipped (Shape Export to Calendar composer + Open Calendar handoff, Fill pull-on-open throttle + read-only synced blocks, non-blocking retry/dismiss banner with cached-event fallback messaging, and final triage pass)
@@ -419,8 +427,8 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] Polish: Replace Shape readiness badge with task border state (green border = ready for Fill, red border = not ready)
 - [x] Feature: Expand per-screen question-mark guides with detailed Dan-source guidance for Pile, Shape, and Fill
 - [x] Polish: Shape It intro/onboarding animation rework v3 — card-deal sort animation (pile on left, 3 cards fly to tagged destinations, 3s loop)
-- [ ] UI: Each screen's guidance page should be step-by-step (e.g. "Step 1: Empty your head fully...")
-- [ ] UI: Add a 5-filters subsection to the Shape guidance screen explaining each filter (Delegate, Do, Delete, Park, Schedule)
+- [x] UI: Each screen's guidance page should be step-by-step (e.g. "Step 1: Empty your head fully...")
+- [x] UI: Add a 5-filters subsection to the Shape guidance screen explaining each filter (Delegate, Do, Delete, Park, Schedule)
 - [ ] UI: Add a graphic or animation to the 5-filters subsection in Shape guidance to visually illustrate each filter
 - [ ] UI: Rename all in-app daily-flow references from "Pile" to "Dump" (including step name) without breaking behavior
 - [ ] UI: Allow reordering items within the same hour bucket in Daily Planner
