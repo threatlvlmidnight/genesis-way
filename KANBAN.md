@@ -204,6 +204,13 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Epic: GW-E11 Terminology & Carryover Clarity Sprint (2026-04-04) - rename remaining Pile→Dump UI copy, carried-item badges on Dump, carryover summary card
 - Sprint E11.1 (Implementation): GW-P11a, GW-P11b, GW-P11c
 
+- Epic: GW-E12 Loop Redesign Sprint (2026-04-04) - move Loop entry point to Dump screen; wand button on input for current text; context menu on captured items; Loop editor keeps original item in Dump
+- Sprint E12.1 (Implementation): GW-P12a, GW-P12b, GW-P12c
+
+- [x] GW-P12a FEATURE: Loop entry from Dump input — wand button appears in input toolbar when text is present; tapping opens Loop editor pre-filled with the typed text; no item is added to Dump until user separately taps +.
+- [x] GW-P12b FEATURE: Loop entry from captured Dump items — long-press context menu on any item row offers "Loop this item"; opens Loop editor pre-filled with item text and lane.
+- [x] GW-P12c FEATURE: Loop editor in Dump screen — NavigationStack Form with Loop text, default lane, Recurrence type (Daily/Weekly/Specific weekdays with Mon–Sun chips), and Duration (Forever/Fixed count with Stepper + TextField entry); saving creates a LoopRule without removing the item from Dump. App Settings › Loop Rules already handles review and deletion.
+
 - [x] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
 - [x] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
 - [x] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
@@ -321,6 +328,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] Sprint E06.3: GW-QA01 validation pass using docs/2026-04-03-gw-e06-testing-plan.md on simulator and physical device
 - [x] Sprint E10.1: GW-P10a through GW-P10c implementation pass
 - [x] Sprint E11.1: GW-P11a through GW-P11c implementation pass
+- [x] Sprint E12.1: GW-P12a through GW-P12c implementation pass
 ## Blocked
 
 - [ ] Set signing to paid Apple team in Xcode (waiting on Apple account propagation)
@@ -336,10 +344,11 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] UX/Copy: Add clear guidance for Shape buttons explaining Work vs Personal categories and why two categories are intentionally sufficient #kickback
 - [x] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
 
-- [ ] Feature: Loop action redesign - Replace Dump repeating-rule flow with Loop as the main recurrence setup. Configure Loop from an Automate menu (not Shape/Pile). Recurrence options: Daily, Weekly, or specific weekdays (Mon-Sun chips). Duration options: Forever or fixed future occurrence count. Saving Loop does NOT resolve/remove the current task from today's pile. Future occurrences generate by schedule regardless of completion and de-duplicate to one instance per day max; missed items roll forward as a single carried-over instance. If lane is unset when loop is created, future instances remain unassigned. - Test: (1) In Dump, type a task and tap the Automate (wand) menu — verify "Loop current input" is available and opens the Loop editor sheet. (2) In the editor, set Daily + Forever, leave lane Unassigned, save — verify today's pile is unchanged and a confirmation message appears. (3) Kill and reopen the app, verify the loop rule persists and appears under Loop Rules in App Settings. (4) In App Settings > Loop Rules, confirm the rule shows Daily · Forever · Unassigned, then delete it and verify it is removed. (5) Create a Weekly loop — confirm it shows the anchor weekday in App Settings. (6) Create a Specific Weekdays loop — tap chips to select Mon/Wed/Fri, confirm the summary shows those days. (7) Create a Fixed Count loop (4 occurrences) — confirm the count decrements by 1 after manual date simulation or that remainingOccurrences is set to 4 in diagnostics. (8) Create a loop from an existing captured item via "Loop captured item" sub-menu — confirm the text pre-fills in the editor. (9) Verify saving a loop on an item that already has a lane pre-sets that lane in the editor. (10) Set lane to Work on a loop, save — verify future items generated carry the Work lane.
+- [x] Feature: Loop action redesign - Closed by E12.1. Wand button on input + context menu on captured items; Loop editor in Dump; saving keeps item intact; App Settings manages loop rules.
 
 ## Done
 
+- [x] Sprint E12.1 complete: Loop redesign shipped (wand button on Dump input opens Loop editor pre-filled with typed text; long-press context menu on captured items for Loop; Loop editor in Dump with full recurrence/duration controls; saving creates LoopRule without removing item from Dump; App Settings Loop Rules section handles review and deletion)
 - [x] Sprint E10.1 complete: UX & usability sprint shipped (Work/Personal one-liner hint on Shape lane buttons, inline tap-to-edit on Dump items with commit-on-submit, Parking Lot recurring review reminders with frequency/time settings and overdue badge in Park)
 - [x] Sprint E09.1 complete: Guidance & discoverability sprint shipped (Dump empty-state → 3-step numbered GlassCard, Fill guidance → 4-step numbered GlassCard, Shape 5-filters explainer subsection added with inline Eliminate/Automate/Delegate/Move/Park one-liners)
 - [x] Sprint E08.1 complete: Polish & refinement sprint shipped (keyboard Done button deduped across 3 screens, Loop weekday chips fixed to 10pt single-line, Loop fixed count now supports direct TextField entry, delegated dump items appear in Fill Task Pool with amber "Delegated" badge + assignee, Pending Delegations card added to Parking Lot with mark-complete action)

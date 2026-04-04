@@ -4,6 +4,12 @@ import SwiftUI
 import UIKit
 
 struct DumpScreen: View {
+    private struct LoopDraft: Identifiable {
+        let id = UUID()
+        var text: String
+        var lane: TaskLane?
+    }
+
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
     @FocusState private var isInputFocused: Bool
@@ -14,6 +20,16 @@ struct DumpScreen: View {
     @State private var editingItemId: UUID? = nil
     @State private var editingText = ""
     @FocusState private var isEditFocused: Bool
+
+    // Loop editor state
+    @State private var loopDraft: LoopDraft? = nil
+    @State private var loopText = ""
+    @State private var loopLane: TaskLane? = nil
+    @State private var loopRecurrenceType: LoopRecurrenceType = .daily
+    @State private var loopWeekdays: Set<Int> = []
+    @State private var loopDurationType: LoopDurationType = .forever
+    @State private var loopFixedCount = 4
+    @State private var loopFixedCountText = "4"
 
     private var selectedDay: Date {
         store.activePlanningDay
@@ -115,6 +131,27 @@ struct DumpScreen: View {
                     }
                     .buttonStyle(.plain)
                             .disabled(isViewingPastDay)
+
+                    if !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isViewingPastDay {
+                        Button {
+                            loopText = input.trimmingCharacters(in: .whitespacesAndNewlines)
+                            loopLane = nil
+                            loopRecurrenceType = .daily
+                            loopWeekdays = []
+                            loopDurationType = .forever
+                            loopFixedCount = 4
+                            loopFixedCountText = "4"
+                            loopDraft = LoopDraft(text: loopText, lane: nil)
+                        } label: {
+                            Image(systemName: "wand.and.stars")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(Color(hex: "1a1208"))
+                                .frame(width: 44, height: 44)
+                                .background(GWTheme.gold.opacity(0.7))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
                 if !voice.transcript.isEmpty {
@@ -267,6 +304,22 @@ struct DumpScreen: View {
                                     }
                                 }
                                 .padding(.vertical, 10)
+                                .contextMenu {
+                                    if editingItemId != item.id && !isViewingPastDay {
+                                        Button {
+                                            loopText = item.text
+                                            loopLane = item.lane
+                                            loopRecurrenceType = .daily
+                                            loopWeekdays = []
+                                            loopDurationType = .forever
+                                            loopFixedCount = 4
+                                            loopFixedCountText = "4"
+                                            loopDraft = LoopDraft(text: item.text, lane: item.lane)
+                                        } label: {
+                                            Label("Loop this item", systemImage: "wand.and.stars")
+                                        }
+                                    }
+                                }
                                 Divider().overlay(GWTheme.gold.opacity(0.07))
                             }
                         }
@@ -317,6 +370,9 @@ struct DumpScreen: View {
                 .foregroundStyle(GWTheme.gold)
                 .padding(.vertical, 6)
             }
+        }
+        .sheet(item: $loopDraft) { draft in
+            loopEditorSheet(draft: draft)
         }
     }
 
@@ -404,6 +460,122 @@ struct DumpScreen: View {
         .padding(.horizontal, 24)
         .padding(.top, 10)
         .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private func loopEditorSheet(draft: LoopDraft) -> some View {
+        NavigationStack {
+            Form {
+                Section("Loop") {
+                    TextField("Task", text: $loopText)
+                    Picker("Default lane", selection: Binding(
+                        get: { loopLane?.rawValue ?? "unassigned" },
+                        set: { loopLane = TaskLane(rawValue: $0) }
+                    )) {
+                        Text("Unassigned").tag("unassigned")
+                        Text("Work").tag(TaskLane.work.rawValue)
+                        Text("Personal").tag(TaskLane.personal.rawValue)
+                    }
+                }
+
+                Section("Recurrence") {
+                    Picker("Type", selection: $loopRecurrenceType) {
+                        ForEach(LoopRecurrenceType.allCases) { type in
+                            Text(type.title).tag(type)
+                        }
+                    }
+                    if loopRecurrenceType == .weekdays {
+                        loopWeekdayChips
+                    }
+                }
+
+                Section("Duration") {
+                    Picker("Length", selection: $loopDurationType) {
+                        ForEach(LoopDurationType.allCases) { type in
+                            Text(type.title).tag(type)
+                        }
+                    }
+                    if loopDurationType == .fixedCount {
+                        Stepper("Occurrences: \(loopFixedCount)", value: $loopFixedCount, in: 1...60)
+                            .onChange(of: loopFixedCount) { _, newVal in
+                                loopFixedCountText = "\(newVal)"
+                            }
+                        HStack {
+                            Text("Or type count:")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                            TextField("1–60", text: $loopFixedCountText)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 60)
+                                .onChange(of: loopFixedCountText) { _, raw in
+                                    if let n = Int(raw), (1...60).contains(n) {
+                                        loopFixedCount = n
+                                    }
+                                }
+                        }
+                    }
+                }
+
+                Section {
+                    Text("Saving a Loop keeps the original item in your Dump. At most one Loop item is generated per day; missed runs roll into one carried-over item.")
+                    Text("Active loops: \(store.loopRules.count) — manage in App Settings › Loop Rules.")
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+            .navigationTitle("Loop")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                loopText = draft.text
+                loopLane = draft.lane
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { loopDraft = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save Loop") {
+                        store.addLoopRule(
+                            text: loopText.trimmingCharacters(in: .whitespacesAndNewlines),
+                            lane: loopLane,
+                            recurrenceType: loopRecurrenceType,
+                            weekdayNumbers: loopRecurrenceType == .weekdays ? loopWeekdays.sorted() : [],
+                            durationType: loopDurationType,
+                            fixedCount: loopDurationType == .fixedCount ? loopFixedCount : nil
+                        )
+                        GWHaptics.success()
+                        loopDraft = nil
+                    }
+                    .disabled(
+                        loopText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                        (loopRecurrenceType == .weekdays && loopWeekdays.isEmpty)
+                    )
+                    .foregroundStyle(GWTheme.gold)
+                }
+            }
+        }
+    }
+
+    private var loopWeekdayChips: some View {
+        let options: [(Int, String)] = [(2,"Mon"),(3,"Tue"),(4,"Wed"),(5,"Thu"),(6,"Fri"),(7,"Sat"),(1,"Sun")]
+        return HStack(spacing: 8) {
+            ForEach(options, id: \.0) { weekday, label in
+                let selected = loopWeekdays.contains(weekday)
+                Button(label) {
+                    if selected { loopWeekdays.remove(weekday) }
+                    else { loopWeekdays.insert(weekday) }
+                }
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(selected ? Color(hex: "1a1208") : GWTheme.textGhost)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(selected ? GWTheme.gold : Color.white.opacity(0.08))
+                .clipShape(Capsule())
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 
