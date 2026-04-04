@@ -201,6 +201,9 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Epic: GW-E10 UX & Usability Sprint (2026-04-04) - Work/Personal lane clarity in Shape, inline task editing on Dump, Parking Lot recurring review reminders
 - Sprint E10.1 (Implementation): GW-P10a, GW-P10b, GW-P10c
 
+- Epic: GW-E11 Terminology & Carryover Clarity Sprint (2026-04-04) - rename remaining Pile→Dump UI copy, carried-item badges on Dump, carryover summary card
+- Sprint E11.1 (Implementation): GW-P11a, GW-P11b, GW-P11c
+
 - [x] GW-P01a Onboarding / Dump It copy update: replace "sustain it" with "finish it" and add Work/Home/Hobby/School prompt in Step 1 guidance.
 - [x] GW-P01b Onboarding / Shape It copy update: use filter sequence Eliminate, Automate, Delegate, Schedule, Park; reorder In Practice bullets to match workflow.
 - [x] GW-P01c Onboarding / Fill It copy update: emphasize calendar sync + assigning each task to a time/place; remove "Choose your daily big 3" from Step 3; refresh In Practice bullets.
@@ -239,6 +242,10 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] GW-P10b FEATURE: Inline task editing on Dump screen — tapping an existing captured item opens it for one-tap in-place text editing rather than delete-and-re-add. Add store.updateDumpItemText(id:text:) and switch item row to TextField on tap; save on submit or dismiss.
 - [x] GW-P10c FEATURE: Parking Lot recurring review reminders — add a weekly/monthly/quarterly UNUserNotificationCenter repeating reminder that prompts the user to review their Parking Lot; configure frequency and time in App Settings Reminders section; show badge in Park screen when review is overdue.
 
+- [x] GW-P11a CLEANUP: Rename remaining user-visible "Pile" text to "Dump" — update ShapeScreen Day Preview labels ("Pending Pile" → "Pending Dump", "pending pile item" → "dump item") and mark the related feature/scheduling preview and configurable hour range items as done (both already implemented).
+- [x] GW-P11b POLISH: Carried-over badge on Dump screen items — items with carriedOver == true should display a small "Carried" pill badge (matching the existing Fill screen treatment); makes rollovers immediately visible at the capture stage.
+- [x] GW-P11c FEATURE: Carryover summary card on Dump screen — when today's dump list contains carried items, show a compact GlassCard at the top of the list summarising how many items rolled forward and from which days; closes the "End-of-day carryover badges and history view" backlog item.
+
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
 - [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
@@ -253,7 +260,8 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] Review session 2026-03-14: Clarify trailing note "Sni" and convert into actionable ticket(s)
 - [ ] Android port
 - [ ] Future: deeper calendar integration for Genesis Way. Question: after the v1 Google pull + local export milestone, do we want provider write-back, Apple Calendar parity, or both in the next pass?
-- [ ] End-of-day carryover badges and history view
+- [x] End-of-day carryover badges and history view
+- [x] Feature: Scheduling preview + confirm flow when assigning an item to a day — already implemented via previewSection in Shape Move/Schedule sheet (appointments, timed tasks, task pool, pending dump items all shown for the target day).
 - [ ] A1.4 Add formal XCTest coverage for migration safety and metadata normalization (AC: old saved payload loads without crash and gets pending/day defaults)
 
 ### Post-Demo Sprint 1 Cleanup (pull into first sprint after Friday March 27)
@@ -262,8 +270,8 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] UI: Add a graphic or animation to the 5-filters subsection in Shape guidance to visually illustrate each filter
 - [x] UI: Execution Progress should use dual-color independent tracking (Big 3 completion + scheduled task completion), not a single combined percentage.
 - [ ] UI: Allow reordering items within the same hour bucket in Daily Planner
-- [ ] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming - Test: in Shape, tap Schedule on a pending item and verify the preview updates as date/time changes; confirm appointments, timed tasks, task pool items, and pending pile items are shown for that day; save and verify the item lands on the selected day/time. Then tap Move on a pending item, verify the preview updates as the day changes, save, and confirm the item appears in that day's pending pile.
-- [ ] Feature: Daily Planner should support configurable visible hour range (user chooses how many hours to show) - Test: in App Settings, change Daily Planner start and end hours; return to Fill and verify the timeline updates to the selected range, All Day remains at the top, drag/drop still works in visible slots, and saved settings persist after closing and reopening the app.
+- [x] Feature: Scheduling preview + confirm flow when assigning an item to a day so users can see what is already scheduled that day before confirming - Test: in Shape, tap Schedule on a pending item and verify the preview updates as date/time changes; confirm appointments, timed tasks, task pool items, and pending pile items are shown for that day; save and verify the item lands on the selected day/time. Then tap Move on a pending item, verify the preview updates as the day changes, save, and confirm the item appears in that day's pending pile.
+- [x] Feature: Daily Planner should support configurable visible hour range (user chooses how many hours to show) - Test: in App Settings, change Daily Planner start and end hours; return to Fill and verify the timeline updates to the selected range, All Day remains at the top, drag/drop still works in visible slots, and saved settings persist after closing and reopening the app.
 - [ ] Epic: Google Calendar integration (v1) — pull selected calendars into Fill as read-only reference blocks, plus local calendar export handoff from Shape; Authorization Code + PKCE OAuth, calendar picker, Supabase schema with RLS (see docs/2026-03-24-rc1-calendar-spike-decision-memo.md). Depends on Auth epic for Cal A3+.
 - [ ] Cal A1: Replace implicit OAuth flow in lib/googleCalendar.ts with Authorization Code + PKCE; update scope to calendar.readonly; add /api/calendar/oauth/callback server-side token exchange route.
 - [ ] Cal A2: Create Supabase schema — user_calendar_connections and synced_calendar_events tables with RLS policies and unique constraints.
@@ -312,7 +320,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] Validation: Run end-to-end calendar sync on device (connect Google, select calendars, trigger Fill pull, verify read-only timeline render, force retry/re-auth path, verify cached fallback behavior)
 - [ ] Sprint E06.3: GW-QA01 validation pass using docs/2026-04-03-gw-e06-testing-plan.md on simulator and physical device
 - [x] Sprint E10.1: GW-P10a through GW-P10c implementation pass
-
+- [x] Sprint E11.1: GW-P11a through GW-P11c implementation pass
 ## Blocked
 
 - [ ] Set signing to paid Apple team in Xcode (waiting on Apple account propagation)

@@ -37,6 +37,10 @@ struct DumpScreen: View {
         return selected < today
     }
 
+    private var carriedItems: [DumpItem] {
+        dayDumpItems.filter { $0.carriedOver == true }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -186,6 +190,25 @@ struct DumpScreen: View {
                         }
                     }
                 } else {
+                    if !carriedItems.isEmpty {
+                        GlassCard {
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(GWTheme.gold)
+                                    .padding(.top, 1)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(carriedItems.count) item\(carriedItems.count == 1 ? "" : "s") carried forward")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(GWTheme.textPrimary)
+                                    Text("These didn't get shaped yesterday. Review, edit, or remove them.")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                    }
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("Captured — \(dayDumpItems.count)")
@@ -196,6 +219,16 @@ struct DumpScreen: View {
                             ForEach(dayDumpItems) { item in
                                 HStack(spacing: 10) {
                                     Circle().fill(GWTheme.gold.opacity(0.35)).frame(width: 6, height: 6)
+
+                                    if item.carriedOver == true {
+                                        Text("Carried")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(Color(hex: "1a1208"))
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 3)
+                                            .background(GWTheme.gold.opacity(0.85))
+                                            .clipShape(Capsule())
+                                    }
 
                                     if editingItemId == item.id {
                                         TextField("Edit item", text: $editingText)

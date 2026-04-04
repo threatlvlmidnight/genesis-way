@@ -688,7 +688,7 @@ struct ShapeScreen: View {
                 Text(formattedPreviewDay(day))
                     .font(.system(size: 13, weight: .semibold))
 
-                Text("\(appointments.count) appointment\(appointments.count == 1 ? "" : "s") • \(scheduledTasks.count) timed task\(scheduledTasks.count == 1 ? "" : "s") • \(taskPool.count) pool item\(taskPool.count == 1 ? "" : "s") • \(pendingPile.count) pending pile item\(pendingPile.count == 1 ? "" : "s")")
+                Text("\(appointments.count) appointment\(appointments.count == 1 ? "" : "s") • \(scheduledTasks.count) timed task\(scheduledTasks.count == 1 ? "" : "s") • \(taskPool.count) pool item\(taskPool.count == 1 ? "" : "s") • \(pendingPile.count) dump item\(pendingPile.count == 1 ? "" : "s")")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
 
@@ -710,7 +710,7 @@ struct ShapeScreen: View {
                     }
 
                     if !pendingPile.isEmpty {
-                        previewGroup(title: "Pending Pile", lines: pendingPile.prefix(3).map(\.text))
+                        previewGroup(title: "Pending Dump", lines: pendingPile.prefix(3).map(\.text))
                     }
                 }
             }
