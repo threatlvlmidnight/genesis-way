@@ -290,6 +290,18 @@ final class GenesisStore: ObservableObject {
         }
     }
 
+    private struct GoogleCalendarRefreshResponse: Codable {
+        let accessToken: String
+        let expiresIn: Int?
+        let refreshToken: String?
+
+        enum CodingKeys: String, CodingKey {
+            case accessToken = "access_token"
+            case expiresIn = "expires_in"
+            case refreshToken = "refresh_token"
+        }
+    }
+
     private struct GoogleCalendarSyncPullRequest: Encodable {
         let accessToken: String
         let selectedCalendarIds: [String]
@@ -1385,14 +1397,11 @@ final class GenesisStore: ObservableObject {
             let calendars = try await fetchGoogleCalendars(accessToken: accessToken)
             await MainActor.run {
                 setGoogleCalendarAvailableCalendars(calendars)
-                state.googleCalendarAccessToken = accessToken
-                state.googleCalendarRefreshToken = tokenPayload.refreshToken
-                if let expiresIn = tokenPayload.expiresIn {
-                    let expiresAt = Date().addingTimeInterval(TimeInterval(max(60, expiresIn)))
-                    state.googleCalendarAccessTokenExpiresAtISO = Self.isoDateTime(from: expiresAt)
-                } else {
-                    state.googleCalendarAccessTokenExpiresAtISO = nil
-                }
+                applyGoogleCalendarTokens(
+                    accessToken: accessToken,
+                    refreshToken: tokenPayload.refreshToken,
+                    expiresIn: tokenPayload.expiresIn
+                )
                 if googleCalendarSelectedCalendarIDs.isEmpty {
                     let preferredCalendarID = calendars.first(where: { $0.detail?.contains("Primary") == true })?.id ?? calendars.first?.id
                     if let preferredCalendarID {
@@ -1454,13 +1463,16 @@ final class GenesisStore: ObservableObject {
             return 0
         }
 
-        guard let accessToken = state.googleCalendarAccessToken, !accessToken.isEmpty else {
-            state.googleCalendarLastError = "Google access token is missing. Reconnect your calendar account."
+        guard let configuration = GoogleCalendarConfiguration.fromBundle() else {
+            state.googleCalendarLastError = "Calendar API base URL is not configured."
             return 0
         }
 
-        guard let configuration = GoogleCalendarConfiguration.fromBundle() else {
-            state.googleCalendarLastError = "Calendar API base URL is not configured."
+        let accessToken: String
+        do {
+            accessToken = try await validGoogleCalendarAccessToken(configuration: configuration)
+        } catch {
+            state.googleCalendarLastError = error.localizedDescription
             return 0
         }
 
@@ -1468,11 +1480,25 @@ final class GenesisStore: ObservableObject {
         let calendarIDs = selectedCalendarIDs.isEmpty ? ["primary"] : selectedCalendarIDs
 
         do {
-            let response = try await performGoogleCalendarPull(
-                endpointBaseURL: configuration.apiBaseURL,
-                accessToken: accessToken,
-                selectedCalendarIDs: calendarIDs
-            )
+            let response: GoogleCalendarSyncPullResponse
+            do {
+                response = try await performGoogleCalendarPull(
+                    endpointBaseURL: configuration.apiBaseURL,
+                    accessToken: accessToken,
+                    selectedCalendarIDs: calendarIDs
+                )
+            } catch {
+                if let nsError = error as NSError?, nsError.code == 401 {
+                    let refreshedToken = try await validGoogleCalendarAccessToken(configuration: configuration, forceRefresh: true)
+                    response = try await performGoogleCalendarPull(
+                        endpointBaseURL: configuration.apiBaseURL,
+                        accessToken: refreshedToken,
+                        selectedCalendarIDs: calendarIDs
+                    )
+                } else {
+                    throw error
+                }
+            }
             let syncedEvents = (response.events ?? []).map { payload in
                 SyncedCalendarEvent(
                     id: "\(payload.provider):\(payload.calendarId):\(payload.providerEventId)",
@@ -2123,6 +2149,73 @@ final class GenesisStore: ObservableObject {
         return payload
     }
 
+    private func refreshGoogleCalendarAccessToken(
+        configuration: GoogleCalendarConfiguration,
+        refreshToken: String
+    ) async throws -> GoogleCalendarRefreshResponse {
+        guard let endpoint = URL(string: "https://oauth2.googleapis.com/token") else {
+            throw NSError(domain: "GenesisWay", code: 1005, userInfo: [NSLocalizedDescriptionKey: "Google token refresh URL is invalid."])
+        }
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        var components = URLComponents()
+        components.queryItems = [
+            URLQueryItem(name: "client_id", value: configuration.clientId),
+            URLQueryItem(name: "grant_type", value: "refresh_token"),
+            URLQueryItem(name: "refresh_token", value: refreshToken),
+        ]
+        request.httpBody = components.percentEncodedQuery?.data(using: .utf8)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "GenesisWay", code: 1006, userInfo: [NSLocalizedDescriptionKey: "Google token refresh returned an invalid response."])
+        }
+
+        guard (200 ..< 300).contains(httpResponse.statusCode) else {
+            let message = (try? JSONSerialization.jsonObject(with: data))
+                .flatMap { $0 as? [String: Any] }?["error_description"] as? String
+            throw NSError(domain: "GenesisWay", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message ?? "Google token refresh failed. Reconnect your calendar account."])
+        }
+
+        return try JSONDecoder().decode(GoogleCalendarRefreshResponse.self, from: data)
+    }
+
+    private func validGoogleCalendarAccessToken(
+        configuration: GoogleCalendarConfiguration,
+        forceRefresh: Bool = false
+    ) async throws -> String {
+        let currentAccessToken = state.googleCalendarAccessToken?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let refreshToken = state.googleCalendarRefreshToken?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let shouldRefresh = forceRefresh || googleCalendarAccessTokenNeedsRefresh
+
+        if !shouldRefresh, !currentAccessToken.isEmpty {
+            return currentAccessToken
+        }
+
+        guard !refreshToken.isEmpty else {
+            if !currentAccessToken.isEmpty {
+                return currentAccessToken
+            }
+            throw NSError(domain: "GenesisWay", code: 1007, userInfo: [NSLocalizedDescriptionKey: "Google access token is missing and no refresh token is available. Reconnect your calendar account."])
+        }
+
+        let refreshed = try await refreshGoogleCalendarAccessToken(configuration: configuration, refreshToken: refreshToken)
+        await MainActor.run {
+            applyGoogleCalendarTokens(
+                accessToken: refreshed.accessToken,
+                refreshToken: refreshed.refreshToken,
+                expiresIn: refreshed.expiresIn
+            )
+            googleCalendarStatusMessage = forceRefresh ? "Calendar session renewed. Retrying sync." : "Calendar session renewed."
+        }
+
+        return refreshed.accessToken
+    }
+
     private func performGoogleCalendarPull(
         endpointBaseURL: URL,
         accessToken: String,
@@ -2205,6 +2298,28 @@ final class GenesisStore: ObservableObject {
                 return lhsPrimary
             }
             return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+        }
+    }
+
+    private var googleCalendarAccessTokenNeedsRefresh: Bool {
+        guard let expiresAtISO = state.googleCalendarAccessTokenExpiresAtISO,
+              let expiresAt = ISO8601DateFormatter().date(from: expiresAtISO) else {
+            return false
+        }
+
+        return expiresAt.timeIntervalSinceNow <= 300
+    }
+
+    private func applyGoogleCalendarTokens(accessToken: String, refreshToken: String?, expiresIn: Int?) {
+        state.googleCalendarAccessToken = accessToken
+        if let refreshToken, !refreshToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            state.googleCalendarRefreshToken = refreshToken
+        }
+        if let expiresIn {
+            let expiresAt = Date().addingTimeInterval(TimeInterval(max(60, expiresIn)))
+            state.googleCalendarAccessTokenExpiresAtISO = Self.isoDateTime(from: expiresAt)
+        } else {
+            state.googleCalendarAccessTokenExpiresAtISO = nil
         }
     }
 
