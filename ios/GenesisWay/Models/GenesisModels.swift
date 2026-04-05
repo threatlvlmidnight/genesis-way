@@ -447,6 +447,8 @@ struct GenesisState: Codable {
     var parkingLotReviewReminderFrequency: String?
     var parkingLotReviewReminderTime: String?
     var lastParkingLotReviewISO: String?
+    var morningReminderWeekdays: [Int]?
+    var eveningReminderWeekdays: [Int]?
 
     static let initial = GenesisState(
         screen: .onboarding,
@@ -516,6 +518,8 @@ struct GenesisState: Codable {
         parkingLotReviewReminderEnabled: false,
         parkingLotReviewReminderFrequency: "weekly",
         parkingLotReviewReminderTime: "",
-        lastParkingLotReviewISO: nil
+        lastParkingLotReviewISO: nil,
+        morningReminderWeekdays: nil,
+        eveningReminderWeekdays: nil
     )
 }

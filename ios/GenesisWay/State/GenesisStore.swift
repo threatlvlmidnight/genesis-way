@@ -512,6 +512,8 @@ final class GenesisStore: ObservableObject {
     var parkingLotReviewReminderFrequency: String { state.parkingLotReviewReminderFrequency ?? "weekly" }
     var parkingLotReviewReminderTime: String { state.parkingLotReviewReminderTime ?? "" }
     var lastParkingLotReviewISO: String? { state.lastParkingLotReviewISO }
+    var morningReminderWeekdays: [Int] { state.morningReminderWeekdays ?? [] }
+    var eveningReminderWeekdays: [Int] { state.eveningReminderWeekdays ?? [] }
     var isParkingLotReviewOverdue: Bool {
         guard parkingLotReviewReminderEnabled,
               let lastISO = state.lastParkingLotReviewISO,
@@ -735,6 +737,16 @@ final class GenesisStore: ObservableObject {
     func setEveningPlanningReminderTime(_ time: String) {
         state.eveningPlanningReminderTime = time
         state.hasConfiguredDailyFlowReminders = false
+        Task { await scheduleDailyFlowRemindersIfNeeded() }
+    }
+
+    func setMorningReminderWeekdays(_ days: [Int]) {
+        state.morningReminderWeekdays = days.isEmpty ? nil : days
+        Task { await scheduleDailyFlowRemindersIfNeeded() }
+    }
+
+    func setEveningReminderWeekdays(_ days: [Int]) {
+        state.eveningReminderWeekdays = days.isEmpty ? nil : days
         Task { await scheduleDailyFlowRemindersIfNeeded() }
     }
 
@@ -1975,7 +1987,12 @@ final class GenesisStore: ObservableObject {
 
     private func scheduleDailyFlowRemindersIfNeeded() async {
         let center = UNUserNotificationCenter.current()
-        center.removePendingNotificationRequests(withIdentifiers: ["genesis.morning.plan", "genesis.evening.plan"])
+
+        // Remove all previously scheduled daily-flow notifications (morning + evening, all weekday variants)
+        let allIdentifiers: [String] = (1...7).flatMap { w in
+            ["genesis.morning.plan.\(w)", "genesis.evening.plan.\(w)"]
+        } + ["genesis.morning.plan", "genesis.evening.plan"]
+        center.removePendingNotificationRequests(withIdentifiers: allIdentifiers)
 
         let morningEnabled = state.morningPlanningReminderEnabled ?? false
         let eveningEnabled = state.eveningPlanningReminderEnabled
@@ -1989,40 +2006,50 @@ final class GenesisStore: ObservableObject {
         }
         guard authorized else { return }
 
-        if morningEnabled,
-           let fireDate = reminderDate(from: state.morningPlanningReminderTime ?? "") {
+        // Schedule morning reminders
+        if morningEnabled, let fireDate = reminderDate(from: state.morningPlanningReminderTime ?? "") {
             let content = UNMutableNotificationContent()
             content.title = "Start your day with Genesis"
             content.body = "Run Dump -> Shape -> Fill to plan your day with intention."
             content.sound = .default
 
-            let components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-            let request = UNNotificationRequest(identifier: "genesis.morning.plan", content: content, trigger: trigger)
+            let activeWeekdays = state.morningReminderWeekdays ?? []
+            let weekdaysToSchedule = activeWeekdays.isEmpty ? Array(1...7) : activeWeekdays
 
-            do {
-                try await center.add(request)
-            } catch {
-                // Ignore scheduling failures in the store layer.
+            for weekday in weekdaysToSchedule {
+                var components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
+                components.weekday = weekday
+                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+                let request = UNNotificationRequest(
+                    identifier: "genesis.morning.plan.\(weekday)",
+                    content: content,
+                    trigger: trigger
+                )
+                try? await center.add(request)
             }
         }
 
-        if eveningEnabled,
-           let fireDate = reminderDate(from: state.eveningPlanningReminderTime) {
+        // Schedule evening reminders
+        if eveningEnabled, let fireDate = reminderDate(from: state.eveningPlanningReminderTime) {
             let content = UNMutableNotificationContent()
             content.title = "Plan tomorrow in 5 minutes"
             content.body = "Open Fill and prep tomorrow before your day starts."
             content.sound = .default
             content.userInfo = ["targetScreen": "fill"]
 
-            let components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
-            let request = UNNotificationRequest(identifier: "genesis.evening.plan", content: content, trigger: trigger)
+            let activeWeekdays = state.eveningReminderWeekdays ?? []
+            let weekdaysToSchedule = activeWeekdays.isEmpty ? Array(1...7) : activeWeekdays
 
-            do {
-                try await center.add(request)
-            } catch {
-                // Ignore scheduling failures in the store layer.
+            for weekday in weekdaysToSchedule {
+                var components = Calendar.current.dateComponents([.hour, .minute], from: fireDate)
+                components.weekday = weekday
+                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+                let request = UNNotificationRequest(
+                    identifier: "genesis.evening.plan.\(weekday)",
+                    content: content,
+                    trigger: trigger
+                )
+                try? await center.add(request)
             }
         }
     }

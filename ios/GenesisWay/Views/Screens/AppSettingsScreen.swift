@@ -14,6 +14,7 @@ struct AppSettingsScreen: View {
     @State private var showFindOutMore = false
     @State private var authStatusMessage = ""
     @State private var isSigningIn = false
+    @State private var devDateOverride: Date = Date()
 
     private var buildLabel: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
@@ -300,6 +301,17 @@ struct AppSettingsScreen: View {
                     }
                     .disabled(!store.morningPlanningReminderEnabled)
 
+                    if store.morningPlanningReminderEnabled {
+                        reminderWeekdayChips(
+                            selected: Set(store.morningReminderWeekdays),
+                            onToggle: { weekday in
+                                var days = Set(store.morningReminderWeekdays)
+                                if days.contains(weekday) { days.remove(weekday) } else { days.insert(weekday) }
+                                store.setMorningReminderWeekdays(Array(days))
+                            }
+                        )
+                    }
+
                     Toggle("Evening 5-minute planning reminder", isOn: Binding(
                         get: { store.eveningPlanningReminderEnabled },
                         set: { store.setEveningPlanningReminderEnabled($0) }
@@ -317,6 +329,17 @@ struct AppSettingsScreen: View {
                         Text("9:00 PM").tag("9:00 PM")
                     }
                     .disabled(!store.eveningPlanningReminderEnabled)
+
+                    if store.eveningPlanningReminderEnabled {
+                        reminderWeekdayChips(
+                            selected: Set(store.eveningReminderWeekdays),
+                            onToggle: { weekday in
+                                var days = Set(store.eveningReminderWeekdays)
+                                if days.contains(weekday) { days.remove(weekday) } else { days.insert(weekday) }
+                                store.setEveningReminderWeekdays(Array(days))
+                            }
+                        )
+                    }
 
                     Text("No reminder times are auto-defaulted. Configure your morning/evening flow reminders explicitly.")
                         .font(.footnote)
@@ -419,6 +442,29 @@ struct AppSettingsScreen: View {
                     .foregroundStyle(GWTheme.gold)
 
                     Text("Temporary pre-release option. Remove before final build.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Developer Testing") {
+                    DatePicker(
+                        "Active day",
+                        selection: $devDateOverride,
+                        displayedComponents: [.date]
+                    )
+
+                    Button("Jump to selected day") {
+                        store.setActivePlanningDay(devDateOverride)
+                    }
+                    .foregroundStyle(GWTheme.gold)
+
+                    Button("Reset to today") {
+                        store.setActivePlanningDayToToday()
+                        devDateOverride = Date()
+                    }
+                    .foregroundStyle(.secondary)
+
+                    Text("Change the active planning day throughout the app to test Loop carryover, carried badges, and cross-day state without waiting for real dates.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -533,6 +579,30 @@ struct AppSettingsScreen: View {
                         ? store.authLastStatusMessage
                         : "Apple Sign In was canceled or incomplete."
                     isSigningIn = false
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func reminderWeekdayChips(selected: Set<Int>, onToggle: @escaping (Int) -> Void) -> some View {
+        let days: [(Int, String)] = [(2,"Mon"),(3,"Tue"),(4,"Wed"),(5,"Thu"),(6,"Fri"),(7,"Sat"),(1,"Sun")]
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Days active (empty = all days)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                ForEach(days, id: \.0) { weekday, label in
+                    let isOn = selected.contains(weekday)
+                    Button(label) { onToggle(weekday) }
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(isOn ? Color(hex: "1a1208") : .secondary)
+                        .lineLimit(1)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 5)
+                        .background(isOn ? GWTheme.gold : Color.secondary.opacity(0.15))
+                        .clipShape(Capsule())
+                        .buttonStyle(.plain)
                 }
             }
         }

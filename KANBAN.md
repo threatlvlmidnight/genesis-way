@@ -207,6 +207,13 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Epic: GW-E12 Loop Redesign Sprint (2026-04-04) - move Loop entry point to Dump screen; wand button on input for current text; context menu on captured items; Loop editor keeps original item in Dump
 - Sprint E12.1 (Implementation): GW-P12a, GW-P12b, GW-P12c
 
+- Epic: GW-E13 Polish & Developer Tools Sprint (2026-04-05) - Shape 5-filter icons, reminder weekday selectors, dev date override for Loop/carryover testing
+- Sprint E13.1 (Implementation): GW-P13a, GW-P13b, GW-P13c
+
+- [x] GW-P13a POLISH: Shape 5-filter explainer icons — add a matching SF Symbol (trash.fill, arrow.triangle.2.circlepath, person.badge.arrow.up.fill, calendar, parkingsign.circle) before each filter name in the Shape guidance GlassCard.
+- [x] GW-P13b FEATURE: Reminder day-of-week selection — add weekday chip selectors (Mon–Sun) below each morning/evening reminder time picker; selecting chips restricts that notification to those weekdays only; empty selection means all days (default, backwards-compatible). Closes "day-of-week and time controls" from scheduled reminders backlog item.
+- [x] GW-P13c FEATURE: Developer Testing section in App Settings — DatePicker to set active planning day app-wide + "Jump to selected day" and "Reset to today" buttons; enables Loop carryover and cross-day state testing without waiting for real dates.
+
 - [x] GW-P12a FEATURE: Loop entry from Dump input — wand button appears in input toolbar when text is present; tapping opens Loop editor pre-filled with the typed text; no item is added to Dump until user separately taps +.
 - [x] GW-P12b FEATURE: Loop entry from captured Dump items — long-press context menu on any item row offers "Loop this item"; opens Loop editor pre-filled with item text and lane.
 - [x] GW-P12c FEATURE: Loop editor in Dump screen — NavigationStack Form with Loop text, default lane, Recurrence type (Daily/Weekly/Specific weekdays with Mon–Sun chips), and Duration (Forever/Fixed count with Stepper + TextField entry); saving creates a LoopRule without removing the item from Dump. App Settings › Loop Rules already handles review and deletion.
@@ -254,6 +261,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] GW-P11c FEATURE: Carryover summary card on Dump screen — when today's dump list contains carried items, show a compact GlassCard at the top of the list summarising how many items rolled forward and from which days; closes the "End-of-day carryover badges and history view" backlog item.
 
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
+- [x] Feature: Scheduled reminders — morning/evening daily-flow reminders with time pickers + day-of-week chip selectors now fully wired (closed by E13.1 GW-P13b).
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
 - [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
 - [ ] Feature: Scheduled reminders — allow user to configure recurring notifications (e.g. morning Pile reminder, evening plan-tomorrow reminder) with day-of-week and time controls in App Settings
@@ -329,6 +337,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] Sprint E10.1: GW-P10a through GW-P10c implementation pass
 - [x] Sprint E11.1: GW-P11a through GW-P11c implementation pass
 - [x] Sprint E12.1: GW-P12a through GW-P12c implementation pass
+- [x] Sprint E13.1: GW-P13a through GW-P13c implementation pass
 ## Blocked
 
 - [ ] Set signing to paid Apple team in Xcode (waiting on Apple account propagation)
@@ -348,6 +357,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 
 ## Done
 
+- [x] Sprint E13.1 complete: Polish & Developer Tools sprint shipped (Shape 5-filter explainer icons, reminder weekday selectors for morning/evening notifications, Developer Testing section in App Settings with date-jump controls)
 - [x] Sprint E12.1 complete: Loop redesign shipped (wand button on Dump input opens Loop editor pre-filled with typed text; long-press context menu on captured items for Loop; Loop editor in Dump with full recurrence/duration controls; saving creates LoopRule without removing item from Dump; App Settings Loop Rules section handles review and deletion)
 - [x] Sprint E10.1 complete: UX & usability sprint shipped (Work/Personal one-liner hint on Shape lane buttons, inline tap-to-edit on Dump items with commit-on-submit, Parking Lot recurring review reminders with frequency/time settings and overdue badge in Park)
 - [x] Sprint E09.1 complete: Guidance & discoverability sprint shipped (Dump empty-state → 3-step numbered GlassCard, Fill guidance → 4-step numbered GlassCard, Shape 5-filters explainer subsection added with inline Eliminate/Automate/Delegate/Move/Park one-liners)

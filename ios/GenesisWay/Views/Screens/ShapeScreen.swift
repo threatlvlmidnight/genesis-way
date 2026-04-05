@@ -96,17 +96,22 @@ struct ShapeScreen: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach([
-                                ("Eliminate", "Won't do it. Delete it."),
-                                ("Automate", "Repeating task — create a Loop rule so it recurs automatically."),
-                                ("Delegate", "Hand it off — assign to someone and set a follow-up reminder."),
-                                ("Move", "Pick a date or time. Schedule it as an appointment or move to another day."),
-                                ("Park", "Not now, not never — move to the Parking Lot for someday/maybe review.")
-                            ], id: \.0) { filter, description in
+                                ("trash.fill",                   "Eliminate", "Won't do it. Delete it."),
+                                ("arrow.triangle.2.circlepath",  "Automate",  "Repeating task — create a Loop rule so it recurs automatically."),
+                                ("person.badge.arrow.up.fill",   "Delegate",  "Hand it off — assign to someone and set a follow-up reminder."),
+                                ("calendar",                      "Move",      "Pick a date or time. Schedule it as an appointment or move to another day."),
+                                ("parkingsign.circle",            "Park",      "Not now, not never — move to the Parking Lot for someday/maybe review.")
+                            ], id: \.1) { icon, filter, description in
                                 HStack(alignment: .top, spacing: 8) {
+                                    Image(systemName: icon)
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(GWTheme.gold)
+                                        .frame(width: 16, alignment: .center)
+                                        .padding(.top, 1)
                                     Text(filter)
                                         .font(.system(size: 11, weight: .bold))
                                         .foregroundStyle(GWTheme.gold)
-                                        .frame(width: 72, alignment: .leading)
+                                        .frame(width: 60, alignment: .leading)
                                     Text(description)
                                         .font(.system(size: 11))
                                         .foregroundStyle(GWTheme.textMuted)
