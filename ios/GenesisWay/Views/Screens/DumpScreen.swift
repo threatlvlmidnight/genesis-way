@@ -31,6 +31,10 @@ struct DumpScreen: View {
     @State private var loopFixedCount = 4
     @State private var loopFixedCountText = "4"
 
+    // Note editor state
+    @State private var noteDumpTarget: DumpItem? = nil
+    @State private var noteDumpText = ""
+
     private var selectedDay: Date {
         store.activePlanningDay
     }
@@ -297,6 +301,16 @@ struct DumpScreen: View {
                                             .foregroundStyle(GWTheme.gold)
                                             .buttonStyle(.plain)
                                     } else {
+                                        Button {
+                                            noteDumpTarget = item
+                                            noteDumpText = item.notes ?? ""
+                                        } label: {
+                                            Image(systemName: item.notes?.isEmpty == false ? "note.text" : "note.text.badge.plus")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(item.notes?.isEmpty == false ? GWTheme.gold : GWTheme.textGhost)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .disabled(isViewingPastDay)
                                         Button("×") { store.removeDumpItem(id: item.id) }
                                             .font(.system(size: 16, weight: .medium))
                                             .foregroundStyle(GWTheme.textGhost)
@@ -373,6 +387,39 @@ struct DumpScreen: View {
         }
         .sheet(item: $loopDraft) { draft in
             loopEditorSheet(draft: draft)
+        }
+        .sheet(item: $noteDumpTarget) { item in
+            NavigationStack {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(item.text)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(GWTheme.textMuted)
+                    TextField("Add a note...", text: $noteDumpText, axis: .vertical)
+                        .lineLimit(4...10)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 14))
+                        .foregroundStyle(GWTheme.textPrimary)
+                    Spacer()
+                }
+                .padding(20)
+                .background(GWTheme.background.ignoresSafeArea())
+                .navigationTitle("Note")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") { noteDumpTarget = nil }
+                            .foregroundStyle(GWTheme.textMuted)
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Save") {
+                            store.updateDumpItemNotes(id: item.id, notes: noteDumpText)
+                            noteDumpTarget = nil
+                        }
+                        .foregroundStyle(GWTheme.gold)
+                        .fontWeight(.semibold)
+                    }
+                }
+            }
         }
     }
 

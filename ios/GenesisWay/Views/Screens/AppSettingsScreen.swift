@@ -23,11 +23,11 @@ struct AppSettingsScreen: View {
     }
 
     private var plannerStartOptions: [Int] {
-        Array(5...21)
+        Array(0...22)
     }
 
     private var plannerEndOptions: [Int] {
-        Array(max(store.plannerStartHour + 1, 6)...22)
+        Array(max(store.plannerStartHour + 1, 1)...23)
     }
 
     private var accountStatusLabel: String {
@@ -398,7 +398,7 @@ struct AppSettingsScreen: View {
                         }
                     }
 
-                    Text("Choose the visible hour range for Fill's Daily Planner timeline.")
+                    Text("Choose the visible hour range for Fill's Daily Planner timeline. Set 12:00 AM to 11:00 PM for a full-day view.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

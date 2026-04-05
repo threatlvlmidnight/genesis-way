@@ -168,6 +168,7 @@ struct DumpItem: Identifiable, Codable {
     var planningDayISO: String?
     var carriedOver: Bool?
     var automationNote: String?
+    var notes: String?
 
     init(
         id: UUID = UUID(),
@@ -177,7 +178,8 @@ struct DumpItem: Identifiable, Codable {
         filterOutcome: PileFilterOutcome? = nil,
         planningDayISO: String? = nil,
         carriedOver: Bool? = nil,
-        automationNote: String? = nil
+        automationNote: String? = nil,
+        notes: String? = nil
     ) {
         self.id = id
         self.text = text
@@ -187,6 +189,7 @@ struct DumpItem: Identifiable, Codable {
         self.planningDayISO = planningDayISO
         self.carriedOver = carriedOver
         self.automationNote = automationNote
+        self.notes = notes
     }
 }
 
@@ -381,10 +384,12 @@ struct ScheduledAppointment: Identifiable, Codable {
 struct ParkItem: Identifiable, Codable {
     let id: UUID
     var text: String
+    var notes: String?
 
-    init(id: UUID = UUID(), text: String) {
+    init(id: UUID = UUID(), text: String, notes: String? = nil) {
         self.id = id
         self.text = text
+        self.notes = notes
     }
 }
 

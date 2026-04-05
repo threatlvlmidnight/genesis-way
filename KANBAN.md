@@ -210,9 +210,16 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - Epic: GW-E13 Polish & Developer Tools Sprint (2026-04-05) - Shape 5-filter icons, reminder weekday selectors, dev date override for Loop/carryover testing
 - Sprint E13.1 (Implementation): GW-P13a, GW-P13b, GW-P13c
 
+- Epic: GW-E14 Full-Day Planner & Task Notes Sprint (2026-04-05) - extend planner hour range to full 24h, add freeform notes to Park and Dump items
+- Sprint E14.1 (Implementation): GW-P14a, GW-P14b, GW-P14c
+
 - [x] GW-P13a POLISH: Shape 5-filter explainer icons — add a matching SF Symbol (trash.fill, arrow.triangle.2.circlepath, person.badge.arrow.up.fill, calendar, parkingsign.circle) before each filter name in the Shape guidance GlassCard.
 - [x] GW-P13b FEATURE: Reminder day-of-week selection — add weekday chip selectors (Mon–Sun) below each morning/evening reminder time picker; selecting chips restricts that notification to those weekdays only; empty selection means all days (default, backwards-compatible). Closes "day-of-week and time controls" from scheduled reminders backlog item.
 - [x] GW-P13c FEATURE: Developer Testing section in App Settings — DatePicker to set active planning day app-wide + "Jump to selected day" and "Reset to today" buttons; enables Loop carryover and cross-day state testing without waiting for real dates.
+
+- [x] GW-P14a FEATURE: Full-day planner range — extend plannerStartOptions to 0–22 (midnight start) and plannerEndOptions to max(start+1,1)–23 (midnight end), enabling 24-hour planning spans. Closes "Full-day timeline window mode" backlog item.
+- [x] GW-P14b FEATURE: Task notes on Park items — add notes: String? field to ParkItem model (Codable, nil-default for backwards compatibility); add updateParkItemNotes(id:notes:) store method; per-item note icon button in ParkScreen that opens a NavigationStack sheet with multiline TextField; existing note preview (gray, 2-line limit) shown beneath item text. Closes "Indexed note system per task" backlog item (Park).
+- [x] GW-P14c FEATURE: Task notes on Dump items — add notes: String? field to DumpItem model; add updateDumpItemNotes(id:notes:) store method; note icon button per Dump item row (gold when note exists, ghost when empty) that opens same NavigationStack sheet pattern. Closes "Indexed note system per task" backlog item (Dump).
 
 - [x] GW-P12a FEATURE: Loop entry from Dump input — wand button appears in input toolbar when text is present; tapping opens Loop editor pre-filled with the typed text; no item is added to Dump until user separately taps +.
 - [x] GW-P12b FEATURE: Loop entry from captured Dump items — long-press context menu on any item row offers "Loop this item"; opens Loop editor pre-filled with item text and lane.
@@ -263,12 +270,12 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] Feature: Shared/collaborative project and Parking Lot workflows (multi-user communication and collective planning) - discovery requested from Dan/Beth feedback
 - [x] Feature: Scheduled reminders — morning/evening daily-flow reminders with time pickers + day-of-week chip selectors now fully wired (closed by E13.1 GW-P13b).
 - [ ] Feature: As the developer/tester, I need to preview any day's Dump/Shape/Fill state so I can validate Loop automation behavior across dates.
-- [ ] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
+- [x] Feature: Full-day timeline window mode — allow scheduling from 12:00 AM through 12:00 AM next day (24-hour planning span)
 - [ ] Feature: Scheduled reminders — allow user to configure recurring notifications (e.g. morning Pile reminder, evening plan-tomorrow reminder) with day-of-week and time controls in App Settings
 - [x] Feature: Inline task editing on Pile screen — tapping an existing task item opens it for in-place text editing rather than requiring delete-and-re-add
 - [x] Feature: Parking lot recurring review reminders — allow user to set weekly, monthly, or quarterly reminder to review the Park screen and promote items into the active Pile
 - [x] Fix: Skip intro onboarding cards on re-open — write a "hasCompletedOnboarding" flag to persistent storage when user taps "Begin journey"; only show intro cards when flag is absent or reset via App Settings
-- [ ] Future: Indexed note system per task — allow users to attach freeform notes to any task, viewable and editable from Pile/Shape/Park, so they can track context and retrieve it later
+- [x] Future: Indexed note system per task — allow users to attach freeform notes to any task, viewable and editable from Pile/Shape/Park, so they can track context and retrieve it later
 - [ ] External tester group created
 - [ ] Beta App Review submitted
 - [x] Post-beta bug triage pass

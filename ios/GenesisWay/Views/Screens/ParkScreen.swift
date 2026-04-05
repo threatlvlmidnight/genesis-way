@@ -4,6 +4,8 @@ import UIKit
 struct ParkScreen: View {
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
+    @State private var noteTargetItem: ParkItem? = nil
+    @State private var noteText = ""
 
     @FocusState private var isInputFocused: Bool
 
@@ -82,12 +84,29 @@ struct ParkScreen: View {
                             Circle()
                                 .fill(GWTheme.gold.opacity(0.5))
                                 .frame(width: 8, height: 8)
-                            Text(item.text)
-                                .font(.system(size: 13))
-                                .foregroundStyle(GWTheme.textMuted)
-                                .lineLimit(nil)
-                                .fixedSize(horizontal: false, vertical: true)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.text)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(GWTheme.textMuted)
+                                    .lineLimit(nil)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                if let notes = item.notes, !notes.isEmpty {
+                                    Text(notes)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(GWTheme.textGhost)
+                                        .lineLimit(2)
+                                }
+                            }
                             Spacer()
+                            Button {
+                                noteTargetItem = item
+                                noteText = item.notes ?? ""
+                            } label: {
+                                Image(systemName: item.notes?.isEmpty == false ? "note.text" : "note.text.badge.plus")
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(item.notes?.isEmpty == false ? GWTheme.gold : GWTheme.textGhost)
+                            }
+                            .buttonStyle(.plain)
                             Button("×") {
                                 store.removeParkItem(id: item.id)
                             }
@@ -165,6 +184,39 @@ struct ParkScreen: View {
         .background(GWTheme.background.ignoresSafeArea())
         .onDisappear {
             isInputFocused = false
+        }
+        .sheet(item: $noteTargetItem) { item in
+            NavigationStack {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(item.text)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(GWTheme.textMuted)
+                    TextField("Add a note...", text: $noteText, axis: .vertical)
+                        .lineLimit(4...10)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 14))
+                        .foregroundStyle(GWTheme.textPrimary)
+                    Spacer()
+                }
+                .padding(20)
+                .background(GWTheme.background.ignoresSafeArea())
+                .navigationTitle("Note")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") { noteTargetItem = nil }
+                            .foregroundStyle(GWTheme.textMuted)
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Save") {
+                            store.updateParkItemNotes(id: item.id, notes: noteText)
+                            noteTargetItem = nil
+                        }
+                        .foregroundStyle(GWTheme.gold)
+                        .fontWeight(.semibold)
+                    }
+                }
+            }
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {

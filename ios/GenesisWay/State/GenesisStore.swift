@@ -1000,6 +1000,12 @@ final class GenesisStore: ObservableObject {
         state.dumpItems[idx].text = trimmed
     }
 
+    func updateDumpItemNotes(id: UUID, notes: String) {
+        guard let idx = state.dumpItems.firstIndex(where: { $0.id == id }) else { return }
+        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        state.dumpItems[idx].notes = trimmed.isEmpty ? nil : trimmed
+    }
+
     func assignDumpItem(_ id: UUID, to spoke: Spoke?) {
         guard let idx = state.dumpItems.firstIndex(where: { $0.id == id }) else { return }
         state.dumpItems[idx].spoke = spoke
@@ -1349,6 +1355,12 @@ final class GenesisStore: ObservableObject {
 
     func removeParkItem(id: UUID) {
         state.parked.removeAll { $0.id == id }
+    }
+
+    func updateParkItemNotes(id: UUID, notes: String) {
+        guard let idx = state.parked.firstIndex(where: { $0.id == id }) else { return }
+        let trimmed = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        state.parked[idx].notes = trimmed.isEmpty ? nil : trimmed
     }
 
     func navigate(_ screen: AppScreen) {
