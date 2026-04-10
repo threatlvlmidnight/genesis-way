@@ -17,6 +17,7 @@ struct AuthSession: Codable {
     var refreshToken: String?
 }
 
+@MainActor
 final class GenesisStore: ObservableObject {
     @Published private(set) var state: GenesisState {
         didSet { persist() }

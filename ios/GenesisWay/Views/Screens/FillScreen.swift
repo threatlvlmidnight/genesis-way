@@ -196,6 +196,11 @@ struct FillScreen: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(GWTheme.textPrimary)
 
+                        Text("Fill It is placing each task into its proper place in your calendar based on priority, timing, and context so your plan becomes actionable.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(GWTheme.textMuted)
+                            .fixedSize(horizontal: false, vertical: true)
+
                         ForEach([
                             ("1", "Sync your calendar", "Connect Google Calendar in Settings so your existing commitments are visible on the timeline."),
                             ("2", "Assign each task to a time", "Drag tasks from the Task Pool onto a time block. Use Move Day to shift tasks without assigning a time."),
@@ -1190,11 +1195,13 @@ struct FillScreen: View {
     }
 
     private func runCalendarAutoSyncIfNeeded() async {
+        // Only skip if not connected or already syncing.
+        // Do NOT gate on hasGoogleCalendarAccessToken — syncGoogleCalendarNow calls
+        // validGoogleCalendarAccessToken which silently refreshes using the refresh token
+        // when the access token is expired or missing. Short-circuiting here would block
+        // that silent refresh path and force the user to reconnect unnecessarily.
         guard store.googleCalendarConnected,
-              store.hasGoogleCalendarAccessToken,
-              !isAutoSyncingCalendar else {
-            return
-        }
+              !isAutoSyncingCalendar else { return }
 
         let shouldSync: Bool
         if let lastSyncISO = store.lastCalendarSyncISO,
@@ -1226,8 +1233,14 @@ struct FillScreen: View {
 
     private var calendarBannerMessage: String {
         let lowercasedError = (store.googleCalendarLastError ?? "").lowercased()
-        if lowercasedError.contains("401") || lowercasedError.contains("unauthorized") {
-            return "Calendar connection needs renewal. Reconnect in Calendar Settings."
+        // "Reconnect" language should only appear when BOTH tokens are gone (error 1007)
+        // or when the refresh token itself has been revoked. Token refresh failures due to
+        // expiry are handled silently by validGoogleCalendarAccessToken before we reach here.
+        let needsFullReconnect = lowercasedError.contains("no refresh token") ||
+            lowercasedError.contains("reconnect your calendar") ||
+            (lowercasedError.contains("401") && lowercasedError.contains("refresh"))
+        if needsFullReconnect {
+            return "Calendar connection needs renewal. Open Calendar Settings to reconnect."
         }
 
         if !store.syncedCalendarEvents.isEmpty {

@@ -158,3 +158,48 @@ Feature:
 
 #### Open Questions
 - Proposed finalized Finish It wording: "Finish your task list or consciously move each item forward. Run each incomplete item through the filters."
+
+---
+
+## 2026-04-08 User/Tester Feedback (Onboarding, Shape, Fill)
+- Participants: Tester (name unknown)
+- Context: Ad-hoc feedback submitted across three screens after latest build. Three issues noted.
+- Summary: One legibility regression on the Onboarding CTA, one filter label naming conflict on Shape, and a continuing calendar sync failure on Fill.
+
+#### Raw Feedback
+- Onboarding / Dump It: "On the bottom of the app…can't read 'Begin the Journey' button."
+- Shape: "Under the five filters: change 'move' with 'schedule'. The five filters are: Eliminate, Automate, Delegate, Schedule, Park."
+- Fill: "I am unable to sync my calendar."
+
+#### Feedback by Category
+Improvement:
+- Increase contrast/legibility of the "Begin the Journey" CTA at the bottom of the onboarding screen.
+- Revert Shape filter label from "Move" back to "Schedule" to match the canonical five-filter set: Eliminate, Automate, Delegate, Schedule, Park.
+
+Bug:
+- "Begin the Journey" button is unreadable (likely contrast or theme issue at bottom of screen).
+- Calendar sync is still not functioning; user cannot complete the Fill sync step.
+
+Feature:
+- No new features requested.
+
+#### Product Signals
+- The "Begin the Journey" button legibility issue is a first-impression blocker — users cannot start the journey if the CTA is invisible.
+- "Move" vs "Schedule" label confusion indicates GW-P07c rename introduced a terminology mismatch with the coaching method language.
+- Calendar sync failure (recurring) suggests the underlying fix may be incomplete or regressed.
+
+#### Decisions
+- Restore Shape filter label to "Schedule" to align with Dan's coaching method terminology.
+- Fix "Begin the Journey" button contrast/visibility immediately.
+- Re-investigate calendar sync; treat as a regression.
+
+#### Prioritized Actions
+- [P0] Fix "Begin the Journey" button legibility on Onboarding screen — Product/Design/Engineering — Immediate.
+- [P0] Rename Shape filter "Move" → "Schedule" to restore canonical five-filter set — Engineering — Immediate.
+- [P0] Re-investigate and fix calendar sync failure on Fill path — Engineering — Immediate.
+
+#### Open Questions
+- Is the "Begin the Journey" button legibility issue theme-specific or universal?
+
+#### Resolved
+- "Move" vs "Schedule" label: Dan confirmed 2026-04-08 — the filter should be labeled "Schedule". GW-P07c "Move" rename is superseded by GW-P15b.

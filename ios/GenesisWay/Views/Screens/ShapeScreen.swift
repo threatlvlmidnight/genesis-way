@@ -72,6 +72,11 @@ struct ShapeScreen: View {
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(GWTheme.textPrimary)
 
+                        Text("Shape It is organizing what you've captured into clear categories, structures, and time blocks so you know where things belong.")
+                            .font(.system(size: 13))
+                            .foregroundStyle(GWTheme.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+
                         Text("Finish your day on paper before the day begins. Quickly tag each item as Work or Personal, then run each item through one filter: Eliminate, Automate, Delegate, Schedule, or Park.")
                             .font(.system(size: 13))
                             .foregroundStyle(GWTheme.textPrimary)
@@ -99,7 +104,7 @@ struct ShapeScreen: View {
                                 ("trash.fill",                   "Eliminate", "Won't do it. Delete it."),
                                 ("arrow.triangle.2.circlepath",  "Automate",  "Repeating task — create a Loop rule so it recurs automatically."),
                                 ("person.badge.arrow.up.fill",   "Delegate",  "Hand it off — assign to someone and set a follow-up reminder."),
-                                ("calendar",                      "Move",      "Pick a date or time. Schedule it as an appointment or move to another day."),
+                                ("calendar",                      "Schedule",  "Pick a date or time. Schedule it as an appointment or move to another day."),
                                 ("parkingsign.circle",            "Park",      "Not now, not never — move to the Parking Lot for someday/maybe review.")
                             ], id: \.1) { icon, filter, description in
                                 HStack(alignment: .top, spacing: 8) {
@@ -288,7 +293,7 @@ struct ShapeScreen: View {
                                             GWHaptics.medium()
                                         }
 
-                                        filterButton("Move", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
+                                        filterButton("Schedule", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
                                                 scheduleOrMoveMode = .appointment

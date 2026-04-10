@@ -217,6 +217,13 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] GW-P13b FEATURE: Reminder day-of-week selection — add weekday chip selectors (Mon–Sun) below each morning/evening reminder time picker; selecting chips restricts that notification to those weekdays only; empty selection means all days (default, backwards-compatible). Closes "day-of-week and time controls" from scheduled reminders backlog item.
 - [x] GW-P13c FEATURE: Developer Testing section in App Settings — DatePicker to set active planning day app-wide + "Jump to selected day" and "Reset to today" buttons; enables Loop carryover and cross-day state testing without waiting for real dates.
 
+- Epic: GW-E15 Tester Feedback Sprint (2026-04-08) - "Begin the Journey" legibility, Shape filter rename Move→Schedule, calendar sync regression
+- Sprint E15.1 (Implementation): GW-P15a, GW-P15b, GW-P15c
+
+- [x] GW-P15a BUG: "Begin the Journey" button legibility — the CTA at the bottom of the Onboarding screen is unreadable; audit contrast, background scrim, and text color for the button in all active themes and fix so it is clearly visible.
+- [x] GW-P15b IMPROVEMENT: Shape filter rename "Move" → "Schedule" — Dan confirmed the canonical five-filter set is Eliminate, Automate, Delegate, Schedule, Park; rename the "Move" filter button and sheet back to "Schedule"; update all related labels, microcopy, and guidance text to match. Supersedes GW-P07c.
+- [x] GW-P15c BUG: Calendar sync failure (regression) — user is unable to sync calendar from Fill; re-investigate the sync initiation path, error handling, and visible feedback; fix and verify against the GW-P04d and GW-P06 prior fix work.
+
 - [x] GW-P14a FEATURE: Full-day planner range — extend plannerStartOptions to 0–22 (midnight start) and plannerEndOptions to max(start+1,1)–23 (midnight end), enabling 24-hour planning spans. Closes "Full-day timeline window mode" backlog item.
 - [x] GW-P14b FEATURE: Task notes on Park items — add notes: String? field to ParkItem model (Codable, nil-default for backwards compatibility); add updateParkItemNotes(id:notes:) store method; per-item note icon button in ParkScreen that opens a NavigationStack sheet with multiline TextField; existing note preview (gray, 2-line limit) shown beneath item text. Closes "Indexed note system per task" backlog item (Park).
 - [x] GW-P14c FEATURE: Task notes on Dump items — add notes: String? field to DumpItem model; add updateDumpItemNotes(id:notes:) store method; note icon button per Dump item row (gold when note exists, ghost when empty) that opens same NavigationStack sheet pattern. Closes "Indexed note system per task" backlog item (Dump).
@@ -236,6 +243,9 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [x] GW-P03c Shape screen filter button relabel: Eliminate | Automate | Delegate | Schedule | Park.
 - [x] GW-P04a Fill screen top description update: "Sync your calendar, then assign each task to a time (drag and drop)."
 - [x] GW-P04b Fill "How fill works" section update: When will I do this? Move tasks to timeline/day, finish your day on paper before it begins, schedule reminders.
+- [x] GW-P16a COPY: Dump screen — add Dan's definition sentence above existing guidance: "Dump It is getting everything out of your head and into a trusted place so nothing gets lost and everything can be seen."
+- [x] GW-P16b COPY: Shape screen — add Dan's definition sentence at top of How Shape It Works card: "Shape It is organizing what you've captured into clear categories, structures, and time blocks so you know where things belong."
+- [x] GW-P16c COPY: Fill screen — add Dan's definition sentence below "Turn clarity into scheduled action" heading: "Fill It is placing each task into its proper place in your calendar based on priority, timing, and context so your plan becomes actionable."
 - [x] GW-P04c BUG: Shape -> Fill handoff regression; ensure shaped items consistently appear in Fill again.
 - [x] GW-P04d BUG: Calendar will not sync; restore pull/sync flow and add visible failure feedback + retry path.
 - [x] GW-P05a Park screen rename: change "The Park" to "Parking Lot" with subtitle "Someday/Maybe List. Not now. Not never. Just not today."
@@ -245,7 +255,7 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 
 - [x] GW-P07a FIX: Skip intro onboarding on re-open — write showIntroOnLaunch=false in beginJourney() and skipToPlanner() so the intro cards only show once; accessible via App Settings reset.
 - [x] GW-P07b IMPROVEMENT: Remove "genesis pattern" GlassCard from OnboardingScreen; keep the daily flow reminder setup card and Begin the Journey CTA unchanged.
-- [x] GW-P07c IMPROVEMENT: Reorder Shape 5-filter grid to Eliminate (red), Automate, Delegate, Move, Park; rename "Schedule" grid button to "Move"; inside the Move sheet swap segment order to Schedule | Move with Schedule as default (appointment mode first).
+- [x] GW-P07c IMPROVEMENT: Reorder Shape 5-filter grid to Eliminate (red), Automate, Delegate, Move, Park; rename "Schedule" grid button to "Move"; inside the Move sheet swap segment order to Schedule | Move with Schedule as default (appointment mode first). ⚠️ SUPERSEDED by GW-P15b — Dan confirmed the filter label should be "Schedule", not "Move".
 - [x] GW-P07d IMPROVEMENT: Shape guidance text legibility — upgrade guidance body copy from textMuted to textPrimary so it reads clearly in all themes.
 - [x] GW-P07e CLEANUP: Remove all duplicate " 2" files from docs/, scripts/, and assets now that E06 validation sign-off is complete.
 

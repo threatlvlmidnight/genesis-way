@@ -531,10 +531,10 @@ private struct ShapeFiltersGuideCard: View {
     }
 
     private let filters: [FilterDetail] = [
-        FilterDetail(title: "Schedule", description: "Assign a real day/time and place it into the planner.", tint: Color(hex: "5ca06d"), icon: "calendar.badge.plus"),
-        FilterDetail(title: "Move", description: "Not today, but still active. Move it to a different day.", tint: Color(hex: "d2a85a"), icon: "arrow.right.circle"),
         FilterDetail(title: "Eliminate", description: "Remove work that does not need action anymore.", tint: Color(hex: "c07060"), icon: "xmark.circle"),
+        FilterDetail(title: "Automate", description: "Repeating task — create a Loop rule so it recurs automatically.", tint: Color(hex: "5080a8"), icon: "arrow.triangle.2.circlepath"),
         FilterDetail(title: "Delegate", description: "Assign ownership to someone else with follow-up.", tint: Color(hex: "6090c8"), icon: "person.2"),
+        FilterDetail(title: "Schedule", description: "Pick a date or time. Schedule as an appointment or move it to another day.", tint: Color(hex: "5ca06d"), icon: "calendar.badge.plus"),
         FilterDetail(title: "Park", description: "Keep it for later without forcing it into today.", tint: Color(hex: "8f7ea8"), icon: "tray.and.arrow.down")
     ]
 

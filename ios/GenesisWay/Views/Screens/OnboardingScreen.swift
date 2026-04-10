@@ -34,7 +34,7 @@ struct OnboardingScreen: View {
                 dailyFlowReminderSetupCard
 
                 PrimaryButton(title: "Begin the Journey", action: onBegin)
-                    .opacity(store.hasConfiguredDailyFlowReminders ? 1.0 : 0.45)
+                    .opacity(store.hasConfiguredDailyFlowReminders ? 1.0 : 0.7)
                     .disabled(!store.hasConfiguredDailyFlowReminders)
 
                 Button("Already familiar? Skip to planner") {
