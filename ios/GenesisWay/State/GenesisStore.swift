@@ -239,7 +239,7 @@ final class GenesisStore: ObservableObject {
             print("[GWConfig] GoogleCal plistClientId=\(plistClientId.map { $0.prefix(12) + "…" } ?? "nil") envClientId=\(envClientId.map { $0.prefix(12) + "…" } ?? "nil")")
             print("[GWConfig] GoogleCal plistBaseURL=\(plistBaseURL ?? "nil") envBaseURL=\(envBaseURL ?? "nil")")
             let hardcodedClientId = "609243271731-nkcl43ltitd9itdeaduf24alr5timo8e.apps.googleusercontent.com"
-            let hardcodedBaseURL = "https://genesis-way.vercel.app"
+            let hardcodedBaseURL = "https://coachdan.app"
             let rawClientId = plistClientId ?? envClientId ?? hardcodedClientId
             let rawAPIBaseURL = plistBaseURL ?? envBaseURL ?? hardcodedBaseURL
             print("[GWConfig] GoogleCal resolved clientId=\(rawClientId.prefix(12))… baseURL=\(rawAPIBaseURL)")
@@ -250,7 +250,7 @@ final class GenesisStore: ObservableObject {
 
             let clientId = rawClientId.trimmingCharacters(in: .whitespacesAndNewlines)
             let callbackScheme = ((Bundle.main.object(forInfoDictionaryKey: "GW_GOOGLE_CALLBACK_SCHEME") as? String)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? "genesisway"
+                .trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? "coachdan"
             let apiBaseURLString = rawAPIBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
 
             guard !clientId.isEmpty,

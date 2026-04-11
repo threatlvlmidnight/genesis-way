@@ -10,6 +10,8 @@ struct CalendarSettingsScreen: View {
     @State private var googleAuthSession: ASWebAuthenticationSession?
     @State private var isConnectingGoogleCalendar = false
     @State private var isSyncingGoogleCalendar = false
+    @State private var isSigningIn = false
+    @State private var signInStatusMessage = ""
 
     private var statusLabel: String {
         switch store.googleCalendarConnectionStatus {
@@ -56,7 +58,46 @@ struct CalendarSettingsScreen: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Google") {
+                if !store.isSignedIn {
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Step 1 — Sign in", systemImage: "person.crop.circle.badge.checkmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(GWTheme.textPrimary)
+                            Text("Sign in to your account to enable Google Calendar sync.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            SignInWithAppleButton(.signIn) { request in
+                                request.requestedScopes = [.fullName, .email]
+                            } onCompletion: { result in
+                                handleAppleSignInCompletion(result)
+                            }
+                            .signInWithAppleButtonStyle(.white)
+                            .frame(height: 44)
+                            .disabled(isSigningIn)
+                            if !signInStatusMessage.isEmpty {
+                                Text(signInStatusMessage)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    } header: {
+                        Text("Account")
+                    }
+                }
+
+                Section("Google Calendar") {
+                    HStack {
+                        if store.isSignedIn {
+                            Label("Step 2 — Connect Google", systemImage: "calendar.badge.plus")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(GWTheme.textPrimary)
+                        }
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+                    .listRowBackground(Color.clear)
+
                     HStack {
                         Text("Status")
                         Spacer()
@@ -89,15 +130,19 @@ struct CalendarSettingsScreen: View {
                         }
                         .foregroundStyle(Color.red)
                     } else {
-                        Button(isConnectingGoogleCalendar ? "Connecting Google Calendar..." : "Connect Google Calendar") {
+                        let canConnect = store.isSignedIn && !isConnectingGoogleCalendar
+                        Button(isConnectingGoogleCalendar ? "Connecting..." : "Connect Google Calendar") {
                             startGoogleCalendarConnection()
                         }
-                        .foregroundStyle(GWTheme.gold)
-                        .disabled(isConnectingGoogleCalendar)
+                        .foregroundStyle(canConnect ? GWTheme.gold : Color.secondary)
+                        .disabled(!canConnect)
                     }
 
-                    if let error = store.googleCalendarLastError,
-                       !error.isEmpty {
+                    if !store.isSignedIn {
+                        Label("Sign in above first to enable this step.", systemImage: "arrow.uturn.left.circle")
+                            .font(.footnote)
+                            .foregroundStyle(Color(hex: "c07060"))
+                    } else if let error = store.googleCalendarLastError, !error.isEmpty {
                         Text(error)
                             .font(.footnote)
                             .foregroundStyle(statusColor)
@@ -253,6 +298,34 @@ private extension CalendarSettingsScreen {
 
         if !isConnectingGoogleCalendar {
             store.setGoogleCalendarError("Unable to start Google Calendar sign-in.")
+        }
+    }
+
+    func handleAppleSignInCompletion(_ result: Result<ASAuthorization, Error>) {
+        switch result {
+        case .failure(let error):
+            signInStatusMessage = "Sign in failed: \(error.localizedDescription)"
+            isSigningIn = false
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+                signInStatusMessage = "Sign in did not return expected credentials."
+                isSigningIn = false
+                return
+            }
+            let identityToken = credential.identityToken.flatMap { String(data: $0, encoding: .utf8) }
+            let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
+            isSigningIn = true
+            Task {
+                let didSignIn = await store.completeAppleSignIn(
+                    userId: credential.user,
+                    identityToken: identityToken,
+                    authorizationCode: authorizationCode
+                )
+                await MainActor.run {
+                    signInStatusMessage = didSignIn ? "Signed in. You can now connect Google Calendar." : "Sign in was canceled or incomplete."
+                    isSigningIn = false
+                }
+            }
         }
     }
 }

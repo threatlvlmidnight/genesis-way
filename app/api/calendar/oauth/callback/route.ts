@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     if (state) params.set("state", state);
   }
 
-  const callbackURL = `genesisway://oauth/callback?${params.toString()}`;
+  const callbackURL = `coachdan://oauth/callback?${params.toString()}`;
   return Response.redirect(callbackURL, 302);
 }
 
