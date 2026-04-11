@@ -840,7 +840,8 @@ struct FillScreen: View {
                     }
                 }
             }
-            .padding(24)
+            .padding(.top, 60)
+            .padding([.horizontal, .bottom], 24)
         }
         .background(GWTheme.background.ignoresSafeArea())
         .alert("Daily Big 3", isPresented: $showBig3Help) {
@@ -878,7 +879,7 @@ struct FillScreen: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Today")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(GWTheme.textMuted)
+                .foregroundStyle(GWTheme.textGhost)
             Text("Fill It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)

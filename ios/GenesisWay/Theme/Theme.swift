@@ -80,6 +80,15 @@ enum GWTheme {
                 textMuted: Color(hex: "b88778"),
                 textGhost: Color(hex: "7e5447")
             )
+        case .coachNavy:
+            return Palette(
+                background: Color(hex: "0d1c2e"),
+                gold: Color(hex: "c8bfae"),
+                goldDark: Color(hex: "4a7aaa"),
+                textPrimary: Color(hex: "e8dfd0"),
+                textMuted: Color(hex: "7a8fa8"),
+                textGhost: Color(hex: "4a5d70")
+            )
         }
     }
 }

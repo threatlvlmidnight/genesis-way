@@ -202,6 +202,42 @@ struct AppSettingsScreen: View {
                     }
                 }
 
+                Section("Subscription") {
+                    HStack {
+                        Text("Status")
+                        Spacer()
+                        Text(store.entitlementStatusLabel)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if store.isEntitled {
+                        Button("Manage Subscription") {
+                            store.showCustomerCenter = true
+                        }
+                        .foregroundStyle(GWTheme.gold)
+                    } else {
+                        Button("View Plans") {
+                            store.paywallContext = .featureGate
+                            store.showPaywall = true
+                        }
+                        .foregroundStyle(GWTheme.gold)
+                    }
+
+                    Button("Restore Purchases") {
+                        Task { try? await store.restorePurchases() }
+                    }
+                    .foregroundStyle(GWTheme.gold)
+
+                    Button("Redeem Offer Code") {
+                        store.presentOfferCodeRedemption()
+                    }
+                    .foregroundStyle(GWTheme.gold)
+
+                    Text("BETA@26 — beta tester access. INTEST@26 — internal full access.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Appearance") {
                     Picker("Theme", selection: Binding(
                         get: { store.appThemeStyle },
@@ -404,6 +440,15 @@ struct AppSettingsScreen: View {
                 }
 
                 Section("Developer") {
+                    Button("⚠️ Test: Show Paywall") {
+                        store.paywallContext = .featureGate
+                        dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            store.showPaywall = true
+                        }
+                    }
+                    .foregroundStyle(GWTheme.gold)
+
                     Button("Import lightweight test day") {
                         let added = store.importDeveloperLightweightTestDumpData()
                         if added == 0 {

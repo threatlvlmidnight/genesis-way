@@ -10,74 +10,79 @@ struct ParkScreen: View {
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Parking Lot")
-                .font(.system(size: 30, weight: .heavy))
-                .foregroundStyle(GWTheme.textPrimary)
-            Text("Someday/Maybe List. Not now. Not never. Just not today.")
-                .font(.system(size: 13))
-                .foregroundStyle(GWTheme.textMuted)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Saved for later")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(GWTheme.textGhost)
+                    Text("Parking Lot")
+                        .font(.system(size: 30, weight: .heavy))
+                        .foregroundStyle(GWTheme.textPrimary)
+                    Text("Someday/Maybe List. Not now. Not never. Just not today.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(GWTheme.textMuted)
+                }
 
-            if store.isParkingLotReviewOverdue {
-                GlassCard {
-                    HStack(spacing: 12) {
-                        Image(systemName: "clock.badge.exclamationmark")
-                            .font(.system(size: 16))
-                            .foregroundStyle(GWTheme.gold)
+                if store.isParkingLotReviewOverdue {
+                    GlassCard {
+                        HStack(spacing: 12) {
+                            Image(systemName: "clock.badge.exclamationmark")
+                                .font(.system(size: 16))
+                                .foregroundStyle(GWTheme.gold)
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Review due")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(GWTheme.textPrimary)
-                            Text("Go through each item — promote, delete, or keep for later.")
-                                .font(.system(size: 11))
-                                .foregroundStyle(GWTheme.textMuted)
-                                .fixedSize(horizontal: false, vertical: true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Review due")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(GWTheme.textPrimary)
+                                Text("Go through each item — promote, delete, or keep for later.")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(GWTheme.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Spacer()
+
+                            Button("Done") {
+                                store.markParkingLotReviewed()
+                            }
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color(hex: "1a1208"))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(GWTheme.gold)
+                            .clipShape(Capsule())
+                            .buttonStyle(.plain)
                         }
-
-                        Spacer()
-
-                        Button("Done") {
-                            store.markParkingLotReviewed()
-                        }
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Color(hex: "1a1208"))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(GWTheme.gold)
-                        .clipShape(Capsule())
-                        .buttonStyle(.plain)
                     }
                 }
-            }
 
-            HStack(spacing: 8) {
-                TextField("Park an item for later", text: $input)
-                    .submitLabel(.done)
-                    .focused($isInputFocused)
-                    .onSubmit {
+                HStack(spacing: 8) {
+                    TextField("Park an item for later", text: $input)
+                        .submitLabel(.done)
+                        .focused($isInputFocused)
+                        .onSubmit {
+                            addParkedItem()
+                        }
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 11)
+                        .background(Color.white.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .foregroundStyle(GWTheme.textPrimary)
+
+                    Button("P") {
                         addParkedItem()
                     }
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 11)
-                    .background(Color.white.opacity(0.05))
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color(hex: "1a1208"))
+                    .frame(width: 44, height: 44)
+                    .background(
+                        LinearGradient(colors: [GWTheme.gold, GWTheme.goldDark], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .foregroundStyle(GWTheme.textPrimary)
-
-                Button("P") {
-                    addParkedItem()
                 }
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Color(hex: "1a1208"))
-                .frame(width: 44, height: 44)
-                .background(
-                    LinearGradient(colors: [GWTheme.gold, GWTheme.goldDark], startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
 
-            ScrollView {
                 VStack(spacing: 8) {
                     ForEach(store.parked) { item in
                         HStack(spacing: 10) {
@@ -177,10 +182,9 @@ struct ParkScreen: View {
                     }
                 }
             }
-
-            Spacer(minLength: 0)
+            .padding(.top, 60)
+            .padding([.horizontal, .bottom], 24)
         }
-        .padding(24)
         .background(GWTheme.background.ignoresSafeArea())
         .onDisappear {
             isInputFocused = false

@@ -74,22 +74,22 @@ struct ShapeScreen: View {
 
                         Text("Shape It is organizing what you've captured into clear categories, structures, and time blocks so you know where things belong.")
                             .font(.system(size: 13))
-                            .foregroundStyle(GWTheme.textPrimary)
+                            .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text("Finish your day on paper before the day begins. Quickly tag each item as Work or Personal, then run each item through one filter: Eliminate, Automate, Delegate, Schedule, or Park.")
                             .font(.system(size: 13))
-                            .foregroundStyle(GWTheme.textPrimary)
+                            .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text("Choose Work for output, deadlines, and obligations. Choose Personal for home, health, and relationship tasks.")
                             .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textPrimary)
+                            .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text("Two lanes are intentionally enough: they keep Fill fast and force a clear decision instead of endless categorizing.")
                             .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textPrimary)
+                            .foregroundStyle(GWTheme.textMuted)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Divider().opacity(0.15).padding(.vertical, 2)
@@ -103,7 +103,7 @@ struct ShapeScreen: View {
                             ForEach([
                                 ("trash.fill",                   "Eliminate", "Won't do it. Delete it."),
                                 ("arrow.triangle.2.circlepath",  "Automate",  "Repeating task — create a Loop rule so it recurs automatically."),
-                                ("person.badge.arrow.up.fill",   "Delegate",  "Hand it off — assign to someone and set a follow-up reminder."),
+                                ("arrowshape.turn.up.right.fill",  "Delegate",  "Hand it off — assign to someone and set a follow-up reminder."),
                                 ("calendar",                      "Schedule",  "Pick a date or time. Schedule it as an appointment or move to another day."),
                                 ("parkingsign.circle",            "Park",      "Not now, not never — move to the Parking Lot for someday/maybe review.")
                             ], id: \.1) { icon, filter, description in
@@ -127,14 +127,15 @@ struct ShapeScreen: View {
                     }
                 }
 
-                Text("Dump to Process")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(GWTheme.textMuted)
-                    .textCase(.uppercase)
-
-                Text("Viewing \(activePlanningDayLabel)")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(GWTheme.gold)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Dump to Process")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(GWTheme.textMuted)
+                        .textCase(.uppercase)
+                    Text("Viewing \(activePlanningDayLabel)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(GWTheme.gold)
+                }
 
                 if dayDumpItems.isEmpty {
                     GlassCard {
@@ -259,7 +260,7 @@ struct ShapeScreen: View {
                                         alignment: .leading,
                                         spacing: 8
                                     ) {
-                                        filterButton("Eliminate", isActive: false, isDestructive: true) {
+                                        filterButton("Eliminate", icon: "trash.fill", isActive: false, isDestructive: true) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
                                                 store.applyFilterOutcome(item.id, outcome: .eliminated)
@@ -267,7 +268,7 @@ struct ShapeScreen: View {
                                             GWHaptics.warning()
                                         }
 
-                                        filterButton("Automate", isActive: lastActionItemId == item.id && automateTargetItem?.id == item.id) {
+                                        filterButton("Automate", icon: "arrow.triangle.2.circlepath", isActive: lastActionItemId == item.id && automateTargetItem?.id == item.id) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
                                                 automateMode = .loop
@@ -285,7 +286,7 @@ struct ShapeScreen: View {
                                             GWHaptics.medium()
                                         }
 
-                                        filterButton("Delegate", isActive: false) {
+                                        filterButton("Delegate", icon: "arrowshape.turn.up.right.fill", isActive: false) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
                                                 delegateTargetItem = item
@@ -293,7 +294,7 @@ struct ShapeScreen: View {
                                             GWHaptics.medium()
                                         }
 
-                                        filterButton("Schedule", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
+                                        filterButton("Schedule", icon: "calendar", isActive: lastActionItemId == item.id && scheduleOrMoveTargetItem?.id == item.id) {
                                             withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
                                                 lastActionItemId = item.id
                                                 scheduleOrMoveMode = .appointment
@@ -304,7 +305,7 @@ struct ShapeScreen: View {
                                             GWHaptics.medium()
                                         }
 
-                                        filterButton("Park", isActive: false, isDestructive: true) {
+                                        filterButton("Park", icon: "parkingsign.circle", isActive: false, isDestructive: true) {
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
                                                 lastActionItemId = item.id
                                                 store.applyFilterOutcome(item.id, outcome: .parked)
@@ -322,7 +323,8 @@ struct ShapeScreen: View {
                     }
                 }
             }
-            .padding(24)
+            .padding(.top, 60)
+            .padding([.horizontal, .bottom], 24)
         }
         .background(GWTheme.background.ignoresSafeArea())
         .sheet(item: $scheduleOrMoveTargetItem) { item in
@@ -644,7 +646,7 @@ struct ShapeScreen: View {
             .buttonStyle(.plain)
     }
 
-    private func filterButton(_ title: String, isActive: Bool, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
+    private func filterButton(_ title: String, icon: String? = nil, isActive: Bool, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         let fillColor: Color = {
             if isDestructive {
                 return isActive ? Color(hex: "d96d5f") : Color(hex: "b14b44").opacity(0.28)
@@ -666,7 +668,13 @@ struct ShapeScreen: View {
             return isActive ? Color(hex: "1a1208") : GWTheme.textPrimary
         }()
 
-        return Button(title, action: action)
+        return Button(action: action) {
+            if let icon {
+                Label(title, systemImage: icon)
+            } else {
+                Text(title)
+            }
+        }
             .font(.system(size: 10, weight: .bold))
             .foregroundStyle(textColor)
             .lineLimit(1)
@@ -787,7 +795,7 @@ struct ShapeScreen: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Step 2 of 3")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(GWTheme.textMuted)
+                .foregroundStyle(GWTheme.textGhost)
             Text("Shape It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)

@@ -452,6 +452,10 @@ struct DumpScreen: View {
             voiceStatusMessage = "Past days are read-only. Switch to today or a future day to capture items."
             return
         }
+        guard store.canAddTasks else {
+            store.triggerPaywallForTaskCreation()
+            return
+        }
 
         let parsed = aiParseDumpItems(from: voice.transcript)
         guard !parsed.isEmpty else {
@@ -479,6 +483,10 @@ struct DumpScreen: View {
 
     private func addTypedDumpItem() {
         guard !isViewingPastDay else { return }
+        guard store.canAddTasks else {
+            store.triggerPaywallForTaskCreation()
+            return
+        }
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             isInputFocused = false
@@ -509,7 +517,7 @@ struct DumpScreen: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
-        .padding(.top, 10)
+        .padding(.top, 60)
         .padding(.bottom, 8)
     }
 

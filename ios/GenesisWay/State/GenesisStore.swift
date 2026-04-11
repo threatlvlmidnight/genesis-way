@@ -1,5 +1,7 @@
+import Combine
 import CryptoKit
 import Foundation
+import RevenueCat
 import Security
 import UserNotifications
 #if canImport(UIKit)
@@ -25,6 +27,13 @@ final class GenesisStore: ObservableObject {
     @Published private(set) var guidedSetupLaunchToken = UUID()
     @Published private(set) var authLastStatusMessage = ""
     @Published private(set) var googleCalendarStatusMessage = ""
+    @Published var showPaywall = false
+    @Published var paywallContext: PaywallContext = .featureGate
+    @Published var showCustomerCenter = false
+    let entitlementService = RevenueCatEntitlementService()
+    private var entitlementCancellable: AnyCancellable?
+    private var entitlementUpdateObserver: NSObjectProtocol?
+    private var pendingOnboardingScreen: AppScreen = .dump
     private var reminderTapObserver: NSObjectProtocol?
     private var pendingGoogleCalendarAuthorization: PendingGoogleCalendarAuthorization?
 
@@ -412,7 +421,26 @@ final class GenesisStore: ObservableObject {
         materializeLoopTasksIfNeeded()
         hydrateAuthSessionFromKeychainIfNeeded()
         autoRetryAuthMigrationIfNeeded()
-        GWTheme.setThemeStyle(state.themeStyle ?? .brown)
+        // Migrate legacy users off brown to the new Coach Navy default.
+        if state.themeStyle == .brown || state.themeStyle == nil {
+            state.themeStyle = .coachNavy
+        }
+        GWTheme.setThemeStyle(state.themeStyle ?? .coachNavy)
+
+        entitlementService.configure()
+        entitlementCancellable = entitlementService.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+        Task { await entitlementService.fetchEntitlement() }
+
+        entitlementUpdateObserver = NotificationCenter.default.addObserver(
+            forName: .genesisEntitlementUpdated,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let info = notification.object as? CustomerInfo else { return }
+            self?.handlePurchaseCompleted(info)
+        }
 
         reminderTapObserver = NotificationCenter.default.addObserver(
             forName: .genesisOpenFillFromReminder,
@@ -551,13 +579,103 @@ final class GenesisStore: ObservableObject {
         isSignedIn && (state.authMigrationStatus ?? .notStarted) == .failed
     }
 
+    // MARK: - Entitlement
+
+    var entitlementState: EntitlementState { entitlementService.entitlementState }
+    var isEntitled: Bool {
+        let s = entitlementService.entitlementState
+        return s == .activeSubscription || s == .offerCodeAccess
+    }
+    var canAddTasks: Bool { isEntitled }
+    var isInPreviewMode: Bool { state.previewModeEnabled == true && !isEntitled }
+    var entitlementStatusLabel: String {
+        switch entitlementService.entitlementState {
+        case .activeSubscription: return "Active"
+        case .offerCodeAccess:    return "Offer Code (Active)"
+        case .expired:            return "Expired"
+        case .preview:            return "No subscription"
+        }
+    }
+
     func beginJourney() {
         state.showIntroOnLaunch = false
-        state.screen = .dump
+        if isEntitled {
+            state.screen = .dump
+        } else {
+            pendingOnboardingScreen = .dump
+            paywallContext = .onboarding
+            showPaywall = true
+        }
     }
+
     func skipToPlanner() {
         state.showIntroOnLaunch = false
-        state.screen = .fill
+        if isEntitled {
+            state.screen = .fill
+        } else {
+            pendingOnboardingScreen = .fill
+            paywallContext = .onboarding
+            showPaywall = true
+        }
+    }
+
+    func enterPreviewMode() {
+        state.previewModeEnabled = true
+        showPaywall = false
+        if state.screen == .onboarding {
+            state.screen = pendingOnboardingScreen
+        }
+    }
+
+    func proceedAfterEntitlement() {
+        showPaywall = false
+        if state.screen == .onboarding {
+            state.screen = pendingOnboardingScreen
+        }
+    }
+
+    func dismissPaywall() {
+        showPaywall = false
+    }
+
+    func triggerPaywallForTaskCreation() {
+        paywallContext = .featureGate
+        showPaywall = true
+    }
+
+    func purchaseMonthly() async throws {
+        try await entitlementService.purchaseMonthly()
+        proceedAfterEntitlement()
+    }
+
+    func purchaseYearly() async throws {
+        try await entitlementService.purchaseYearly()
+        proceedAfterEntitlement()
+    }
+
+    func purchaseLifetime() async throws {
+        try await entitlementService.purchaseLifetime()
+        proceedAfterEntitlement()
+    }
+
+    func restorePurchases() async throws {
+        try await entitlementService.restorePurchases()
+        if isEntitled {
+            proceedAfterEntitlement()
+        }
+    }
+
+    func presentOfferCodeRedemption() {
+        entitlementService.presentOfferCodeRedemption()
+    }
+
+    func handlePurchaseCompleted(_ customerInfo: CustomerInfo) {
+        Task { await entitlementService.fetchEntitlement() }
+        if isEntitled { proceedAfterEntitlement() }
+    }
+
+    func refreshEntitlement() {
+        Task { await entitlementService.fetchEntitlement() }
     }
 
     func setActivePlanningDay(_ day: Date) {

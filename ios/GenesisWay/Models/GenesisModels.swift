@@ -68,6 +68,7 @@ enum AppThemeStyle: String, Codable, CaseIterable, Identifiable {
     case darkNightfall
     case oceanGlass
     case emberGlass
+    case coachNavy
 
     var id: String { rawValue }
 
@@ -79,6 +80,7 @@ enum AppThemeStyle: String, Codable, CaseIterable, Identifiable {
         case .darkNightfall: return "Dark Gradient"
         case .oceanGlass: return "Ocean Glass"
         case .emberGlass: return "Ember Glass"
+        case .coachNavy: return "Coach Navy"
         }
     }
 }
@@ -454,6 +456,7 @@ struct GenesisState: Codable {
     var lastParkingLotReviewISO: String?
     var morningReminderWeekdays: [Int]?
     var eveningReminderWeekdays: [Int]?
+    var previewModeEnabled: Bool?
 
     static let initial = GenesisState(
         screen: .onboarding,
@@ -500,7 +503,7 @@ struct GenesisState: Codable {
         syncedCalendarEvents: [],
         appleIcsEnabled: true,
         lastCalendarSyncISO: nil,
-        themeStyle: .brown,
+        themeStyle: .coachNavy,
         hasCompletedGuidedSetup: false,
         repeatingTaskRules: [],
         loopRules: [],
@@ -525,6 +528,7 @@ struct GenesisState: Codable {
         parkingLotReviewReminderTime: "",
         lastParkingLotReviewISO: nil,
         morningReminderWeekdays: nil,
-        eveningReminderWeekdays: nil
+        eveningReminderWeekdays: nil,
+        previewModeEnabled: nil
     )
 }

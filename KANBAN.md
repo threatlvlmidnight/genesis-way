@@ -114,8 +114,8 @@ Goal: add entitlements and purchase flow only after the core app and calendar ha
 Pull first:
 
 - Mon A1: Add monetization domain model and entitlement service abstraction; support states for active subscription, offer-code access, expired access, and preview mode.
-- Mon A2: Integrate StoreKit 2 + RevenueCat for monthly and annual subscriptions; keep product IDs and displayed price copy configurable so pricing can be tuned without code churn.
-- Mon A3: Build the paywall shown after Intro > Start the Journey; include monthly and annual plans, Restore Purchases, code redemption entry point, and continue-to-preview option.
+- Mon A2: Integrate StoreKit 2 + RevenueCat; configure initial product as $10/month base plan (product ID: com.genesisway.monthly); keep product IDs and displayed price copy configurable so pricing can be adjusted without code churn; annual plan deferred post-launch.
+- Mon A3: Build the paywall shown after Intro > Start the Journey; show the $10/month plan, Restore Purchases, offer-code redemption entry point, and continue-to-preview option; no annual plan UI until post-launch.
 - Mon A4: Add preview mode gating across the app — unpaid users can browse but cannot add new tasks; all task-creation entry points should route to the paywall.
 
 Exit criteria:
@@ -131,7 +131,7 @@ Goal: finish subscription lifecycle handling, seminar/tester access, and launch 
 Pull first:
 
 - Mon A5: Add Settings account/subscription screen with current plan, entitlement status, manage subscription, restore purchases, redeemed-code status, and sign-in/account linkage hooks.
-- Mon A6: Add offer-code and cohort-access support for seminar/testing rollouts using Apple offer codes first; support time-boxed access such as 3-month cohort grants without custom billing infrastructure.
+- Mon A6: Add offer-code and cohort-access support using Apple offer codes; seed two launch codes — **BETA@26** (external beta testers: time-boxed access, expires with beta period) and **INTEST@26** (internal testing: full unlimited access for dev/QA); support additional cohort codes post-launch without code churn.
 - Mon A7: Add entitlement restore and lifecycle handling for reinstall, device change, sign-in/sign-out, renewal, cancellation, billing issue, and expiration states using trusted third-party vendor flows.
 - Mon A8: Add monetization telemetry events and funnel tracking — paywall shown, plan selected, purchase started, purchase completed, restore started/completed, code redeemed, preview entered, paywall exit, entitlement expired.
 - Review session 2026-03-14: Clarify trailing note "Sni" and convert into actionable ticket(s)
@@ -314,12 +314,12 @@ Keep these in Backlog, but do not pull them into active sprints unless they dire
 - [ ] Cal A7: Calendar Settings screen — replace stub with real connected/disconnected state, connect/disconnect with calendar picker, Sync Now, last-synced display. (Depends on Cal A3, Cal A4)
 - [ ] Cal A8: Offline cache and error UX — serve cached events on failure; non-blocking banner with retry; inline re-auth prompt on Fill (dismissible per session); non-blocking export/open-calendar failure messaging in Shape.
 - [ ] Epic: Monetization (v1) — StoreKit 2 + RevenueCat subscriptions, no free tier, preview mode when unpaid, offer-code access for seminar/testing cohorts, paywall after Start the Journey.
-- [ ] Mon A1: Add monetization domain model and entitlement service abstraction; support states for active subscription, offer-code access, expired access, and preview mode.
-- [ ] Mon A2: Integrate StoreKit 2 + RevenueCat for monthly and annual subscriptions; keep product IDs and displayed price copy configurable so pricing can be tuned without code churn.
-- [ ] Mon A3: Build the paywall shown after Intro > Start the Journey; include monthly and annual plans, Restore Purchases, code redemption entry point, and continue-to-preview option.
-- [ ] Mon A4: Add preview mode gating across the app — unpaid users can browse but cannot add new tasks; all task-creation entry points should route to the paywall.
+- [x] Mon A1: Add monetization domain model and entitlement service abstraction; support states for active subscription, offer-code access, expired access, and preview mode.
+- [x] Mon A2: Integrate StoreKit 2 + RevenueCat; configure initial product as $10/month base plan (product ID: com.genesisway.monthly); keep product IDs and displayed price copy configurable so pricing can be adjusted without code churn; annual plan deferred post-launch.
+- [x] Mon A3: Build the paywall shown after Intro > Start the Journey; show the $10/month plan, Restore Purchases, offer-code redemption entry point, and continue-to-preview option; no annual plan UI until post-launch.
+- [x] Mon A4: Add preview mode gating across the app — unpaid users can browse but cannot add new tasks; all task-creation entry points should route to the paywall.
 - [ ] Mon A5: Add Settings account/subscription screen with current plan, entitlement status, manage subscription, restore purchases, redeemed-code status, and sign-in/account linkage hooks.
-- [ ] Mon A6: Add offer-code and cohort-access support for seminar/testing rollouts using Apple offer codes first; support time-boxed access such as 3-month cohort grants without custom billing infrastructure.
+- [ ] Mon A6: Add offer-code and cohort-access support using Apple offer codes; seed two launch codes — **BETA@26** (external beta testers: time-boxed access, expires with beta period) and **INTEST@26** (internal testing: full unlimited access for dev/QA); support additional cohort codes post-launch without code churn.
 - [ ] Mon A7: Add entitlement restore and lifecycle handling for reinstall, device change, sign-in/sign-out, renewal, cancellation, billing issue, and expiration states using trusted third-party vendor flows.
 - [ ] Mon A8: Add monetization telemetry events and funnel tracking — paywall shown, plan selected, purchase started, purchase completed, restore started/completed, code redeemed, preview entered, paywall exit, entitlement expired.
 - [ ] Epic: Authentication (v1) — Supabase Auth + Apple Sign In + guest-first local mode + anonymous-to-account migration (see docs/2026-03-21-rc1-auth-spike-decision-memo.md)

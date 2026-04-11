@@ -1,3 +1,4 @@
+import RevenueCatUI
 import SwiftUI
 
 struct RootView: View {
@@ -16,11 +17,24 @@ struct RootView: View {
                 MainTabShell()
             }
         }
-        .overlay(alignment: .top) {
-            if store.showFeedbackIdentifiers {
-                FeedbackIdentifierBadge(text: FeedbackScreenID.main(for: store.screen))
-                    .padding(.top, 6)
-            }
+        .sheet(
+            isPresented: Binding(
+                get: { store.showPaywall },
+                set: { if !$0 { store.dismissPaywall() } }
+            )
+        ) {
+            GWPaywallView()
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { store.showCustomerCenter },
+                set: { store.showCustomerCenter = $0 }
+            )
+        ) {
+            CustomerCenterView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            store.refreshEntitlement()
         }
     }
 }
@@ -84,47 +98,24 @@ private struct MainTabShell: View {
             set: { store.navigate($0) }
         )) {
             DumpScreen()
-            .padding(.top, 42)
             .tabItem { Label("Dump", systemImage: "square.and.pencil") }
             .tag(AppScreen.dump)
 
             ShapeScreen()
-            .padding(.top, 42)
             .tabItem { Label("Shape", systemImage: "circle.grid.cross") }
             .tag(AppScreen.shape)
 
             FillScreen()
-            .padding(.top, 42)
             .tabItem { Label("Fill", systemImage: "checklist") }
             .tag(AppScreen.fill)
 
             ParkScreen()
-            .padding(.top, 42)
             .tabItem { Label("Park", systemImage: "tray.and.arrow.down") }
             .tag(AppScreen.park)
         }
-        .safeAreaInset(edge: .top) {
-            Color.clear
-                .frame(height: 92)
-        }
         .overlay(alignment: .top) {
-            ZStack(alignment: .bottom) {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.black.opacity(0.36), Color.black.opacity(0.2)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .overlay(alignment: .bottom) {
-                        Rectangle()
-                            .fill(GWTheme.gold.opacity(0.08))
-                            .frame(height: 1)
-                    }
-                    .allowsHitTesting(false)
-
-                HStack(spacing: 8) {
+            HStack {
+                    // Left: Tour button
                     if showsHomeButton {
                         Button {
                             store.navigate(.onboarding)
@@ -134,55 +125,54 @@ private struct MainTabShell: View {
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(GWTheme.gold)
                                 .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .padding(.vertical, 7)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
                     }
 
-                    Spacer(minLength: 0)
+                    Spacer()
 
-                    HStack(spacing: 8) {
+                    // Center: feedback badge (dev only)
+                    if store.showFeedbackIdentifiers {
+                        FeedbackIdentifierBadge(text: FeedbackScreenID.main(for: store.screen))
+                    }
+
+                    Spacer()
+
+                    // Right: guide + settings
+                    HStack(spacing: 6) {
                         if showsGuideButton {
-                            Button {
-                                showScreenGuide = true
-                            } label: {
-                                Image(systemName: "questionmark.circle.fill")
-                                    .font(.system(size: 16, weight: .semibold))
+                            Button { showScreenGuide = true } label: {
+                                Image(systemName: "questionmark")
+                                    .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(GWTheme.gold)
-                                    .frame(width: 36, height: 36)
-                                    .background(Color.white.opacity(0.08))
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .frame(width: 32, height: 32)
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(Circle())
                             }
                             .buttonStyle(.plain)
                         }
-
-                        Button {
-                            showAppSettings = true
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 16, weight: .semibold))
+                        Button { showAppSettings = true } label: {
+                            Image(systemName: "gearshape")
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(GWTheme.gold)
-                                .frame(width: 36, height: 36)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .frame(width: 32, height: 32)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
                                 .overlay {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(GWTheme.gold, lineWidth: 2)
+                                    Circle()
+                                        .stroke(GWTheme.gold, lineWidth: 1.5)
                                         .opacity(activeGuidedStep?.emphasis == .settings ? 0.95 : 0)
                                 }
-                                .shadow(color: GWTheme.gold.opacity(activeGuidedStep?.emphasis == .settings ? 0.55 : 0), radius: 8)
+                                .shadow(color: GWTheme.gold.opacity(activeGuidedStep?.emphasis == .settings ? 0.5 : 0), radius: 6)
                         }
                         .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 14)
-                .padding(.top, 6)
-                .padding(.bottom, 18)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 66)
+                .padding(.vertical, 8)
         }
         .overlay(alignment: .bottom) {
             if let emphasis = activeGuidedStep?.emphasis,

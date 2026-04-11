@@ -61,6 +61,7 @@ Complete these before opening the app to external users outside the internal tes
 - [ ] Decide which features are free vs. paid before opening to external beta users
 - [ ] Confirm paywall boundaries are in place so testers cannot access paid features without a valid entitlement
 - [ ] StoreKit/RevenueCat sandbox tested end-to-end
+- [ ] Remove "⚠️ Test: Show Paywall" button from App Settings Developer section before public release
 
 ---
 
