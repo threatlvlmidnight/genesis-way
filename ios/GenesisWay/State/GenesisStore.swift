@@ -30,7 +30,9 @@ final class GenesisStore: ObservableObject {
     @Published var showPaywall = false
     @Published var paywallContext: PaywallContext = .featureGate
     @Published var showCustomerCenter = false
-    let entitlementService = RevenueCatEntitlementService()
+    let entitlementService: any EntitlementService = MonetizationConfig.useRevenueCat
+        ? RevenueCatEntitlementService()
+        : BypassEntitlementService()
     private var entitlementCancellable: AnyCancellable?
     private var entitlementUpdateObserver: NSObjectProtocol?
     private var pendingOnboardingScreen: AppScreen = .dump

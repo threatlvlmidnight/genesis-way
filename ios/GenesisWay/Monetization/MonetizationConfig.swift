@@ -3,10 +3,18 @@ import Foundation
 /// Static configuration for the monetization layer.
 /// Update product IDs and entitlement ID to match your App Store Connect + RevenueCat dashboard.
 enum MonetizationConfig {
+    // MARK: - Feature flag
+
+    /// Set to `true` once you have a production RevenueCat key and are ready to
+    /// enforce subscriptions. While `false`, `BypassEntitlementService` is used
+    /// and all users receive full access automatically.
+    static let useRevenueCat = false
+
     // MARK: - RevenueCat
 
     /// RevenueCat public SDK key (Apple / sandbox).
-    /// Production key: swap before submitting to App Store Review.
+    /// Replace the test_ key with your production `appl_…` key from the
+    /// RevenueCat dashboard before flipping `useRevenueCat` to `true`.
     static let revenueCatAPIKey = "test_REOWGjxZupzpyxgHkadLqokBpcM"
 
     /// RevenueCat entitlement identifier granting full app access.
