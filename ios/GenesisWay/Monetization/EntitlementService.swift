@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 // MARK: - Domain Types
@@ -33,6 +34,10 @@ protocol EntitlementService: AnyObject {
     /// The current entitlement state. Changes should publish to observers.
     var entitlementState: EntitlementState { get }
 
+    /// Type-erased publisher that fires whenever entitlement state changes.
+    /// Use instead of `objectWillChange` so the protocol can be used as an existential.
+    var objectWillChangePublisher: AnyPublisher<Void, Never> { get }
+
     /// Configure the underlying SDK. Must be called once before any purchase operation.
     func configure()
 
@@ -41,6 +46,12 @@ protocol EntitlementService: AnyObject {
 
     /// Purchase the $10/month base plan. Throws on cancellation or failure.
     func purchaseMonthly() async throws
+
+    /// Purchase the yearly plan. Throws on cancellation or failure.
+    func purchaseYearly() async throws
+
+    /// Purchase the lifetime plan. Throws on cancellation or failure.
+    func purchaseLifetime() async throws
 
     /// Restore previous purchases from the App Store.
     func restorePurchases() async throws

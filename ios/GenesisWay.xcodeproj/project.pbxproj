@@ -10,6 +10,7 @@
 		755B899E2F8AE26B00C1C0D4 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 755B899D2F8AE26B00C1C0D4 /* RevenueCat */; };
 		755B89A02F8AE27000C1C0D4 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 755B899F2F8AE27000C1C0D4 /* RevenueCatUI */; };
 		755B89A52F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A32F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift */; };
+		755B89AD2F8AEE5000C1C0D4 /* BypassEntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89AC2F8AEE5000C1C0D4 /* BypassEntitlementService.swift */; };
 		755B89A62F8AEE5000C1C0D4 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A12F8AEE5000C1C0D4 /* EntitlementService.swift */; };
 		755B89A72F8AEE5000C1C0D4 /* MonetizationConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A22F8AEE5000C1C0D4 /* MonetizationConfig.swift */; };
 		755B89AA2F8AEEEF00C1C0D4 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A82F8AEEEF00C1C0D4 /* PaywallView.swift */; };
@@ -34,6 +35,7 @@
 		755B89A12F8AEE5000C1C0D4 /* EntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementService.swift; sourceTree = "<group>"; };
 		755B89A22F8AEE5000C1C0D4 /* MonetizationConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonetizationConfig.swift; sourceTree = "<group>"; };
 		755B89A32F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevenueCatEntitlementService.swift; sourceTree = "<group>"; };
+		755B89AC2F8AEE5000C1C0D4 /* BypassEntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BypassEntitlementService.swift; sourceTree = "<group>"; };
 		755B89A82F8AEEEF00C1C0D4 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		A00000000000000000000010 /* GenesisWay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = GenesisWay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000011 /* GenesisWayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenesisWayApp.swift; sourceTree = "<group>"; };
@@ -79,6 +81,7 @@
 				755B89A12F8AEE5000C1C0D4 /* EntitlementService.swift */,
 				755B89A22F8AEE5000C1C0D4 /* MonetizationConfig.swift */,
 				755B89A32F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift */,
+				755B89AC2F8AEE5000C1C0D4 /* BypassEntitlementService.swift */,
 			);
 			path = Monetization;
 			sourceTree = "<group>";
@@ -272,6 +275,7 @@
 				A0000000000000000000000A /* ShapeScreen.swift in Sources */,
 				A0000000000000000000000B /* FillScreen.swift in Sources */,
 				755B89A52F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift in Sources */,
+				755B89AD2F8AEE5000C1C0D4 /* BypassEntitlementService.swift in Sources */,
 				755B89A62F8AEE5000C1C0D4 /* EntitlementService.swift in Sources */,
 				755B89A72F8AEE5000C1C0D4 /* MonetizationConfig.swift in Sources */,
 				A0000000000000000000000C /* ParkScreen.swift in Sources */,
@@ -387,7 +391,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = GenesisWay/App/GenesisWay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEVELOPMENT_ASSET_PATHS = "\"GenesisWay/Preview Content\"";
 				DEVELOPMENT_TEAM = L34MSS92N5;
 				ENABLE_PREVIEWS = YES;
@@ -412,7 +416,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.genesisway.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -428,7 +432,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = GenesisWay/App/GenesisWay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 33;
 				DEVELOPMENT_TEAM = L34MSS92N5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -452,7 +456,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.1;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.genesisway.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

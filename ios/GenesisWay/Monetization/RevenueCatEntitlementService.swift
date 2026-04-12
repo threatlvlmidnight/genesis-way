@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import RevenueCat
 import StoreKit
@@ -42,6 +43,10 @@ enum MonetizationError: LocalizedError {
 @MainActor
 final class RevenueCatEntitlementService: ObservableObject, EntitlementService {
     @Published private(set) var entitlementState: EntitlementState = .preview
+
+    var objectWillChangePublisher: AnyPublisher<Void, Never> {
+        objectWillChange.map { _ in () }.eraseToAnyPublisher()
+    }
 
     // MARK: - EntitlementService
 

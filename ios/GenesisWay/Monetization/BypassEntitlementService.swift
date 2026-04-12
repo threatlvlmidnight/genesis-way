@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 /// A no-op EntitlementService used while `MonetizationConfig.useRevenueCat` is `false`.
@@ -9,9 +10,15 @@ import Foundation
 final class BypassEntitlementService: ObservableObject, EntitlementService {
     @Published private(set) var entitlementState: EntitlementState = .activeSubscription
 
+    var objectWillChangePublisher: AnyPublisher<Void, Never> {
+        objectWillChange.map { _ in () }.eraseToAnyPublisher()
+    }
+
     func configure() {}
     func fetchEntitlement() async {}
     func purchaseMonthly() async throws {}
+    func purchaseYearly() async throws {}
+    func purchaseLifetime() async throws {}
     func restorePurchases() async throws {}
     func presentOfferCodeRedemption() {}
 }

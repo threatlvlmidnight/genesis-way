@@ -430,7 +430,7 @@ final class GenesisStore: ObservableObject {
         GWTheme.setThemeStyle(state.themeStyle ?? .coachNavy)
 
         entitlementService.configure()
-        entitlementCancellable = entitlementService.objectWillChange.sink { [weak self] _ in
+        entitlementCancellable = entitlementService.objectWillChangePublisher.sink { [weak self] in
             self?.objectWillChange.send()
         }
         Task { await entitlementService.fetchEntitlement() }
