@@ -35,6 +35,9 @@ struct RootView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             store.refreshEntitlement()
+            Task {
+                _ = await store.syncGoogleCalendarNow()
+            }
         }
     }
 }

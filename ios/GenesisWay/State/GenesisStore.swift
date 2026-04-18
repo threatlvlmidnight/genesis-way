@@ -308,9 +308,9 @@ final class GenesisStore: ObservableObject {
         let refreshToken: String?
 
         enum CodingKeys: String, CodingKey {
-            case accessToken = "access_token"
-            case expiresIn = "expires_in"
-            case refreshToken = "refresh_token"
+            case accessToken
+            case expiresIn
+            case refreshToken
         }
     }
 
@@ -2406,22 +2406,12 @@ final class GenesisStore: ObservableObject {
         configuration: GoogleCalendarConfiguration,
         refreshToken: String
     ) async throws -> GoogleCalendarRefreshResponse {
-        guard let endpoint = URL(string: "https://oauth2.googleapis.com/token") else {
-            throw NSError(domain: "GenesisWay", code: 1005, userInfo: [NSLocalizedDescriptionKey: "Google token refresh URL is invalid."])
-        }
-
+        let endpoint = configuration.apiBaseURL.appending(path: "api/calendar/oauth/refresh")
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        var components = URLComponents()
-        components.queryItems = [
-            URLQueryItem(name: "client_id", value: configuration.clientId),
-            URLQueryItem(name: "grant_type", value: "refresh_token"),
-            URLQueryItem(name: "refresh_token", value: refreshToken),
-        ]
-        request.httpBody = components.percentEncodedQuery?.data(using: .utf8)
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["refreshToken": refreshToken])
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -2430,7 +2420,7 @@ final class GenesisStore: ObservableObject {
 
         guard (200 ..< 300).contains(httpResponse.statusCode) else {
             let message = (try? JSONSerialization.jsonObject(with: data))
-                .flatMap { $0 as? [String: Any] }?["error_description"] as? String
+                .flatMap { $0 as? [String: Any] }?["error"] as? String
             throw NSError(domain: "GenesisWay", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: message ?? "Google token refresh failed. Reconnect your calendar account."])
         }
 
