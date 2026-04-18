@@ -53,19 +53,27 @@ Exit criteria:
 1. User can sign up/sign in/sign out reliably.
 2. Account state persists correctly and safely.
 
-### 0.3.0 (Feature Release 2 - Google Calendar Push/Pull Sync)
+### 0.3.0 (Feature Release 2 - Google Calendar Sync) — Demo Target: Friday March 27, 2026
+
+> **Demo release.** Dan is presenting to a potential client on Friday March 27. This version must be in TestFlight / on-device before that demo. Auth (0.2.0) and Calendar sync (0.3.0) are combined into this milestone. Monetization (0.4.0) is explicitly excluded from this cut.
 
 Scope:
 
-1. Add Google Calendar import (pull) and export/update (push) sync on happy path.
-2. Implement conflict and failure handling for expected sync edge cases.
+1. Auth and user accounts fully integrated (Sprints 2–3 complete).
+2. Google Calendar pull sync and Fill integration working on device (Sprints 4–5 complete).
+3. Shape scheduling export handoff included.
+4. Offline/failure UX at a demo-safe baseline.
 
 Exit criteria:
 
-1. Calendar push/pull sync is stable for primary usage path.
-2. Sync failures are recoverable and visible to user.
+1. Apple Sign In, guest mode, and account linking all work on device.
+2. Fill shows pulled Google Calendar events reliably.
+3. Shape export handoff to calendar works.
+4. No Sev 1 blockers in daily flow, auth, or calendar pull path.
 
-### 0.4.0 (Feature Release 3 - Monetization)
+### 0.4.0 (Feature Release 3 - Monetization) — Post-Demo (after Friday March 27)
+
+> Not required for the Friday client demo. Begin only after the 0.3.0 demo release is on device and stable.
 
 Scope:
 
@@ -77,15 +85,15 @@ Exit criteria:
 1. Entitlements are enforced consistently.
 2. Purchase/restore flows are functional and tested.
 
-### 1.0.0 (General Availability)
+### 1.0.0 (General Availability) — Post-Demo
 
 Scope:
 
 1. Includes all 0.1.2 improvements.
 2. Includes all three major features shipped in order:
-- Authentication and user accounts
-- Google Calendar push/pull sync
-- Monetization and entitlement gating
+- Authentication and user accounts (0.2.0/0.3.0 demo cut)
+- Google Calendar push/pull sync (0.3.0 demo cut)
+- Monetization and entitlement gating (0.4.0, post-demo)
 3. Final release hardening for production readiness.
 
 Exit criteria:

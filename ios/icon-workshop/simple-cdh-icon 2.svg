@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="CDH app icon">
+  <rect width="1024" height="1024" rx="220" fill="#CFE2F3" />
+
+  <!-- Large C -->
+  <path
+    d="M760 286 A258 258 0 1 0 760 738"
+    fill="none"
+    stroke="#1C2A39"
+    stroke-width="94"
+    stroke-linecap="round"
+  />
+
+  <!-- D -->
+  <path
+    d="M384 404 V620 M384 404 H442 C500 404 500 620 442 620 H384"
+    fill="none"
+    stroke="#1C2A39"
+    stroke-width="30"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- H -->
+  <path
+    d="M512 404 V620 M620 404 V620 M512 512 H620"
+    fill="none"
+    stroke="#1C2A39"
+    stroke-width="30"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

@@ -105,3 +105,101 @@ Feature:
 - Branding and Positioning
 - Monetization and Packaging
 - Collaboration Discovery
+
+## 2026-04-02 Dan Input (Onboarding + Core Flow)
+- Participants: Dan
+- Context: Post-review content and functional feedback across Onboarding, Dump, Shape, Fill, and Park flows.
+- Summary: Copy and sequencing changes are straightforward and high impact; three functional issues are release-critical (Shape-to-Fill item handoff, calendar sync failure, and Parking Lot carryover persistence).
+
+#### Raw Feedback
+- Onboarding terminology update: change "Sustain it" to "Finish it".
+- Add Work/Home/Hobby/School prompt in onboarding and dump guidance.
+- Genesis Pattern language should read: Dump it - Shape it - Fill it - Finish it - Rest.
+- Shape onboarding and Shape screen should enforce and clearly present filters: Eliminate, Automate, Delegate, Schedule, Park.
+- Fill onboarding and Fill screen should emphasize syncing calendar and assigning tasks to time.
+- Functional regression: Shape items no longer appear in Fill.
+- Functional issue: calendar will not sync.
+- Park terminology and framing update: "Parking Lot" with Someday/Maybe subtitle.
+- Functional issue: Parking Lot should carry items across consecutive days.
+
+#### Feedback by Category
+Improvement:
+- Refresh onboarding copy for all 4 steps with consistent terminology and instructional sequence.
+- Align Shape filter naming and order in onboarding and task controls.
+- Update Fill instructional text to focus on calendar sync, time assignment, reminders, and margin.
+- Rename Park to Parking Lot and update supporting microcopy.
+
+Bug:
+- Shape-to-Fill transfer regression (items processed in Shape are not visible in Fill).
+- Calendar sync failure on Fill path.
+- Parking Lot carryover persistence regression across days.
+
+Feature:
+- No net-new feature requested; feedback is primarily UX/copy refinement plus bug fixes.
+
+#### Product Signals
+- Dan is optimizing for language clarity and operational simplicity in the daily loop.
+- Copy consistency is tightly coupled with coaching method adoption.
+- Reliability issues in Fill/Calendar/Parking Lot undermine trust in the workflow and should be treated as top-priority fixes.
+
+#### Decisions
+- Create a dedicated epic for Dan's 2026-04-02 feedback round.
+- Prioritize functional regressions before non-blocking copy polish.
+- Keep terms aligned across onboarding and runtime screens (Finish it, Parking Lot, filter set).
+- Normalize calendar wording in UX copy to "synced".
+
+#### Prioritized Actions
+- [P0] Fix Shape-to-Fill transfer regression so shaped items appear in Fill timeline/input list - Engineering - Immediate.
+- [P0] Fix calendar sync reliability in Fill path (sync initiation + error handling + user feedback) - Engineering - Immediate.
+- [P0] Fix Parking Lot day-to-day carryover persistence - Engineering - Immediate.
+- [P1] Apply onboarding copy updates for Dump, Shape, Fill, Finish plus Genesis Pattern language normalization - Product/Design/Engineering - Next sprint.
+- [P1] Apply Dump/Shape/Fill/Park in-screen copy and label updates (including filter button text and section names) - Product/Design/Engineering - Next sprint.
+- [P1] Run targeted regression on daily loop after fixes (Dump -> Shape -> Fill -> Parking Lot) - QA/Engineering - Next sprint.
+
+#### Open Questions
+- Proposed finalized Finish It wording: "Finish your task list or consciously move each item forward. Run each incomplete item through the filters."
+
+---
+
+## 2026-04-08 User/Tester Feedback (Onboarding, Shape, Fill)
+- Participants: Tester (name unknown)
+- Context: Ad-hoc feedback submitted across three screens after latest build. Three issues noted.
+- Summary: One legibility regression on the Onboarding CTA, one filter label naming conflict on Shape, and a continuing calendar sync failure on Fill.
+
+#### Raw Feedback
+- Onboarding / Dump It: "On the bottom of the app…can't read 'Begin the Journey' button."
+- Shape: "Under the five filters: change 'move' with 'schedule'. The five filters are: Eliminate, Automate, Delegate, Schedule, Park."
+- Fill: "I am unable to sync my calendar."
+
+#### Feedback by Category
+Improvement:
+- Increase contrast/legibility of the "Begin the Journey" CTA at the bottom of the onboarding screen.
+- Revert Shape filter label from "Move" back to "Schedule" to match the canonical five-filter set: Eliminate, Automate, Delegate, Schedule, Park.
+
+Bug:
+- "Begin the Journey" button is unreadable (likely contrast or theme issue at bottom of screen).
+- Calendar sync is still not functioning; user cannot complete the Fill sync step.
+
+Feature:
+- No new features requested.
+
+#### Product Signals
+- The "Begin the Journey" button legibility issue is a first-impression blocker — users cannot start the journey if the CTA is invisible.
+- "Move" vs "Schedule" label confusion indicates GW-P07c rename introduced a terminology mismatch with the coaching method language.
+- Calendar sync failure (recurring) suggests the underlying fix may be incomplete or regressed.
+
+#### Decisions
+- Restore Shape filter label to "Schedule" to align with Dan's coaching method terminology.
+- Fix "Begin the Journey" button contrast/visibility immediately.
+- Re-investigate calendar sync; treat as a regression.
+
+#### Prioritized Actions
+- [P0] Fix "Begin the Journey" button legibility on Onboarding screen — Product/Design/Engineering — Immediate.
+- [P0] Rename Shape filter "Move" → "Schedule" to restore canonical five-filter set — Engineering — Immediate.
+- [P0] Re-investigate and fix calendar sync failure on Fill path — Engineering — Immediate.
+
+#### Open Questions
+- Is the "Begin the Journey" button legibility issue theme-specific or universal?
+
+#### Resolved
+- "Move" vs "Schedule" label: Dan confirmed 2026-04-08 — the filter should be labeled "Schedule". GW-P07c "Move" rename is superseded by GW-P15b.

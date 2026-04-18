@@ -4,15 +4,47 @@ import SwiftUI
 import UIKit
 
 struct DumpScreen: View {
+    private struct LoopDraft: Identifiable {
+        let id = UUID()
+        var text: String
+        var lane: TaskLane?
+    }
+
     @EnvironmentObject private var store: GenesisStore
     @State private var input = ""
-    @State private var selectedDay = Date()
     @FocusState private var isInputFocused: Bool
     @StateObject private var voice = VoiceDumpController()
     @State private var wasRecording = false
     @State private var voiceStatusMessage: String?
     @State private var hasDeferredFocus = false
-    @State private var keyboardVisible = false
+    @State private var editingItemId: UUID? = nil
+    @State private var editingText = ""
+    @FocusState private var isEditFocused: Bool
+
+    // Loop editor state
+    @State private var loopDraft: LoopDraft? = nil
+    @State private var loopText = ""
+    @State private var loopLane: TaskLane? = nil
+    @State private var loopRecurrenceType: LoopRecurrenceType = .daily
+    @State private var loopWeekdays: Set<Int> = []
+    @State private var loopDurationType: LoopDurationType = .forever
+    @State private var loopFixedCount = 4
+    @State private var loopFixedCountText = "4"
+
+    // Note editor state
+    @State private var noteDumpTarget: DumpItem? = nil
+    @State private var noteDumpText = ""
+
+    private var selectedDay: Date {
+        store.activePlanningDay
+    }
+
+    private var selectedDayBinding: Binding<Date> {
+        Binding(
+            get: { store.activePlanningDay },
+            set: { store.setActivePlanningDay($0) }
+        )
+    }
 
     private var dayDumpItems: [DumpItem] {
         store.dumpItems(for: selectedDay)
@@ -25,17 +57,21 @@ struct DumpScreen: View {
         return selected < today
     }
 
+    private var carriedItems: [DumpItem] {
+        dayDumpItems.filter { $0.carriedOver == true }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
 
             HStack(spacing: 10) {
-                DatePicker("Day", selection: $selectedDay, displayedComponents: [.date])
+                DatePicker("Day", selection: selectedDayBinding, displayedComponents: [.date])
                     .labelsHidden()
                     .datePickerStyle(.compact)
 
                 Button("Today") {
-                    selectedDay = Date()
+                    store.setActivePlanningDayToToday()
                 }
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(isViewingPastDay ? GWTheme.gold : Color(hex: "1a1208"))
@@ -99,6 +135,27 @@ struct DumpScreen: View {
                     }
                     .buttonStyle(.plain)
                             .disabled(isViewingPastDay)
+
+                    if !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isViewingPastDay {
+                        Button {
+                            loopText = input.trimmingCharacters(in: .whitespacesAndNewlines)
+                            loopLane = nil
+                            loopRecurrenceType = .daily
+                            loopWeekdays = []
+                            loopDurationType = .forever
+                            loopFixedCount = 4
+                            loopFixedCountText = "4"
+                            loopDraft = LoopDraft(text: loopText, lane: nil)
+                        } label: {
+                            Image(systemName: "wand.and.stars")
+                                .font(.system(size: 15, weight: .bold))
+                                .foregroundStyle(Color(hex: "1a1208"))
+                                .frame(width: 44, height: 44)
+                                .background(GWTheme.gold.opacity(0.7))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
                 if !voice.transcript.isEmpty {
@@ -141,16 +198,58 @@ struct DumpScreen: View {
                 }
 
                 if dayDumpItems.isEmpty {
-                    VStack(spacing: 8) {
-                        Text("Your list is clear")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(GWTheme.textMuted)
-                        Text("Start dumping everything you are carrying.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textGhost)
+                    GlassCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("How to Dump It")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(GWTheme.textGhost)
+                                .textCase(.uppercase)
+
+                            ForEach([
+                                ("1", "Empty your head fully", "Type every task, worry, idea, or obligation — Work, Home, Hobby, School. All of it."),
+                                ("2", "Don't filter yet", "No sorting, no prioritising. Capture first, judge later. The goal is an empty mind."),
+                                ("3", "Tap Shape when done", "Once everything is out, head to Shape to run each item through the five filters.")
+                            ], id: \.0) { num, title, detail in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Text(num)
+                                        .font(.system(size: 11, weight: .heavy))
+                                        .foregroundStyle(GWTheme.gold)
+                                        .frame(width: 18, alignment: .center)
+                                        .padding(.top, 1)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(title)
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundStyle(GWTheme.textPrimary)
+                                        Text(detail)
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(GWTheme.textMuted)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+                                }
+                            }
+                        }
                     }
-                    .padding(.top, 28)
                 } else {
+                    if !carriedItems.isEmpty {
+                        GlassCard {
+                            HStack(alignment: .top, spacing: 10) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(GWTheme.gold)
+                                    .padding(.top, 1)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(carriedItems.count) item\(carriedItems.count == 1 ? "" : "s") carried forward")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(GWTheme.textPrimary)
+                                    Text("These didn't get shaped yesterday. Review, edit, or remove them.")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                    }
                     ScrollView {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("Captured — \(dayDumpItems.count)")
@@ -161,18 +260,80 @@ struct DumpScreen: View {
                             ForEach(dayDumpItems) { item in
                                 HStack(spacing: 10) {
                                     Circle().fill(GWTheme.gold.opacity(0.35)).frame(width: 6, height: 6)
-                                    Text(item.text)
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(GWTheme.textMuted)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .lineLimit(nil)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Button("×") { store.removeDumpItem(id: item.id) }
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundStyle(GWTheme.textGhost)
+
+                                    if item.carriedOver == true {
+                                        Text("Carried")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(Color(hex: "1a1208"))
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 3)
+                                            .background(GWTheme.gold.opacity(0.85))
+                                            .clipShape(Capsule())
+                                    }
+
+                                    if editingItemId == item.id {
+                                        TextField("Edit item", text: $editingText)
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(GWTheme.textPrimary)
+                                            .focused($isEditFocused)
+                                            .submitLabel(.done)
+                                            .onSubmit { commitEdit() }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    } else {
+                                        Text(item.text)
+                                            .font(.system(size: 13))
+                                            .foregroundStyle(GWTheme.textMuted)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .lineLimit(nil)
+                                            .fixedSize(horizontal: false, vertical: true)
+                                            .contentShape(Rectangle())
+                                            .onTapGesture {
+                                                guard !isViewingPastDay else { return }
+                                                editingItemId = item.id
+                                                editingText = item.text
+                                                isEditFocused = true
+                                            }
+                                    }
+
+                                    if editingItemId == item.id {
+                                        Button("Save") { commitEdit() }
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(GWTheme.gold)
+                                            .buttonStyle(.plain)
+                                    } else {
+                                        Button {
+                                            noteDumpTarget = item
+                                            noteDumpText = item.notes ?? ""
+                                        } label: {
+                                            Image(systemName: item.notes?.isEmpty == false ? "note.text" : "note.text.badge.plus")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(item.notes?.isEmpty == false ? GWTheme.gold : GWTheme.textGhost)
+                                        }
+                                        .buttonStyle(.plain)
                                         .disabled(isViewingPastDay)
+                                        Button("×") { store.removeDumpItem(id: item.id) }
+                                            .font(.system(size: 16, weight: .medium))
+                                            .foregroundStyle(GWTheme.textGhost)
+                                            .disabled(isViewingPastDay)
+                                    }
                                 }
                                 .padding(.vertical, 10)
+                                .contextMenu {
+                                    if editingItemId != item.id && !isViewingPastDay {
+                                        Button {
+                                            loopText = item.text
+                                            loopLane = item.lane
+                                            loopRecurrenceType = .daily
+                                            loopWeekdays = []
+                                            loopDurationType = .forever
+                                            loopFixedCount = 4
+                                            loopFixedCountText = "4"
+                                            loopDraft = LoopDraft(text: item.text, lane: item.lane)
+                                        } label: {
+                                            Label("Loop this item", systemImage: "wand.and.stars")
+                                        }
+                                    }
+                                }
                                 Divider().overlay(GWTheme.gold.opacity(0.07))
                             }
                         }
@@ -205,12 +366,6 @@ struct DumpScreen: View {
         .onDisappear {
             isInputFocused = false
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            keyboardVisible = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            keyboardVisible = false
-        }
         .onChange(of: voice.isRecording) { _, isRecording in
             if wasRecording && !isRecording {
                 parseTranscriptIntoDumpItems()
@@ -221,6 +376,7 @@ struct DumpScreen: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
+                    if editingItemId != nil { commitEdit() }
                     isInputFocused = false
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
@@ -229,24 +385,40 @@ struct DumpScreen: View {
                 .padding(.vertical, 6)
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            if keyboardVisible {
-                HStack {
+        .sheet(item: $loopDraft) { draft in
+            loopEditorSheet(draft: draft)
+        }
+        .sheet(item: $noteDumpTarget) { item in
+            NavigationStack {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(item.text)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(GWTheme.textMuted)
+                    TextField("Add a note...", text: $noteDumpText, axis: .vertical)
+                        .lineLimit(4...10)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 14))
+                        .foregroundStyle(GWTheme.textPrimary)
                     Spacer()
-                    Button("Done") {
-                        isInputFocused = false
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(GWTheme.gold)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.92))
-                    .clipShape(Capsule())
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .background(Color.black.opacity(0.35))
+                .padding(20)
+                .background(GWTheme.background.ignoresSafeArea())
+                .navigationTitle("Note")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") { noteDumpTarget = nil }
+                            .foregroundStyle(GWTheme.textMuted)
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Save") {
+                            store.updateDumpItemNotes(id: item.id, notes: noteDumpText)
+                            noteDumpTarget = nil
+                        }
+                        .foregroundStyle(GWTheme.gold)
+                        .fontWeight(.semibold)
+                    }
+                }
             }
         }
     }
@@ -280,6 +452,10 @@ struct DumpScreen: View {
             voiceStatusMessage = "Past days are read-only. Switch to today or a future day to capture items."
             return
         }
+        guard store.canAddTasks else {
+            store.triggerPaywallForTaskCreation()
+            return
+        }
 
         let parsed = aiParseDumpItems(from: voice.transcript)
         guard !parsed.isEmpty else {
@@ -297,8 +473,20 @@ struct DumpScreen: View {
         voice.clearTranscript()
     }
 
+    private func commitEdit() {
+        guard let id = editingItemId else { return }
+        store.updateDumpItemText(id: id, text: editingText)
+        editingItemId = nil
+        editingText = ""
+        isEditFocused = false
+    }
+
     private func addTypedDumpItem() {
         guard !isViewingPastDay else { return }
+        guard store.canAddTasks else {
+            store.triggerPaywallForTaskCreation()
+            return
+        }
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             isInputFocused = false
@@ -318,14 +506,135 @@ struct DumpScreen: View {
             Text("Dump It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)
-            Text("Get everything out of your head. Don't filter.")
+            Text("Dump It is getting everything out of your head and into a trusted place so nothing gets lost and everything can be seen.")
                 .font(.system(size: 13))
                 .foregroundStyle(GWTheme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Get everything out of your head. List tasks at Work, Home, Hobby, School. Don't filter. Don't worry about the order.")
+                .font(.system(size: 13))
+                .foregroundStyle(GWTheme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
-        .padding(.top, 10)
+        .padding(.top, 60)
         .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private func loopEditorSheet(draft: LoopDraft) -> some View {
+        NavigationStack {
+            Form {
+                Section("Loop") {
+                    TextField("Task", text: $loopText)
+                    Picker("Default lane", selection: Binding(
+                        get: { loopLane?.rawValue ?? "unassigned" },
+                        set: { loopLane = TaskLane(rawValue: $0) }
+                    )) {
+                        Text("Unassigned").tag("unassigned")
+                        Text("Work").tag(TaskLane.work.rawValue)
+                        Text("Personal").tag(TaskLane.personal.rawValue)
+                    }
+                }
+
+                Section("Recurrence") {
+                    Picker("Type", selection: $loopRecurrenceType) {
+                        ForEach(LoopRecurrenceType.allCases) { type in
+                            Text(type.title).tag(type)
+                        }
+                    }
+                    if loopRecurrenceType == .weekdays {
+                        loopWeekdayChips
+                    }
+                }
+
+                Section("Duration") {
+                    Picker("Length", selection: $loopDurationType) {
+                        ForEach(LoopDurationType.allCases) { type in
+                            Text(type.title).tag(type)
+                        }
+                    }
+                    if loopDurationType == .fixedCount {
+                        Stepper("Occurrences: \(loopFixedCount)", value: $loopFixedCount, in: 1...60)
+                            .onChange(of: loopFixedCount) { _, newVal in
+                                loopFixedCountText = "\(newVal)"
+                            }
+                        HStack {
+                            Text("Or type count:")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                            TextField("1–60", text: $loopFixedCountText)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 60)
+                                .onChange(of: loopFixedCountText) { _, raw in
+                                    if let n = Int(raw), (1...60).contains(n) {
+                                        loopFixedCount = n
+                                    }
+                                }
+                        }
+                    }
+                }
+
+                Section {
+                    Text("Saving a Loop keeps the original item in your Dump. At most one Loop item is generated per day; missed runs roll into one carried-over item.")
+                    Text("Active loops: \(store.loopRules.count) — manage in App Settings › Loop Rules.")
+                }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            }
+            .navigationTitle("Loop")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                loopText = draft.text
+                loopLane = draft.lane
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { loopDraft = nil }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save Loop") {
+                        store.addLoopRule(
+                            text: loopText.trimmingCharacters(in: .whitespacesAndNewlines),
+                            lane: loopLane,
+                            recurrenceType: loopRecurrenceType,
+                            weekdayNumbers: loopRecurrenceType == .weekdays ? loopWeekdays.sorted() : [],
+                            durationType: loopDurationType,
+                            fixedCount: loopDurationType == .fixedCount ? loopFixedCount : nil
+                        )
+                        GWHaptics.success()
+                        loopDraft = nil
+                    }
+                    .disabled(
+                        loopText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                        (loopRecurrenceType == .weekdays && loopWeekdays.isEmpty)
+                    )
+                    .foregroundStyle(GWTheme.gold)
+                }
+            }
+        }
+    }
+
+    private var loopWeekdayChips: some View {
+        let options: [(Int, String)] = [(2,"Mon"),(3,"Tue"),(4,"Wed"),(5,"Thu"),(6,"Fri"),(7,"Sat"),(1,"Sun")]
+        return HStack(spacing: 8) {
+            ForEach(options, id: \.0) { weekday, label in
+                let selected = loopWeekdays.contains(weekday)
+                Button(label) {
+                    if selected { loopWeekdays.remove(weekday) }
+                    else { loopWeekdays.insert(weekday) }
+                }
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(selected ? Color(hex: "1a1208") : GWTheme.textGhost)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(selected ? GWTheme.gold : Color.white.opacity(0.08))
+                .clipShape(Capsule())
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 

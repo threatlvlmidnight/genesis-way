@@ -1,3 +1,4 @@
+import RevenueCatUI
 import SwiftUI
 
 struct RootView: View {
@@ -14,6 +15,28 @@ struct RootView: View {
                 )
             } else {
                 MainTabShell()
+            }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { store.showPaywall },
+                set: { if !$0 { store.dismissPaywall() } }
+            )
+        ) {
+            GWPaywallView()
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { store.showCustomerCenter },
+                set: { store.showCustomerCenter = $0 }
+            )
+        ) {
+            CustomerCenterView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            store.refreshEntitlement()
+            Task {
+                _ = await store.syncGoogleCalendarNow()
             }
         }
     }
@@ -78,47 +101,24 @@ private struct MainTabShell: View {
             set: { store.navigate($0) }
         )) {
             DumpScreen()
-            .padding(.top, 42)
             .tabItem { Label("Dump", systemImage: "square.and.pencil") }
             .tag(AppScreen.dump)
 
             ShapeScreen()
-            .padding(.top, 42)
             .tabItem { Label("Shape", systemImage: "circle.grid.cross") }
             .tag(AppScreen.shape)
 
             FillScreen()
-            .padding(.top, 42)
             .tabItem { Label("Fill", systemImage: "checklist") }
             .tag(AppScreen.fill)
 
             ParkScreen()
-            .padding(.top, 42)
             .tabItem { Label("Park", systemImage: "tray.and.arrow.down") }
             .tag(AppScreen.park)
         }
-        .safeAreaInset(edge: .top) {
-            Color.clear
-                .frame(height: 92)
-        }
         .overlay(alignment: .top) {
-            ZStack(alignment: .bottom) {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.black.opacity(0.36), Color.black.opacity(0.2)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .overlay(alignment: .bottom) {
-                        Rectangle()
-                            .fill(GWTheme.gold.opacity(0.08))
-                            .frame(height: 1)
-                    }
-                    .allowsHitTesting(false)
-
-                HStack(spacing: 8) {
+            HStack {
+                    // Left: Tour button
                     if showsHomeButton {
                         Button {
                             store.navigate(.onboarding)
@@ -128,55 +128,54 @@ private struct MainTabShell: View {
                                 .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(GWTheme.gold)
                                 .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .padding(.vertical, 7)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
                     }
 
-                    Spacer(minLength: 0)
+                    Spacer()
 
-                    HStack(spacing: 8) {
+                    // Center: feedback badge (dev only)
+                    if store.showFeedbackIdentifiers {
+                        FeedbackIdentifierBadge(text: FeedbackScreenID.main(for: store.screen))
+                    }
+
+                    Spacer()
+
+                    // Right: guide + settings
+                    HStack(spacing: 6) {
                         if showsGuideButton {
-                            Button {
-                                showScreenGuide = true
-                            } label: {
-                                Image(systemName: "questionmark.circle.fill")
-                                    .font(.system(size: 16, weight: .semibold))
+                            Button { showScreenGuide = true } label: {
+                                Image(systemName: "questionmark")
+                                    .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(GWTheme.gold)
-                                    .frame(width: 36, height: 36)
-                                    .background(Color.white.opacity(0.08))
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .frame(width: 32, height: 32)
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(Circle())
                             }
                             .buttonStyle(.plain)
                         }
-
-                        Button {
-                            showAppSettings = true
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 16, weight: .semibold))
+                        Button { showAppSettings = true } label: {
+                            Image(systemName: "gearshape")
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(GWTheme.gold)
-                                .frame(width: 36, height: 36)
-                                .background(Color.white.opacity(0.08))
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .frame(width: 32, height: 32)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
                                 .overlay {
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(GWTheme.gold, lineWidth: 2)
+                                    Circle()
+                                        .stroke(GWTheme.gold, lineWidth: 1.5)
                                         .opacity(activeGuidedStep?.emphasis == .settings ? 0.95 : 0)
                                 }
-                                .shadow(color: GWTheme.gold.opacity(activeGuidedStep?.emphasis == .settings ? 0.55 : 0), radius: 8)
+                                .shadow(color: GWTheme.gold.opacity(activeGuidedStep?.emphasis == .settings ? 0.5 : 0), radius: 6)
                         }
                         .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 14)
-                .padding(.top, 6)
-                .padding(.bottom, 18)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 66)
+                .padding(.vertical, 8)
         }
         .overlay(alignment: .bottom) {
             if let emphasis = activeGuidedStep?.emphasis,
@@ -440,6 +439,47 @@ private struct MainTabShell: View {
     }
 }
 
+struct FeedbackIdentifierBadge: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 11, weight: .heavy, design: .rounded))
+            .foregroundStyle(Color(hex: "1a1208"))
+            .tracking(0.4)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                Capsule()
+                    .fill(GWTheme.gold.opacity(0.98))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(0.45), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.34), radius: 10, y: 4)
+            .allowsHitTesting(false)
+            .accessibilityLabel("Page identifier \(text)")
+    }
+}
+
+enum FeedbackScreenID {
+    static func main(for screen: AppScreen) -> String {
+        switch screen {
+        case .onboarding:
+            return "GW-P01 · Onboarding"
+        case .dump:
+            return "GW-P02 · Dump"
+        case .shape:
+            return "GW-P03 · Shape"
+        case .fill:
+            return "GW-P04 · Fill"
+        case .park:
+            return "GW-P05 · Park"
+        }
+    }
+}
+
 private struct ScreenGuideCard: View {
     let title: String
     let summary: String
@@ -484,10 +524,10 @@ private struct ShapeFiltersGuideCard: View {
     }
 
     private let filters: [FilterDetail] = [
-        FilterDetail(title: "Schedule", description: "Assign a real day/time and place it into the planner.", tint: Color(hex: "5ca06d"), icon: "calendar.badge.plus"),
-        FilterDetail(title: "Move", description: "Not today, but still active. Move it to a different day.", tint: Color(hex: "d2a85a"), icon: "arrow.right.circle"),
         FilterDetail(title: "Eliminate", description: "Remove work that does not need action anymore.", tint: Color(hex: "c07060"), icon: "xmark.circle"),
+        FilterDetail(title: "Automate", description: "Repeating task — create a Loop rule so it recurs automatically.", tint: Color(hex: "5080a8"), icon: "arrow.triangle.2.circlepath"),
         FilterDetail(title: "Delegate", description: "Assign ownership to someone else with follow-up.", tint: Color(hex: "6090c8"), icon: "person.2"),
+        FilterDetail(title: "Schedule", description: "Pick a date or time. Schedule as an appointment or move it to another day.", tint: Color(hex: "5ca06d"), icon: "calendar.badge.plus"),
         FilterDetail(title: "Park", description: "Keep it for later without forcing it into today.", tint: Color(hex: "8f7ea8"), icon: "tray.and.arrow.down")
     ]
 

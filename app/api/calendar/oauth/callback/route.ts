@@ -17,8 +17,21 @@ export async function GET(request: Request) {
     if (state) params.set("state", state);
   }
 
-  const callbackURL = `genesisway://oauth/callback?${params.toString()}`;
-  return Response.redirect(callbackURL, 302);
+  const callbackURL = `coachdan://oauth/callback?${params.toString()}`;
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="refresh" content="0;url=${callbackURL}">
+<title>Redirecting…</title>
+</head>
+<body>
+<script>window.location.replace(${JSON.stringify(callbackURL)});</script>
+<p>Redirecting back to app…</p>
+</body>
+</html>`;
+  return new Response(html, {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
 }
 
 interface GoogleOAuthCallbackRequest {

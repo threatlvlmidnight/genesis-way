@@ -315,6 +315,17 @@ Expected:
 - No crash on decode/migration.
 - Default/optional fields are safely normalized.
 
+### I3. Auth migration retry and relink safety
+Steps:
+1. In Settings diagnostics, run migration self-check.
+2. Trigger a migration retry from account settings.
+3. Verify migration event history updates with retry/probe events.
+4. Copy diagnostics report and verify it includes migration status, retry count, and relink counters.
+Expected:
+- Migration checks are idempotent and do not corrupt local auth state.
+- Retry path does not regress account status or session persistence.
+- Diagnostics output contains enough detail for triage.
+
 ---
 
 ## J. UI Polish and Accessibility Sanity
@@ -331,6 +342,98 @@ Steps:
 2. Verify Done button placement and dismissal behavior.
 Expected:
 - Keyboard controls are usable and non-overlapping.
+
+---
+
+## L. Auth and Account Foundation (Sprint 3)
+### L1. Apple Sign In with backend exchange
+Steps:
+1. Sign in with Apple from Settings account area.
+2. Confirm account state moves to signed in and backend shows Supabase.
+3. Kill app and relaunch.
+Expected:
+- Sign-in succeeds and persists after restart.
+- Backend status remains visible and accurate.
+
+### L2. Sign out invalidation
+Steps:
+1. While signed in, trigger Sign Out in Settings.
+2. Relaunch app.
+Expected:
+- Local session is cleared.
+- Backend sign-out path completes without leaving stale signed-in state.
+
+---
+
+## M. Calendar OAuth and Schema Groundwork (Sprint 3)
+### M1. Google OAuth Authorization Code + PKCE callback
+Steps:
+1. Start calendar connect flow.
+2. Complete provider auth and return through callback route.
+Expected:
+- Callback route handles code exchange path without implicit-token dependency.
+- Auth failure path returns actionable errors.
+
+### M2. Supabase calendar schema readiness
+Steps:
+1. Apply docs/supabase-calendar-schema.sql in a staging project.
+2. Validate table creation, constraints, and RLS policies.
+Expected:
+- user_calendar_connections and synced_calendar_events tables create successfully.
+- RLS blocks cross-user reads/writes.
+
+---
+
+## N. Calendar Pull Integration (Sprint 4)
+### N1. Fill pull on open and read-only render
+Steps:
+1. Connect Google Calendar and select at least one calendar source.
+2. Open Fill for today and wait for sync to complete.
+3. Confirm external events appear as read-only blocks in matching timeline slots (including All Day when applicable).
+Expected:
+- Fill renders pulled external events without converting them into editable Genesis tasks.
+- Existing local tasks remain draggable/editable and are visually distinct from external blocks.
+
+### N2. Fill sync throttle and last-synced metadata
+Steps:
+1. Open Fill and confirm a pull occurs.
+2. Re-open Fill within 15 minutes and verify no duplicate forced pull is triggered.
+3. Verify Last synced text is present after successful pull.
+Expected:
+- Pull is throttled to the configured window unless manual retry/sync is used.
+- Last synced indicator updates after successful pulls.
+
+### N3. Fill degraded sync UX
+Steps:
+1. Force sync failure (offline or invalid token path).
+2. Open Fill and verify non-blocking error banner appears with Retry and Dismiss actions.
+3. If cached events exist, verify they still render while failure banner is shown.
+4. Trigger a 401/unauthorized response and verify reconnect guidance appears.
+Expected:
+- Planner remains usable when calendar sync fails.
+- Error UI is inline, non-blocking, and supports retry/dismiss.
+- Cached events continue to display when available.
+
+---
+
+## O. Calendar Export Handoff (Sprint 5)
+### O1. Shape export to Apple Calendar composer
+Steps:
+1. In Shape, schedule an item via the Schedule sheet.
+2. Tap Export to Calendar.
+3. Verify Apple Calendar event composer opens with prefilled title/date/time.
+Expected:
+- Item is scheduled in Genesis even if export composer is canceled.
+- Prefilled event data appears in the composer.
+
+### O2. Shape open-calendar fallback and permission handling
+Steps:
+1. In Shape schedule flow, tap Open Calendar.
+2. Verify Calendar app opens to a valid date context.
+3. Deny calendar permission for export path and retry Export to Calendar.
+Expected:
+- Open Calendar path is non-blocking and does not drop scheduled data.
+- Permission failure surfaces user-facing guidance while keeping local scheduled state intact.
 
 ---
 

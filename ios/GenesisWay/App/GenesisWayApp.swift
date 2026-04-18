@@ -28,11 +28,18 @@ struct GenesisWayApp: App {
     @UIApplicationDelegateAdaptor(GenesisNotificationDelegate.self) var appDelegate
     @StateObject private var store = GenesisStore()
 
+    private var colorScheme: ColorScheme {
+        switch store.appThemeStyle {
+        case .lightSunrise: return .light
+        default: return .dark
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(colorScheme)
         }
     }
 }

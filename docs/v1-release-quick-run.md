@@ -1,4 +1,4 @@
-# Genesis Way v1 Release Quick Run (30 Minutes)
+# Genesis Way v1 Release Quick Run (35 Minutes)
 
 Use this as the fast pre-RC/pre-submit pass. For full coverage, run docs/v1-regression-test-plan.md.
 
@@ -51,6 +51,16 @@ Pass if:
 
 Pass if:
 - Loop behavior and persistence are stable.
+
+## 6. Calendar Integration Checks (5 min)
+1. Connect Google Calendar in Settings and run Sync Now.
+2. Open Fill and verify pulled events render as read-only reference blocks.
+3. Force a sync failure (offline/token issue) and verify Fill shows inline non-blocking retry banner.
+4. In Shape > Schedule, use Export to Calendar and verify Apple event composer opens prefilled.
+
+Pass if:
+- Fill remains usable during calendar failures and cached events still show when available.
+- Shape export handoff opens composer and local scheduled data remains intact on cancel.
 
 ## Quick GO/NO-GO
 - GO if all sections pass and no Sev 1/Sev 2 findings.

@@ -31,6 +31,29 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_oauth_client_id
 
 The Fill screen `Link Google` action uses OAuth and imports events from your primary calendar for the upcoming two weeks.
 
+## Google Calendar Setup (iOS)
+
+The iOS app now starts Google Calendar connect with `ASWebAuthenticationSession` and expects the callback scheme `genesisway://oauth/callback` by default.
+
+Add these app configuration keys in the iOS target build settings / generated Info.plist values:
+
+```text
+GW_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id
+GW_CALENDAR_API_BASE_URL=https://your-next-app-host
+```
+
+Optional override:
+
+```text
+GW_GOOGLE_CALLBACK_SCHEME=genesisway
+```
+
+Google OAuth requirements for iOS native connect:
+
+1. The Google OAuth client must allow the redirect URI `genesisway://oauth/callback`.
+2. `GW_CALENDAR_API_BASE_URL` must point at the deployed or local Next.js app that serves `/api/calendar/oauth/callback`.
+3. The app must be signed in before calendar connect is attempted because the calendar feature depends on the existing Supabase-backed account flow.
+
 ## Simple Calendar Import (Web)
 
 If you want the fastest path without OAuth setup:

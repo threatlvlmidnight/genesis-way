@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		755B899E2F8AE26B00C1C0D4 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 755B899D2F8AE26B00C1C0D4 /* RevenueCat */; };
+		755B89A02F8AE27000C1C0D4 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 755B899F2F8AE27000C1C0D4 /* RevenueCatUI */; };
+		755B89A52F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A32F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift */; };
+		755B89AD2F8AEE5000C1C0D4 /* BypassEntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89AC2F8AEE5000C1C0D4 /* BypassEntitlementService.swift */; };
+		755B89A62F8AEE5000C1C0D4 /* EntitlementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A12F8AEE5000C1C0D4 /* EntitlementService.swift */; };
+		755B89A72F8AEE5000C1C0D4 /* MonetizationConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A22F8AEE5000C1C0D4 /* MonetizationConfig.swift */; };
+		755B89AA2F8AEEEF00C1C0D4 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 755B89A82F8AEEEF00C1C0D4 /* PaywallView.swift */; };
 		A00000000000000000000001 /* GenesisWayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* GenesisWayApp.swift */; };
 		A00000000000000000000002 /* GenesisModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* GenesisModels.swift */; };
 		A00000000000000000000003 /* GenesisStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* GenesisStore.swift */; };
@@ -25,6 +32,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		755B89A12F8AEE5000C1C0D4 /* EntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementService.swift; sourceTree = "<group>"; };
+		755B89A22F8AEE5000C1C0D4 /* MonetizationConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonetizationConfig.swift; sourceTree = "<group>"; };
+		755B89A32F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RevenueCatEntitlementService.swift; sourceTree = "<group>"; };
+		755B89AC2F8AEE5000C1C0D4 /* BypassEntitlementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BypassEntitlementService.swift; sourceTree = "<group>"; };
+		755B89A82F8AEEEF00C1C0D4 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		A00000000000000000000010 /* GenesisWay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = GenesisWay.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000011 /* GenesisWayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenesisWayApp.swift; sourceTree = "<group>"; };
 		A00000000000000000000012 /* GenesisModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenesisModels.swift; sourceTree = "<group>"; };
@@ -48,16 +60,45 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				755B89A02F8AE27000C1C0D4 /* RevenueCatUI in Frameworks */,
+				755B899E2F8AE26B00C1C0D4 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		755B899C2F8AE26B00C1C0D4 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		755B89A42F8AEE5000C1C0D4 /* Monetization */ = {
+			isa = PBXGroup;
+			children = (
+				755B89A12F8AEE5000C1C0D4 /* EntitlementService.swift */,
+				755B89A22F8AEE5000C1C0D4 /* MonetizationConfig.swift */,
+				755B89A32F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift */,
+				755B89AC2F8AEE5000C1C0D4 /* BypassEntitlementService.swift */,
+			);
+			path = Monetization;
+			sourceTree = "<group>";
+		};
+		755B89A92F8AEEEF00C1C0D4 /* Paywall */ = {
+			isa = PBXGroup;
+			children = (
+				755B89A82F8AEEEF00C1C0D4 /* PaywallView.swift */,
+			);
+			path = Paywall;
+			sourceTree = "<group>";
+		};
 		A00000000000000000000030 = {
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000031 /* GenesisWay */,
+				755B899C2F8AE26B00C1C0D4 /* Frameworks */,
 				A00000000000000000000040 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -71,6 +112,7 @@
 				A00000000000000000000035 /* Theme */,
 				A0000000000000000000001F /* Assets.xcassets */,
 				A00000000000000000000036 /* Views */,
+				755B89A42F8AEE5000C1C0D4 /* Monetization */,
 			);
 			path = GenesisWay;
 			sourceTree = "<group>";
@@ -113,6 +155,7 @@
 				A00000000000000000000037 /* Common */,
 				A00000000000000000000038 /* Screens */,
 				A00000000000000000000017 /* RootView.swift */,
+				755B89A92F8AEEEF00C1C0D4 /* Paywall */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -191,6 +234,9 @@
 				Base,
 			);
 			mainGroup = A00000000000000000000030;
+			packageReferences = (
+				755B899B2F8ADF7A00C1C0D4 /* XCRemoteSwiftPackageReference "purchases-ios" */,
+			);
 			productRefGroup = A00000000000000000000040 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -217,6 +263,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A00000000000000000000001 /* GenesisWayApp.swift in Sources */,
+				755B89AA2F8AEEEF00C1C0D4 /* PaywallView.swift in Sources */,
 				A00000000000000000000002 /* GenesisModels.swift in Sources */,
 				A00000000000000000000003 /* GenesisStore.swift in Sources */,
 				A00000000000000000000004 /* Theme.swift in Sources */,
@@ -227,6 +274,10 @@
 				A00000000000000000000009 /* DumpScreen.swift in Sources */,
 				A0000000000000000000000A /* ShapeScreen.swift in Sources */,
 				A0000000000000000000000B /* FillScreen.swift in Sources */,
+				755B89A52F8AEE5000C1C0D4 /* RevenueCatEntitlementService.swift in Sources */,
+				755B89AD2F8AEE5000C1C0D4 /* BypassEntitlementService.swift in Sources */,
+				755B89A62F8AEE5000C1C0D4 /* EntitlementService.swift in Sources */,
+				755B89A72F8AEE5000C1C0D4 /* MonetizationConfig.swift in Sources */,
 				A0000000000000000000000C /* ParkScreen.swift in Sources */,
 				A0000000000000000000000D /* CalendarSettingsScreen.swift in Sources */,
 				A0000000000000000000000E /* AppSettingsScreen.swift in Sources */,
@@ -337,13 +388,23 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+				CODE_SIGN_ENTITLEMENTS = GenesisWay/App/GenesisWay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 33;
 				DEVELOPMENT_ASSET_PATHS = "\"GenesisWay/Preview Content\"";
 				DEVELOPMENT_TEAM = L34MSS92N5;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;			INFOPLIST_KEY_CFBundleDisplayName = Coach;				INFOPLIST_KEY_CFBundleIcons = "{CFBundlePrimaryIcon = {CFBundleIconFiles = (AppIcon);}; CFBundleAlternateIcons = {Textile = {CFBundleIconFiles = (AppIconTextile);}; Stone = {CFBundleIconFiles = (AppIconStone);}; Molten = {CFBundleIconFiles = (AppIconMolten);}; ObsidianGlass = {CFBundleIconFiles = (AppIconObsidianGlass);}; Monochrome = {CFBundleIconFiles = (AppIconMonochrome);};};}";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Coach;
+				INFOPLIST_KEY_CFBundleIcons = "{CFBundlePrimaryIcon = {CFBundleIconFiles = (AppIcon);}; CFBundleAlternateIcons = {Textile = {CFBundleIconFiles = (AppIconTextile);}; Stone = {CFBundleIconFiles = (AppIconStone);}; Molten = {CFBundleIconFiles = (AppIconMolten);}; ObsidianGlass = {CFBundleIconFiles = (AppIconObsidianGlass);}; Monochrome = {CFBundleIconFiles = (AppIconMonochrome);};};}";
 				"INFOPLIST_KEY_CFBundleIcons~ipad" = "{CFBundlePrimaryIcon = {CFBundleIconFiles = (AppIcon);}; CFBundleAlternateIcons = {Textile = {CFBundleIconFiles = (AppIconTextile);}; Stone = {CFBundleIconFiles = (AppIconStone);}; Molten = {CFBundleIconFiles = (AppIconMolten);}; ObsidianGlass = {CFBundleIconFiles = (AppIconObsidianGlass);}; Monochrome = {CFBundleIconFiles = (AppIconMonochrome);};};}";
+				INFOPLIST_KEY_CFBundleURLTypes = "({CFBundleTypeRole=Editor;CFBundleURLName=coachdan;CFBundleURLSchemes=(coachdan);})";
+				INFOPLIST_KEY_GW_CALENDAR_API_BASE_URL = "https://coachdan.app";
+				INFOPLIST_KEY_GW_GOOGLE_OAUTH_CLIENT_ID = "609243271731-nkcl43ltitd9itdeaduf24alr5timo8e.apps.googleusercontent.com";
+				INFOPLIST_KEY_GW_SUPABASE_ANON_KEY = sb_publishable_LbTmRHJIRpnaRXOHXC66ag_9VViLL32;
+				INFOPLIST_KEY_GW_SUPABASE_URL = "https://bolxsqpvabvpjbtbhmpf.supabase.co";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Use Calendar access to export scheduled items from Coach.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Use your microphone to quickly capture Dump items.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Convert voice capture into a Dump list.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -355,7 +416,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.genesisway.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -369,12 +430,21 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = GenesisWay/App/GenesisWay.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 24;
+				CURRENT_PROJECT_VERSION = 33;
 				DEVELOPMENT_TEAM = L34MSS92N5;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;			INFOPLIST_KEY_CFBundleDisplayName = Coach;				INFOPLIST_KEY_CFBundleIcons = "{CFBundlePrimaryIcon = {CFBundleIconFiles = (AppIcon);}; CFBundleAlternateIcons = {Textile = {CFBundleIconFiles = (AppIconTextile);}; Stone = {CFBundleIconFiles = (AppIconStone);}; Molten = {CFBundleIconFiles = (AppIconMolten);}; ObsidianGlass = {CFBundleIconFiles = (AppIconObsidianGlass);}; Monochrome = {CFBundleIconFiles = (AppIconMonochrome);};};}";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Coach;
+				INFOPLIST_KEY_CFBundleIcons = "{CFBundlePrimaryIcon = {CFBundleIconFiles = (AppIcon);}; CFBundleAlternateIcons = {Textile = {CFBundleIconFiles = (AppIconTextile);}; Stone = {CFBundleIconFiles = (AppIconStone);}; Molten = {CFBundleIconFiles = (AppIconMolten);}; ObsidianGlass = {CFBundleIconFiles = (AppIconObsidianGlass);}; Monochrome = {CFBundleIconFiles = (AppIconMonochrome);};};}";
 				"INFOPLIST_KEY_CFBundleIcons~ipad" = "{CFBundlePrimaryIcon = {CFBundleIconFiles = (AppIcon);}; CFBundleAlternateIcons = {Textile = {CFBundleIconFiles = (AppIconTextile);}; Stone = {CFBundleIconFiles = (AppIconStone);}; Molten = {CFBundleIconFiles = (AppIconMolten);}; ObsidianGlass = {CFBundleIconFiles = (AppIconObsidianGlass);}; Monochrome = {CFBundleIconFiles = (AppIconMonochrome);};};}";
+				INFOPLIST_KEY_CFBundleURLTypes = "({CFBundleTypeRole=Editor;CFBundleURLName=coachdan;CFBundleURLSchemes=(coachdan);})";
+				INFOPLIST_KEY_GW_CALENDAR_API_BASE_URL = "https://coachdan.app";
+				INFOPLIST_KEY_GW_GOOGLE_OAUTH_CLIENT_ID = "609243271731-nkcl43ltitd9itdeaduf24alr5timo8e.apps.googleusercontent.com";
+				INFOPLIST_KEY_GW_SUPABASE_ANON_KEY = sb_publishable_LbTmRHJIRpnaRXOHXC66ag_9VViLL32;
+				INFOPLIST_KEY_GW_SUPABASE_URL = "https://bolxsqpvabvpjbtbhmpf.supabase.co";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Use Calendar access to export scheduled items from Coach.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Use your microphone to quickly capture Dump items.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Convert voice capture into a Dump list.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -386,7 +456,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.genesisway.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -418,6 +488,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		755B899B2F8ADF7A00C1C0D4 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.67.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		755B899D2F8AE26B00C1C0D4 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 755B899B2F8ADF7A00C1C0D4 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+		755B899F2F8AE27000C1C0D4 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 755B899B2F8ADF7A00C1C0D4 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCatUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A00000000000000000000060 /* Project object */;
 }

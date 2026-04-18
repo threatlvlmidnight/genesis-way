@@ -8,15 +8,27 @@ struct FillScreen: View {
     @State private var reminderStatus = ""
     @State private var showBig3Help = false
     @State private var showRatingHelp = false
-    @State private var planningDay = Date()
     @State private var targetedDropSlot: String?
-    @State private var keyboardVisible = false
+    @State private var isAutoSyncingCalendar = false
+    @State private var isRetryingCalendarSync = false
+    @State private var hideCalendarErrorBannerForSession = false
     @FocusState private var focusedField: FillInputField?
 
     private enum FillInputField: Hashable {
         case big3(UUID)
         case weeklyGoal(Int)
         case weeklyMacro
+    }
+
+    private var planningDay: Date {
+        store.activePlanningDay
+    }
+
+    private var planningDayBinding: Binding<Date> {
+        Binding(
+            get: { store.activePlanningDay },
+            set: { store.setActivePlanningDay($0) }
+        )
     }
 
     private var timelineSlots: [String] {
@@ -98,6 +110,10 @@ struct FillScreen: View {
         unscheduledTaskPool.filter { $0.lane == .personal }
     }
 
+    private var delegatedDumpItems: [DumpItem] {
+        store.dumpItems(for: planningDay).filter { $0.filterOutcome == .delegated }
+    }
+
     private var planningDayISO: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -119,8 +135,20 @@ struct FillScreen: View {
         dayTaskPool.filter { $0.lane == .personal }
     }
 
+    private var planningDayAppointments: [ScheduledAppointment] {
+        store.appointments(for: planningDay)
+    }
+
     private var unresolvedPlanningCount: Int {
         unscheduledTaskPool.count + unfilteredPileItems.count
+    }
+
+    private var scheduledOutsideVisibleHours: [TaskItem] {
+        let visibleSlots = Set(timelineSlots)
+        return store.scheduledTasks(for: planningDay).filter { task in
+            guard let time = task.time else { return false }
+            return !visibleSlots.contains(time)
+        }
     }
 
     private var carryoverHistory: [(String, [DumpItem])] {
@@ -158,8 +186,8 @@ struct FillScreen: View {
                 }
 
                 GlassCard {
-                    VStack(alignment: .leading, spacing: 9) {
-                        Text("How Fill Works")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("How Fill It Works")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(GWTheme.textGhost)
                             .textCase(.uppercase)
@@ -168,11 +196,35 @@ struct FillScreen: View {
                             .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(GWTheme.textPrimary)
 
-                        Text("1. Choose your Daily Big 3\n2. Place work and personal tasks on today\n3. Schedule reminders so your plan survives the day")
-                            .font(.system(size: 12))
+                        Text("Fill It is placing each task into its proper place in your calendar based on priority, timing, and context so your plan becomes actionable.")
+                            .font(.system(size: 13))
                             .foregroundStyle(GWTheme.textMuted)
-                            .lineSpacing(2)
-                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        ForEach([
+                            ("1", "Sync your calendar", "Connect Google Calendar in Settings so your existing commitments are visible on the timeline."),
+                            ("2", "Assign each task to a time", "Drag tasks from the Task Pool onto a time block. Use Move Day to shift tasks without assigning a time."),
+                            ("3", "Finish your day on paper first", "Your plan is useless if it stays in your head. Lock it in here before the day begins."),
+                            ("4", "Start your day", "Tap Start Day when everything is placed. Your Big 3 sets the daily north star.")
+                        ], id: \.0) { num, title, detail in
+                            HStack(alignment: .top, spacing: 10) {
+                                Text(num)
+                                    .font(.system(size: 11, weight: .heavy))
+                                    .foregroundStyle(GWTheme.gold)
+                                    .frame(width: 18, alignment: .center)
+                                    .padding(.top, 1)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(title)
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(GWTheme.textPrimary)
+                                    Text(detail)
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -231,15 +283,15 @@ struct FillScreen: View {
 
                 GlassCard {
                     VStack(alignment: .leading, spacing: 8) {
-                        rowHeader(title: "Today's Appointments", trailing: "\(store.todayAppointments.count)")
+                        rowHeader(title: "Today's Appointments", trailing: "\(planningDayAppointments.count)")
 
-                        if store.todayAppointments.isEmpty {
+                        if planningDayAppointments.isEmpty {
                             Text("No scheduled appointments yet. Use Schedule in Shape to place an item on your timeline.")
                                 .font(.system(size: 11))
                                 .foregroundStyle(GWTheme.textGhost)
                                 .fixedSize(horizontal: false, vertical: true)
                         } else {
-                            ForEach(store.todayAppointments) { appointment in
+                            ForEach(planningDayAppointments) { appointment in
                                 HStack(spacing: 10) {
                                     Text(appointment.code)
                                         .font(.system(size: 10, weight: .bold))
@@ -270,13 +322,80 @@ struct FillScreen: View {
                     VStack(alignment: .leading, spacing: 10) {
                         rowHeader(title: "Daily Planner", trailing: formattedPlanningDay())
 
-                        DatePicker("Daily Planner", selection: $planningDay, displayedComponents: [.date])
+                        DatePicker("Daily Planner", selection: planningDayBinding, displayedComponents: [.date])
                             .datePickerStyle(.compact)
                             .tint(GWTheme.gold)
 
                         Text("Drag tasks from Task Pool onto a time block. Use Move Day to reschedule without assigning a time.")
                             .font(.system(size: 11))
                             .foregroundStyle(GWTheme.textGhost)
+
+                        if store.googleCalendarConnected {
+                            if isAutoSyncingCalendar {
+                                Text("Syncing linked calendars...")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(GWTheme.textGhost)
+                            }
+
+                            if shouldShowCalendarErrorBanner {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .top, spacing: 8) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(Color(hex: "c07060"))
+
+                                        Text(calendarBannerMessage)
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundStyle(Color(hex: "c07060"))
+                                            .fixedSize(horizontal: false, vertical: true)
+                                    }
+
+                                    HStack(spacing: 10) {
+                                        Button(isRetryingCalendarSync ? "Retrying..." : "Retry Sync") {
+                                            Task { await retryCalendarSyncFromBanner() }
+                                        }
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(Color(hex: "1a1208"))
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(GWTheme.gold)
+                                        .clipShape(Capsule())
+                                        .buttonStyle(.plain)
+                                        .disabled(isRetryingCalendarSync)
+
+                                        Button("Dismiss") {
+                                            hideCalendarErrorBannerForSession = true
+                                        }
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundStyle(GWTheme.textMuted)
+                                        .buttonStyle(.plain)
+
+                                        Spacer()
+                                    }
+                                }
+                                .padding(10)
+                                .background(Color(hex: "c07060").opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+
+                            if let lastSync = formattedLastCalendarSync {
+                                Text("Last synced \(lastSync)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(GWTheme.textGhost)
+                            }
+
+                            if store.googleCalendarLastPulledEventCount > 0 {
+                                Text("Linked calendar events loaded: \(store.googleCalendarLastPulledEventCount)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(Color(hex: "5ca06d"))
+                            }
+                        }
+
+                        if !scheduledOutsideVisibleHours.isEmpty {
+                            Text("\(scheduledOutsideVisibleHours.count) scheduled task\(scheduledOutsideVisibleHours.count == 1 ? " is" : "s are") outside your visible planner hours. Adjust Daily Planner hour range in Settings to view them.")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(GWTheme.gold)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
 
                         ForEach(timelineSlots, id: \.self) { slot in
                             timelineSlotRow(slot: slot)
@@ -349,7 +468,7 @@ struct FillScreen: View {
                                 .draggable("dump:\(item.id.uuidString)")
                             }
 
-                            ForEach(dayWorkTasks) { task in
+                            ForEach(unscheduledWorkTasks) { task in
                                 HStack(spacing: 10) {
                                     dragHandle
 
@@ -363,16 +482,6 @@ struct FillScreen: View {
                                         .foregroundStyle(task.time == nil ? GWTheme.textMuted : GWTheme.textGhost)
                                         .lineLimit(nil)
                                         .fixedSize(horizontal: false, vertical: true)
-
-                                    if task.time != nil {
-                                        Text("Placed")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .foregroundStyle(Color(hex: "1a1208"))
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 3)
-                                            .background(GWTheme.gold.opacity(0.5))
-                                            .clipShape(Capsule())
-                                    }
 
                                     if task.carriedOver {
                                         Text("Carried")
@@ -438,7 +547,7 @@ struct FillScreen: View {
                                 .draggable("dump:\(item.id.uuidString)")
                             }
 
-                            ForEach(dayPersonalTasks) { task in
+                            ForEach(unscheduledPersonalTasks) { task in
                                 HStack(spacing: 10) {
                                     dragHandle
 
@@ -452,16 +561,6 @@ struct FillScreen: View {
                                         .foregroundStyle(task.time == nil ? GWTheme.textMuted : GWTheme.textGhost)
                                         .lineLimit(nil)
                                         .fixedSize(horizontal: false, vertical: true)
-
-                                    if task.time != nil {
-                                        Text("Placed")
-                                            .font(.system(size: 9, weight: .bold))
-                                            .foregroundStyle(Color(hex: "1a1208"))
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 3)
-                                            .background(GWTheme.gold.opacity(0.5))
-                                            .clipShape(Capsule())
-                                    }
 
                                     if task.carriedOver {
                                         Text("Carried")
@@ -493,6 +592,48 @@ struct FillScreen: View {
                                     Button("Add to Big 3 #1") { assignTask(task, toBig3Slot: 0) }
                                     Button("Add to Big 3 #2") { assignTask(task, toBig3Slot: 1) }
                                     Button("Add to Big 3 #3") { assignTask(task, toBig3Slot: 2) }
+                                }
+                            }
+
+                            if !delegatedDumpItems.isEmpty {
+                                Text("Delegated")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(GWTheme.textGhost)
+                                    .textCase(.uppercase)
+                                    .padding(.top, 4)
+
+                                ForEach(delegatedDumpItems) { item in
+                                    let followUp = store.delegatedFollowUps.first(where: { $0.taskText == item.text })
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "arrow.forward.circle")
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(GWTheme.gold.opacity(0.7))
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(item.text)
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(GWTheme.textMuted)
+                                                .lineLimit(nil)
+                                                .fixedSize(horizontal: false, vertical: true)
+
+                                            if let fu = followUp, !fu.assignee.isEmpty {
+                                                Text("→ \(fu.assignee)")
+                                                    .font(.system(size: 10, weight: .medium))
+                                                    .foregroundStyle(GWTheme.gold.opacity(0.75))
+                                            }
+                                        }
+
+                                        Spacer()
+
+                                        Text("Delegated")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(GWTheme.gold.opacity(0.8))
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 3)
+                                            .background(GWTheme.gold.opacity(0.12))
+                                            .clipShape(Capsule())
+                                    }
+                                    .padding(.vertical, 2)
                                 }
                             }
                         }
@@ -699,7 +840,8 @@ struct FillScreen: View {
                     }
                 }
             }
-            .padding(24)
+            .padding(.top, 60)
+            .padding([.horizontal, .bottom], 24)
         }
         .background(GWTheme.background.ignoresSafeArea())
         .alert("Daily Big 3", isPresented: $showBig3Help) {
@@ -712,12 +854,6 @@ struct FillScreen: View {
         } message: {
             Text("W and P codes are auto-generated task IDs. They help index tasks quickly and are not manual priority inputs.")
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            keyboardVisible = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            keyboardVisible = false
-        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -729,23 +865,12 @@ struct FillScreen: View {
                 .padding(.vertical, 6)
             }
         }
-        .safeAreaInset(edge: .bottom) {
-            if keyboardVisible {
-                HStack {
-                    Spacer()
-                    Button("Done") {
-                        dismissKeyboard()
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(GWTheme.gold)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.92))
-                    .clipShape(Capsule())
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .background(Color.black.opacity(0.35))
+        .task(id: planningDayISO) {
+            await runCalendarAutoSyncIfNeeded()
+        }
+        .onChange(of: store.googleCalendarLastError) { _, newValue in
+            if newValue == nil || newValue?.isEmpty == true {
+                hideCalendarErrorBannerForSession = false
             }
         }
     }
@@ -754,13 +879,14 @@ struct FillScreen: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Today")
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(GWTheme.textMuted)
+                .foregroundStyle(GWTheme.textGhost)
             Text("Fill It")
                 .font(.system(size: 30, weight: .heavy))
                 .foregroundStyle(GWTheme.textPrimary)
-            Text("Assign intentional actions to the right time, then protect them.")
+            Text("Sync your calendar, then assign each task to a time (drag and drop).")
                 .font(.system(size: 13))
                 .foregroundStyle(GWTheme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -788,11 +914,12 @@ struct FillScreen: View {
 
     private var dragHandle: some View {
         Image(systemName: "line.3.horizontal")
-            .font(.system(size: 18, weight: .bold))
+            .font(.system(size: 20, weight: .bold))
             .foregroundStyle(GWTheme.textMuted)
-            .frame(width: 28, height: 28)
-            .background(Color.white.opacity(0.04))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .frame(width: 40, height: 40)
+            .contentShape(Rectangle())
+            .background(Color.white.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private var dualExecutionProgressBar: some View {
@@ -892,6 +1019,7 @@ struct FillScreen: View {
 
     private func timelineSlotRow(slot: String) -> some View {
         let scheduled = store.tasksScheduled(for: planningDay, at: slot)
+        let syncedEvents = syncedEventsForSlot(slot)
 
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
@@ -900,9 +1028,11 @@ struct FillScreen: View {
                     .foregroundStyle(GWTheme.gold)
                     .frame(width: 58, alignment: .leading)
 
-                Text(scheduled.isEmpty ? "Drop task here" : "\(scheduled.count) task\(scheduled.count == 1 ? "" : "s")")
+                Text((scheduled.isEmpty && syncedEvents.isEmpty)
+                     ? "Drop task here"
+                     : "\(scheduled.count) task\(scheduled.count == 1 ? "" : "s") · \(syncedEvents.count) event\(syncedEvents.count == 1 ? "" : "s")")
                     .font(.system(size: 11))
-                    .foregroundStyle(scheduled.isEmpty ? GWTheme.textGhost : GWTheme.textMuted)
+                    .foregroundStyle((scheduled.isEmpty && syncedEvents.isEmpty) ? GWTheme.textGhost : GWTheme.textMuted)
 
                 Spacer()
             }
@@ -968,6 +1098,32 @@ struct FillScreen: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
+
+            if !syncedEvents.isEmpty {
+                ForEach(syncedEvents) { event in
+                    HStack(spacing: 8) {
+                        Image(systemName: "calendar")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color(hex: "5ca06d"))
+
+                        Text(event.title)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Color(hex: "9bc4a6"))
+                            .lineLimit(nil)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Spacer()
+
+                        Text(event.allDay ? "All day" : "Google")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(Color(hex: "5ca06d"))
+                    }
+                    .padding(.vertical, 2)
+                    .padding(.horizontal, 4)
+                    .background(Color(hex: "5ca06d").opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+            }
         }
         .padding(10)
         .background(Color.white.opacity(0.03))
@@ -995,6 +1151,126 @@ struct FillScreen: View {
             }
 
             return true
+        }
+    }
+
+    // Parses ISO 8601 strings including those with fractional seconds (e.g. .000Z)
+    // returned by the Vercel sync endpoint.
+    private func parseISO(_ iso: String) -> Date? {
+        let plain = ISO8601DateFormatter()
+        if let d = plain.date(from: iso) { return d }
+        let frac = ISO8601DateFormatter()
+        frac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return frac.date(from: iso)
+    }
+
+    private func syncedEventsForSlot(_ slot: String) -> [SyncedCalendarEvent] {
+        let plannedDayISO = planningDayISO
+        return store.syncedCalendarEvents
+            .filter { event in
+                if event.allDay {
+                    // All-day events: use raw date prefix to avoid timezone day shifts.
+                    let rawDate = String((event.startAtISO ?? "").prefix(10))
+                    return slot == "All Day" && rawDate == plannedDayISO
+                }
+
+                guard let startISO = event.startAtISO,
+                      let date = parseISO(startISO) else {
+                    return false
+                }
+
+                return dayISO(from: startISO) == plannedDayISO && hourLabel(Calendar.current.component(.hour, from: date)) == slot
+            }
+            .sorted { lhs, rhs in
+                (lhs.startAtISO ?? "") < (rhs.startAtISO ?? "")
+            }
+    }
+
+    private func dayISO(from iso: String?) -> String? {
+        guard let iso, let date = parseISO(iso) else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
+    private func runCalendarAutoSyncIfNeeded() async {
+        // Only skip if not connected or already syncing.
+        // Do NOT gate on hasGoogleCalendarAccessToken — syncGoogleCalendarNow calls
+        // validGoogleCalendarAccessToken which silently refreshes using the refresh token
+        // when the access token is expired or missing. Short-circuiting here would block
+        // that silent refresh path and force the user to reconnect unnecessarily.
+        guard store.googleCalendarConnected,
+              !isAutoSyncingCalendar else { return }
+
+        let shouldSync: Bool
+        if let lastSyncISO = store.lastCalendarSyncISO,
+           let lastSync = ISO8601DateFormatter().date(from: lastSyncISO) {
+            shouldSync = Date().timeIntervalSince(lastSync) > (15 * 60)
+        } else {
+            shouldSync = true
+        }
+
+        guard shouldSync else { return }
+
+        await MainActor.run {
+            isAutoSyncingCalendar = true
+        }
+        _ = await store.syncGoogleCalendarNow()
+        await MainActor.run {
+            isAutoSyncingCalendar = false
+        }
+    }
+
+    private var shouldShowCalendarErrorBanner: Bool {
+        guard !hideCalendarErrorBannerForSession,
+              let calendarError = store.googleCalendarLastError,
+              !calendarError.isEmpty else {
+            return false
+        }
+        return true
+    }
+
+    private var calendarBannerMessage: String {
+        let lowercasedError = (store.googleCalendarLastError ?? "").lowercased()
+        // "Reconnect" language should only appear when BOTH tokens are gone (error 1007)
+        // or when the refresh token itself has been revoked. Token refresh failures due to
+        // expiry are handled silently by validGoogleCalendarAccessToken before we reach here.
+        let needsFullReconnect = lowercasedError.contains("no refresh token") ||
+            lowercasedError.contains("reconnect your calendar") ||
+            (lowercasedError.contains("401") && lowercasedError.contains("refresh"))
+        if needsFullReconnect {
+            return "Calendar connection needs renewal. Open Calendar Settings to reconnect."
+        }
+
+        if !store.syncedCalendarEvents.isEmpty {
+            return "Calendar sync unavailable. Showing cached events. Tap Retry Sync to refresh."
+        }
+
+        return "Calendar sync unavailable. You can keep planning and retry when ready."
+    }
+
+    private var formattedLastCalendarSync: String? {
+        guard let iso = store.lastCalendarSyncISO,
+              let date = ISO8601DateFormatter().date(from: iso) else {
+            return nil
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func retryCalendarSyncFromBanner() async {
+        guard !isRetryingCalendarSync else { return }
+
+        await MainActor.run {
+            isRetryingCalendarSync = true
+        }
+        _ = await store.syncGoogleCalendarNow()
+        await MainActor.run {
+            isRetryingCalendarSync = false
         }
     }
 

@@ -6,6 +6,7 @@ struct OnboardingScreen: View {
     let onSkip: () -> Void
 
     @State private var selectedStep: IntroStep = .pile
+    @State private var reminderSetupStatus: String?
 
     private var selectedIndex: Int {
         IntroStep.allCases.firstIndex(of: selectedStep) ?? 0
@@ -30,30 +31,10 @@ struct OnboardingScreen: View {
 
                 showcaseCard
 
-                GlassCard {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Genesis Pattern")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(GWTheme.textGhost)
-                            .textCase(.uppercase)
-
-                        Text("Form -> Fill -> Finish -> Rest")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(GWTheme.textPrimary)
-
-                        Text("The three-step flow gets you moving now. The six-week path deepens rhythm, boundaries, and completion.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(GWTheme.textMuted)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(nil)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-
                 dailyFlowReminderSetupCard
 
                 PrimaryButton(title: "Begin the Journey", action: onBegin)
-                    .opacity(store.hasConfiguredDailyFlowReminders ? 1.0 : 0.45)
+                    .opacity(store.hasConfiguredDailyFlowReminders ? 1.0 : 0.7)
                     .disabled(!store.hasConfiguredDailyFlowReminders)
 
                 Button("Already familiar? Skip to planner") {
@@ -68,6 +49,18 @@ struct OnboardingScreen: View {
             .padding(.top, 28)
         }
         .background(GWTheme.background.ignoresSafeArea())
+        .onChange(of: store.morningPlanningReminderEnabled) { _, _ in
+            reminderSetupStatus = nil
+        }
+        .onChange(of: store.morningPlanningReminderTime) { _, _ in
+            reminderSetupStatus = nil
+        }
+        .onChange(of: store.eveningPlanningReminderEnabled) { _, _ in
+            reminderSetupStatus = nil
+        }
+        .onChange(of: store.eveningPlanningReminderTime) { _, _ in
+            reminderSetupStatus = nil
+        }
     }
 
     private var dailyFlowReminderSetupCard: some View {
@@ -122,7 +115,10 @@ struct OnboardingScreen: View {
                 }
 
                 Button("Save Reminder Setup") {
-                    store.markDailyFlowRemindersConfigured()
+                    let saved = store.markDailyFlowRemindersConfigured()
+                    reminderSetupStatus = saved
+                        ? "Reminder setup saved. You can adjust this anytime in Settings."
+                        : "Pick a time for each reminder you turned on."
                 }
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(Color(hex: "1a1208"))
@@ -132,11 +128,11 @@ struct OnboardingScreen: View {
                 .clipShape(Capsule())
                 .buttonStyle(.plain)
 
-                Text(store.hasConfiguredDailyFlowReminders
+                Text(reminderSetupStatus ?? (store.hasConfiguredDailyFlowReminders
                      ? "Reminder setup saved. You can adjust this anytime in Settings."
-                     : "You must save reminder setup before starting.")
+                     : "You must save reminder setup before starting."))
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(store.hasConfiguredDailyFlowReminders ? GWTheme.gold : GWTheme.textMuted)
+                    .foregroundStyle(store.hasConfiguredDailyFlowReminders ? GWTheme.gold : (store.canMarkDailyFlowRemindersConfigured() ? GWTheme.textMuted : Color(hex: "c07060")))
             }
         }
     }
@@ -235,14 +231,14 @@ private enum IntroStep: CaseIterable {
     case pile
     case shape
     case fill
-    case sustain
+    case finish
 
     var badge: String {
         switch self {
         case .pile: return "1"
         case .shape: return "2"
         case .fill: return "3"
-        case .sustain: return "4"
+        case .finish: return "4"
         }
     }
 
@@ -251,29 +247,29 @@ private enum IntroStep: CaseIterable {
         case .pile: return "Dump It"
         case .shape: return "Shape It"
         case .fill: return "Fill It"
-        case .sustain: return "Sustain It"
+        case .finish: return "Finish It"
         }
     }
 
     var kicker: String {
         switch self {
         case .pile: return "Capture everything before you decide anything."
-        case .shape: return "Run each item through a filter: schedule, move, eliminate, delegate, or park."
-        case .fill: return "Choose intentional actions and place them on your calendar."
-        case .sustain: return "Close your day, carry what matters, and reset tomorrow quickly."
+        case .shape: return "Run each item through the filter: Eliminate, Automate, Delegate, Schedule, Park."
+        case .fill: return "Choose intentional actions and place them in your calendar. Decide when you will do the task."
+        case .finish: return "Close your day, move what matters, and reset for tomorrow."
         }
     }
 
     var summary: String {
         switch self {
         case .pile:
-            return "Brain dump every open loop into one trusted dump list. You are collecting reality, not solving it yet."
+            return "Get everything out of your head. List tasks at Work, Home, Hobby, School. Do not filter or worry about order yet."
         case .shape:
             return "Convert raw dump items into decisions. If it belongs today, lane it into Work or Personal so Fill can schedule it."
         case .fill:
-            return "Choose your Daily Big 3, place key tasks on the timeline, and protect focus with reminders."
-        case .sustain:
-            return "At day end, complete what you can, carry forward what remains, and prep tomorrow in five minutes."
+            return "Assign each task a place in your calendar and protect margin so your plan survives real life."
+        case .finish:
+            return "Close your day with intention: complete what you can, move what matters, and reset tomorrow."
         }
     }
 
@@ -282,26 +278,26 @@ private enum IntroStep: CaseIterable {
         case .pile:
             return [
                 "List items fast. Do not prioritize yet.",
-                "Notice what explains your mental load.",
+                "Think of Work, Home, Hobby, School.",
                 "Keep all raw input in one trusted place."
             ]
         case .shape:
             return [
-                "Use one filter per item: Schedule, Move, Eliminate, Delegate, Park.",
+                "Break oversized items into smaller pieces.",
                 "Assign each actionable item to Work or Personal.",
-                "Break oversized items into a Jam Session."
+                "Use one filter per item: Eliminate, Automate, Delegate, Schedule, Park."
             ]
         case .fill:
             return [
-                "Set one action with a clear time.",
-                "Map action to your Daily Big 3.",
-                "Protect margin so the plan survives real life."
+                "Make sure your digital calendar is synced.",
+                "Protect margin so the plan survives real life.",
+                "Assign each item a placeholder on your calendar."
             ]
-        case .sustain:
+        case .finish:
             return [
-                "Finish your Daily Big 3 or consciously re-plan.",
+                "Finish your task list or consciously move each item forward. Run each incomplete item through the filters.",
                 "Carry incomplete items forward with intention.",
-                "Use the evening reminder to set up tomorrow quickly."
+                "Use the evening reminder to set up tomorrow."
             ]
         }
     }
@@ -318,7 +314,7 @@ private struct StepAnimationView: View {
             return "Filter every dump item into a clear next decision"
         case .fill:
             return "Turn priorities into scheduled action"
-        case .sustain:
+        case .finish:
             return "Close today and prepare tomorrow in minutes"
         }
     }
@@ -344,7 +340,7 @@ private struct StepAnimationView: View {
                     shapeAnimation(t: t)
                 case .fill:
                     fillAnimation(t: t)
-                case .sustain:
+                case .finish:
                     syncAnimation(t: t)
                 }
 
